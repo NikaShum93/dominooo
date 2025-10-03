@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Domino · Cozy Editor</title>
 <style>
@@ -21,6 +21,8 @@
        cursor:pointer; font-weight:700; font-size:15px; transition:all .2s}
   .btn:hover{transform:scale(1.05)}
   .note{font-size:13px; color:#ddd; text-align:center; margin-top:8px}
+  #embedCodeBox{display:none; margin-top:16px; text-align:center; width:100%}
+  #embedCode{width:100%; height:80px; border-radius:10px; border:2px solid var(--accent); padding:8px; font-size:13px}
 </style>
 </head>
 <body>
@@ -32,7 +34,12 @@
     <label><input type="checkbox" id="freeMode"> Свободная игра (без правил)</label>
 
     <button id="saveBtn" class="btn">Сохранить набор</button>
-    <p class="note">После сохранения открой <b>main.html</b>, чтобы играть</p>
+    <p class="note">После сохранения появится код для вставки в Genially</p>
+
+    <div id="embedCodeBox">
+      <p>Скопируй этот код и вставь в Genially:</p>
+      <textarea id="embedCode" readonly></textarea>
+    </div>
   </div>
 
 <script>
@@ -47,15 +54,19 @@ function buildDeckClassic(list) {
 }
 function buildDeckAdvanced(listA, listB) {
   var out=[];
-  // Классическое домино внутри списка A
-  out = out.concat(buildDeckClassic(listA));
-  // Классическое домино внутри списка B
-  out = out.concat(buildDeckClassic(listB));
-  // Мостики слово ↔ картинка (по индексам)
-  for (var k=0;k<listA.length && k<listB.length;k++){
+  out = out.concat(buildDeckClassic(listA)); // слова
+  out = out.concat(buildDeckClassic(listB)); // картинки
+  for (var k=0;k<listA.length && k<listB.length;k++){ // мостики слово ↔ картинка
     out.push({a:listA[k], b:listB[k]});
   }
   return out;
+}
+
+function showEmbedCode() {
+  const url = window.location.origin + window.location.pathname.replace("edit.html","main.html");
+  const code = `<iframe src="${url}" width="960" height="540" style="border:0;" allowfullscreen></iframe>`;
+  document.getElementById("embedCode").value = code;
+  document.getElementById("embedCodeBox").style.display = "block";
 }
 
 document.getElementById("saveBtn").addEventListener("click", ()=>{
@@ -76,7 +87,8 @@ document.getElementById("saveBtn").addEventListener("click", ()=>{
   }
 
   localStorage.setItem("dominoDeck", JSON.stringify({deck:deck, freeMode:freeMode}));
-  alert("✅ Набор сохранён! Теперь открой main.html");
+  alert("✅ Набор сохранён!");
+  showEmbedCode();
 });
 </script>
 </body>
