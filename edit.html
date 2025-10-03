@@ -7,21 +7,18 @@
 <style>
   :root{
     --bg:#3b2a42; --panel:#4a3657; --accent:#e6a8ff; --accent2:#ffda8b;
-    --tile:#fffaf5; --tile-edge:#e2c0ff; --tile-shadow:rgba(0,0,0,.25);
   }
-  *{box-sizing:border-box}
   body{margin:0; min-height:100vh; background:var(--bg); color:#fdf4ff; font:500 16px "Inter", system-ui;
        display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px}
   h1{margin:12px 0 20px; font-size:28px; color:var(--accent2); text-shadow:0 0 8px rgba(255,218,139,.7)}
-  
-  .panel{background:var(--panel); padding:24px; border-radius:16px; display:flex; flex-direction:column; align-items:center; gap:14px;
-         box-shadow:0 4px 20px rgba(0,0,0,.4); width:320px}
-  textarea{width:100%; height:120px; padding:12px; border-radius:10px; border:2px solid var(--accent);
+  .panel{background:var(--panel); padding:24px; border-radius:16px; display:flex; flex-direction:column;
+         align-items:center; gap:14px; box-shadow:0 4px 20px rgba(0,0,0,.4); width:340px}
+  textarea{width:100%; height:100px; padding:12px; border-radius:10px; border:2px solid var(--accent);
            background:#fffaf5; color:#2c1a32; font-size:15px; resize:none}
   label{font-size:14px; display:flex; align-items:center; gap:8px}
   input[type=checkbox]{transform:scale(1.2)}
-  .btn{padding:12px 20px; border-radius:10px; border:none; background:var(--accent2); color:#2c1a32; cursor:pointer;
-       font-weight:700; font-size:15px; transition:all .2s}
+  .btn{padding:12px 20px; border-radius:10px; border:none; background:var(--accent2); color:#2c1a32;
+       cursor:pointer; font-weight:700; font-size:15px; transition:all .2s}
   .btn:hover{transform:scale(1.05)}
   .note{font-size:13px; color:#ddd; text-align:center; margin-top:8px}
 </style>
@@ -29,32 +26,57 @@
 <body>
   <h1>Domino · Cozy Editor</h1>
   <div class="panel">
-    <textarea id="wordsInput" placeholder="Введи слова через запятую (CAT, DOG, SUN)"></textarea>
+    <textarea id="listA" placeholder="Список A (например: CAT, DOG, SUN или ссылки на картинки)"></textarea>
+    <textarea id="listB" placeholder="Список B (опционально: 🐱, 🐶, ☀️)"></textarea>
+
     <label><input type="checkbox" id="freeMode"> Свободная игра (без правил)</label>
+
     <button id="saveBtn" class="btn">Сохранить набор</button>
     <p class="note">После сохранения открой <b>main.html</b>, чтобы играть</p>
   </div>
 
 <script>
-function buildDeck(words) {
+function buildDeckClassic(list) {
   var out=[];
-  for (var i=0;i<words.length;i++){
-    for (var j=i;j<words.length;j++){
-      out.push({a:words[i], b:words[j]});
+  for (var i=0;i<list.length;i++){
+    for (var j=i;j<list.length;j++){
+      out.push({a:list[i], b:list[j]});
     }
   }
   return out;
 }
+function buildDeckAdvanced(listA, listB) {
+  var out=[];
+  // Классическое домино внутри списка A
+  out = out.concat(buildDeckClassic(listA));
+  // Классическое домино внутри списка B
+  out = out.concat(buildDeckClassic(listB));
+  // Мостики слово ↔ картинка (по индексам)
+  for (var k=0;k<listA.length && k<listB.length;k++){
+    out.push({a:listA[k], b:listB[k]});
+  }
+  return out;
+}
 
-document.getElementById("saveBtn").addEventListener("click", function(){
-  var text=document.getElementById("wordsInput").value.trim();
-  if(!text){ alert("Введите хотя бы одно слово"); return; }
-  var words=text.split(",").map(w=>w.trim()).filter(Boolean);
-  var deck=buildDeck(words);
-  var free=document.getElementById("freeMode").checked;
-  // сохраняем в localStorage
-  localStorage.setItem("dominoDeck", JSON.stringify({deck:deck, words:words, freeMode:free}));
-  alert("✅ Набор сохранён!\nТеперь открой main.html");
+document.getElementById("saveBtn").addEventListener("click", ()=>{
+  var listA = document.getElementById("listA").value.split(",").map(w=>w.trim()).filter(Boolean);
+  var listB = document.getElementById("listB").value.split(",").map(w=>w.trim()).filter(Boolean);
+  var freeMode = document.getElementById("freeMode").checked;
+
+  if (!listA.length) {
+    alert("Введите хотя бы один элемент в список A");
+    return;
+  }
+
+  var deck;
+  if (listB.length) {
+    deck = buildDeckAdvanced(listA, listB);
+  } else {
+    deck = buildDeckClassic(listA);
+  }
+
+  localStorage.setItem("dominoDeck", JSON.stringify({deck:deck, freeMode:freeMode}));
+  alert("✅ Набор сохранён! Теперь открой main.html");
 });
 </script>
 </body>
