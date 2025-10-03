@@ -3,192 +3,411 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Domino · Cozy Edition</title>
+<title>Domino · Cozy Edition — FULL</title>
 <style>
+  /* ===============================
+     THEME & BASE
+     =============================== */
   :root{
-    --bg:#3b2a42; --panel:#4a3657; --accent:#e6a8ff; --accent2:#ffda8b;
-    --tile:#fffaf5; --tile-edge:#e2c0ff; --tile-shadow:rgba(0,0,0,.25);
+    --bg:#3b2a42; 
+    --panel:#4a3657; 
+    --accent:#e6a8ff; 
+    --accent2:#ffda8b;
+    --tile:#fffaf5; 
+    --tile-edge:#e2c0ff; 
+    --tile-shadow:rgba(0,0,0,.25);
   }
   *{box-sizing:border-box}
-
-  /* ВНЕШНЯЯ ВЬЮПОРТ-ОБЛАСТЬ — центрируем сцену и масштабируем под любое окно */
   html,body{height:100%}
   body{
-    margin:0; background:var(--bg); color:#fdf4ff; font:500 16px "Inter", system-ui;
+    margin:0; 
+    background:var(--bg); 
+    color:#fdf4ff; 
+    font:500 16px "Inter", system-ui; 
     overflow:hidden;
   }
+
+  /* ===============================
+     16:9 STAGE (960×540) + AUTO SCALE
+     =============================== */
   #stage{
-    position:absolute; left:50%; top:50%;
-    width:960px; height:540px;         /* БАЗОВЫЙ 16:9 */
-    transform:translate(-50%,-50%) scale(1);
+    position:absolute; 
+    left:50%; 
+    top:50%; 
+    width:960px; 
+    height:540px;
+    transform:translate(-50%,-50%) scale(1); 
     transform-origin:center center;
-    display:flex; flex-direction:column; align-items:center;
+    display:flex; 
+    flex-direction:column; 
+    align-items:center;
   }
 
-  h1{margin:8px 0 6px; font-size:22px; color:var(--accent2); text-shadow:0 0 8px rgba(255,218,139,.7)}
+  /* ===============================
+     HEADER
+     =============================== */
+  h1{
+    margin:8px 0 6px; 
+    font-size:22px; 
+    color:var(--accent2); 
+    text-shadow:0 0 8px rgba(255,218,139,.7)
+  }
 
+  /* ===============================
+     MENU (START OVERLAY)
+     =============================== */
   .menu{
-    position:absolute; inset:0;
-    background:rgba(59,42,66,.96); display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:14px; z-index:10; padding:30px
+    position:absolute; 
+    inset:0; 
+    background:rgba(59,42,66,.96); 
+    display:flex; 
+    flex-direction:column;
+    align-items:center; 
+    justify-content:center; 
+    gap:14px; 
+    z-index:10; 
+    padding:30px
   }
   .menu input{
-    padding:8px 12px; border-radius:8px; border:2px solid var(--accent);
-    background:#fdf4ff; color:#2c1a32; margin:6px 0; font-size:14px; width:220px
+    padding:8px 12px; 
+    border-radius:8px; 
+    border:2px solid var(--accent); 
+    background:#fffaf5; 
+    color:#2c1a32; 
+    width:220px
   }
   .menu button{
-    padding:10px 16px; border-radius:8px; border:none; background:var(--accent); color:#2c1a32;
-    cursor:pointer; font-weight:700; font-size:14px
+    padding:10px 16px; 
+    border-radius:8px; 
+    border:none; 
+    background:var(--accent); 
+    color:#2c1a32; 
+    cursor:pointer; 
+    font-weight:700
   }
 
-  .topbar{width:95%; display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:2px}
-  .players{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
-  .player{padding:4px 8px; border-radius:14px; background:rgba(230,168,255,.15); font-size:12px}
-  .player.active{background:var(--accent2); color:#2c1a32; font-weight:800; box-shadow:0 0 10px var(--accent2)}
-  .score{margin-left:4px; font-weight:800; color:#2c1a32}
-
-  .controls{display:flex; gap:6px}
+  /* ===============================
+     TOP BAR
+     =============================== */
+  .topbar{
+    width:95%; 
+    display:flex; 
+    align-items:center; 
+    justify-content:space-between; 
+    gap:10px
+  }
+  .players{
+    display:flex; 
+    gap:6px; 
+    align-items:center; 
+    flex-wrap:wrap
+  }
+  .player{
+    padding:4px 8px; 
+    border-radius:14px; 
+    background:rgba(230,168,255,.15); 
+    font-size:12px
+  }
+  .player.active{
+    background:var(--accent2); 
+    color:#2c1a32; 
+    font-weight:800; 
+    box-shadow:0 0 10px var(--accent2)
+  }
+  .score{
+    margin-left:4px; 
+    font-weight:800; 
+    color:#2c1a32
+  }
+  .controls{
+    display:flex; 
+    gap:6px
+  }
   .btn{
-    padding:6px 12px; border-radius:8px; border:none; background:var(--accent2); color:#2c1a32;
-    cursor:pointer; font-weight:700; font-size:12px
+    padding:6px 12px; 
+    border-radius:8px; 
+    border:none; 
+    background:var(--accent2); 
+    color:#2c1a32; 
+    cursor:pointer; 
+    font-weight:700; 
+    font-size:12px
   }
-  .btn:disabled{opacity:.5; cursor:not-allowed}
+  .btn:disabled{
+    opacity:.5; 
+    cursor:not-allowed
+  }
 
+  /* ===============================
+     BOARD
+     =============================== */
   .board{
-    position:relative; width:95%; height:65%;
-    border:3px solid var(--accent2); margin:6px 0; border-radius:14px;
-    background:var(--panel); padding:4px; overflow:hidden
+    position:relative; 
+    width:95%; 
+    height:65%; 
+    border:3px solid var(--accent2); 
+    margin:6px 0; 
+    border-radius:14px;
+    background:var(--panel); 
+    padding:4px; 
+    overflow:hidden
+  }
+  .chain{
+    position:relative; 
+    width:100%; 
+    height:100%
   }
 
-  /* Внутри доски отдельный слой, который можно масштабировать при переполнении цепочки */
-  .chain{position:relative; width:100%; height:100%; overflow:hidden}
-  #chainZoom{position:absolute; left:0; top:0; width:100%; height:100%; transform-origin:0 0; transform:scale(1)}
+  /* Масштабируемый слой с цепочкой костяшек и дроп-зонами */
+  #chainZoom{
+    position:absolute; 
+    left:0; 
+    top:0; 
+    width:100%; 
+    height:100%; 
+    transform-origin:0 0; 
+    transform:scale(1)
+  }
 
+  /* ===============================
+     TILES
+     =============================== */
   .tile{
-    width:150px; height:60px; background:var(--tile); border:2px solid var(--tile-edge); border-radius:10px;
-    display:grid; grid-template-columns:1fr 1fr; position:absolute; box-shadow:0 2px 6px var(--tile-shadow);
-    overflow:hidden; user-select:none; transition:transform .12s
+    width:150px; 
+    height:60px; 
+    background:var(--tile); 
+    border:2px solid var(--tile-edge); 
+    border-radius:10px;
+    display:grid; 
+    grid-template-columns:1fr 1fr; 
+    position:absolute; 
+    box-shadow:0 2px 6px var(--tile-shadow); 
+    overflow:hidden; 
+    user-select:none; 
+    transition:transform .12s
   }
-  .tile:hover{transform:scale(1.05)}
-  .tile b{font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#2c1a32}
-  .tile.hand{position:relative; cursor:grab}
-  .sep{position:absolute; left:50%; top:0; bottom:0; width:0; background:var(--tile-edge)}
-  .half{display:flex; align-items:center; justify-content:center; padding:0 4px; text-align:center}
+  .tile:hover{ transform:scale(1.05) }
+  .tile b{
+    font-size:14px; 
+    white-space:nowrap; 
+    overflow:hidden; 
+    text-overflow:ellipsis; 
+    color:#2c1a32
+  }
+  .tile.hand{
+    position:relative; 
+    cursor:grab
+  }
+  .sep{
+    position:absolute; 
+    left:50%; 
+    top:0; 
+    bottom:0; 
+    width:0; 
+    background:var(--tile-edge)
+  }
+  .half{
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    padding:0 4px; 
+    text-align:center
+  }
 
-  /* Вертикальная костяшка для «змейки» */
-  .tile.vert{width:60px; height:150px; grid-template-columns:1fr; grid-template-rows:1fr 1fr}
-  .tile.vert .sep{left:0; top:50%; width:100%; height:0;}
+  /* ВЕРТИКАЛЬНЫЕ КОСТЯШКИ (для «змейки») */
+  .tile.vert{
+    width:60px; 
+    height:150px; 
+    grid-template-columns:1fr; 
+    grid-template-rows:1fr 1fr
+  }
+  .tile.vert .sep{
+    left:0; 
+    top:50%; 
+    width:100%; 
+    height:0
+  }
 
+  /* Дроп-зоны */
   .drop-zone{
-    position:absolute; width:70px; height:70px; border:2px dashed var(--accent2); border-radius:10px;
-    display:flex; align-items:center; justify-content:center; opacity:.9; transition:all .2s
+    position:absolute; 
+    width:70px; 
+    height:70px; 
+    border:2px dashed var(--accent2); 
+    border-radius:10px
   }
-  .drop-zone.active{background:rgba(255,218,139,.3); box-shadow:0 0 10px var(--accent2)}
+  .drop-zone.active{
+    background:rgba(255,218,139,.3); 
+    box-shadow:0 0 10px var(--accent2)
+  }
 
-  .hands{width:100%; display:flex; flex-direction:column; gap:6px; padding:6px 0}
+  /* ===============================
+     HANDS
+     =============================== */
+  .hands{
+    width:100%; 
+    display:flex; 
+    flex-direction:column; 
+    gap:6px; 
+    padding:6px 0
+  }
   .tray{
-    width:95%; display:flex; gap:6px; flex-wrap:wrap; justify-content:center; padding:6px;
-    border-top:2px dashed var(--accent2); background:rgba(230,168,255,.08); border-radius:10px
+    width:95%; 
+    display:flex; 
+    gap:6px; 
+    flex-wrap:wrap; 
+    justify-content:center; 
+    padding:6px; 
+    border-top:2px dashed var(--accent2); 
+    background:rgba(230,168,255,.08); 
+    border-radius:10px
   }
-  .tray > .tile{position:static}
+  .tray > .tile{ position:static }
 
-  .end-message{font-size:16px; color:var(--accent2); margin:4px 0; display:none; text-align:center}
+  /* ===============================
+     END MESSAGE
+     =============================== */
+  .end-message{
+    font-size:16px; 
+    color:var(--accent2); 
+    margin:4px 0; 
+    display:none; 
+    text-align:center
+  }
 
-  #tilePreview{position:absolute; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:50}
-  #tilePreview .tile{position:static; box-shadow:0 0 20px rgba(0,0,0,.6)}
-  #tilePreview .tile b{font-size:24px}
+  /* ===============================
+     PREVIEW OVERLAY
+     =============================== */
+  #tilePreview{
+    position:absolute; 
+    inset:0; 
+    background:rgba(0,0,0,.6); 
+    display:none; 
+    align-items:center; 
+    justify-content:center; 
+    z-index:50
+  }
+  #tilePreview .tile{
+    position:static; 
+    box-shadow:0 0 20px rgba(0,0,0,.6)
+  }
+  #tilePreview .tile b{ font-size:24px }
 </style>
 </head>
 <body>
-<div id="stage">
-  <h1 id="title">Domino · Cozy Edition</h1>
+  <!-- ===============================
+       STAGE 16:9
+       =============================== -->
+  <div id="stage">
+    <h1 id="title">Domino · Cozy Edition</h1>
 
-  <div id="menu" class="menu">
-    <label>Количество игроков:
-      <input type="number" id="playerCount" min="2" max="4" value="2">
-    </label>
-    <div id="nameInputs"></div>
-    <button id="startBtn">Начать игру</button>
-  </div>
-
-  <div class="topbar">
-    <div id="playersBar" class="players"></div>
-    <div class="controls">
-      <button id="drawBtn" class="btn">Взять</button>
-      <button id="skipBtn" class="btn">Пропустить</button>
-      <button id="restartBtn" class="btn">Перезапустить</button>
+    <!-- START MENU -->
+    <div id="menu" class="menu">
+      <label>Количество игроков: 
+        <input type="number" id="playerCount" min="2" max="4" value="2">
+      </label>
+      <div id="nameInputs"></div>
+      <button id="startBtn">Начать игру</button>
+      <div style="opacity:.75; font-size:13px; max-width:520px; text-align:center">
+        Игра читает данные из параметра <code>?data=...</code> в URL (JSON от редактора).<br>
+        Пример JSON: <code>{"listA":["CAT","DOG"],"listB":["🐱","🐶"],"freeMode":false}</code>
+      </div>
     </div>
-  </div>
-  <div class="turn" id="turnInfo"></div>
 
-  <div class="board">
-    <div class="chain" id="chain">
-      <div id="chainZoom"></div><!-- сюда кладём плитки и дропзоны; масштабируем при переполнении -->
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div id="playersBar" class="players"></div>
+      <div class="controls">
+        <button id="drawBtn" class="btn">Взять</button>
+        <button id="skipBtn" class="btn">Пропустить</button>
+        <button id="restartBtn" class="btn">Перезапустить</button>
+      </div>
     </div>
-  </div>
+    <div class="turn" id="turnInfo"></div>
 
-  <div class="hands" id="hands"></div>
-  <div id="endMessage" class="end-message"></div>
-  <div id="tilePreview"><div id="tilePreviewInner"></div></div>
-</div>
+    <!-- BOARD -->
+    <div class="board">
+      <div class="chain" id="chain">
+        <div id="chainZoom"></div>
+      </div>
+    </div>
+
+    <!-- HANDS -->
+    <div class="hands" id="hands"></div>
+
+    <!-- END MESSAGE -->
+    <div id="endMessage" class="end-message"></div>
+
+    <!-- PREVIEW -->
+    <div id="tilePreview"><div id="tilePreviewInner"></div></div>
+  </div>
 
 <script>
-/* ---------- 16:9 авто-скейл сцены ----------- */
+/* =========================================================
+   16:9 AUTO SCALE
+   ========================================================= */
 function fitStage(){
   const W=960, H=540;
   const s=Math.min(window.innerWidth/W, window.innerHeight/H);
   document.getElementById('stage').style.transform = `translate(-50%,-50%) scale(${s})`;
 }
-window.addEventListener('resize', fitStage); fitStage();
+window.addEventListener('resize', fitStage);
+fitStage();
 
-/******************
- * DATA & STATE
- ******************/
-var menuEl=document.getElementById('menu');
-var nameInputsEl=document.getElementById('nameInputs');
-var playerCountEl=document.getElementById('playerCount');
-var startBtn=document.getElementById('startBtn');
-var playersBarEl=document.getElementById('playersBar');
-var chainEl=document.getElementById('chain');
-var chainZoom=document.getElementById('chainZoom');
-var handsEl=document.getElementById('hands');
-var drawBtn=document.getElementById('drawBtn');
-var skipBtn=document.getElementById('skipBtn');
-var restartBtn=document.getElementById('restartBtn');
-var turnInfo=document.getElementById('turnInfo');
-var endMessage=document.getElementById('endMessage');
-var previewWrap=document.getElementById('tilePreview');
-var previewInner=document.getElementById('tilePreviewInner');
-
-var TILE_W=150, TILE_H=60, VERT_W=60, VERT_H=150, GAP=6;
-var ZW=70, ZH=70;
-
-var playerNames=[];    
-var hands={};          
-var deck=[];           
-var currentPlayer=0;
-var scores={};
-var passes={};
-var openLeft=null, openRight=null;      // значения на концах цепи
-var endLeft=null, endRight=null;        // геометрия концов {x,y,dir}
-var dragging=null;                       // перетаскиваемая фишка
-var freeMode=false;
-
-/******************
- * UTILS
- ******************/
-function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; }
+/* =========================================================
+   HELPERS, STATE, CONSTANTS
+   ========================================================= */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function uid(i){ return 't'+i+'_'+Math.random().toString(36).slice(2,7); }
 function fontSizeFor(s){ const n=(s||'').length; if(n<=7) return 14; if(n<=10) return 12; return 11; }
+function getQueryData(){
+  const p=new URLSearchParams(window.location.search);
+  const raw=p.get("data");
+  if(!raw) return null;
+  try{ return JSON.parse(decodeURIComponent(raw)); }catch(e){ return null; }
+}
 function br(){ return {w:chainEl.clientWidth,h:chainEl.clientHeight}; }
 function resetPasses(){ Object.keys(passes).forEach(k=>passes[k]=0); }
 
-/******************
- * INPUT UI
- ******************/
+/* DOM */
+const menuEl=document.getElementById('menu');
+const nameInputsEl=document.getElementById('nameInputs');
+const playerCountEl=document.getElementById('playerCount');
+const startBtn=document.getElementById('startBtn');
+const playersBarEl=document.getElementById('playersBar');
+const chainEl=document.getElementById('chain');
+const chainZoom=document.getElementById('chainZoom');
+const handsEl=document.getElementById('hands');
+const drawBtn=document.getElementById('drawBtn');
+const skipBtn=document.getElementById('skipBtn');
+const restartBtn=document.getElementById('restartBtn');
+const turnInfo=document.getElementById('turnInfo');
+const endMessage=document.getElementById('endMessage');
+const previewWrap=document.getElementById('tilePreview');
+const previewInner=document.getElementById('tilePreviewInner');
+
+/* STATE */
+let playerNames=[];    
+let hands={};          
+let deck=[];           
+let currentPlayer=0;
+let scores={};
+let passes={};
+let openLeft=null, openRight=null; 
+let endLeft=null, endRight=null;   
+let dragging=null;                 
+let freeMode=false;
+
+/* GEOMETRY */
+const TILE_W=150, TILE_H=60, VERT_W=60, VERT_H=150, GAP=6;
+const ZW=70, ZH=70; // drop-zone dims
+
+/* =========================================================
+   INPUT UI
+   ========================================================= */
 function renderNameInputs(){
   nameInputsEl.innerHTML='';
-  const c=+playerCountEl.value||2;
+  const c=parseInt(playerCountEl.value,10)||2;
   for(let i=0;i<c;i++){
     const inp=document.createElement('input');
     inp.placeholder='Имя игрока '+(i+1);
@@ -196,66 +415,96 @@ function renderNameInputs(){
     nameInputsEl.appendChild(inp);
   }
 }
-playerCountEl.addEventListener('input', renderNameInputs); renderNameInputs();
+playerCountEl.addEventListener('input', renderNameInputs);
+renderNameInputs();
 
-/******************
- * PREVIEW
- ******************/
+/* =========================================================
+   PREVIEW OVERLAY
+   ========================================================= */
 function showPreview(a,b,orient){
   previewInner.innerHTML='';
-  const big=document.createElement('div'); big.className='tile '+(orient==='v'?'vert':'');
+  const big=document.createElement('div'); 
+  big.className='tile '+(orient==='v'?'vert ':'');
   big.style.position='static';
-  big.style.width = orient==='v' ? '120px' : '400px';
-  big.style.height= orient==='v' ? '300px' : '160px';
+  big.style.width = orient==='v' ? '150px' : '400px';
+  big.style.height= orient==='v' ? '400px' : '150px';
   big.innerHTML='<div class="half"><b>'+a+'</b></div><div class="sep"></div><div class="half"><b>'+b+'</b></div>';
-  const bs=big.getElementsByTagName('b'); for(let i=0;i<bs.length;i++){ bs[i].style.fontSize='28px'; }
-  previewInner.appendChild(big); previewWrap.style.display='flex';
+  const bs=big.getElementsByTagName('b'); 
+  for(let i=0;i<bs.length;i++){ bs[i].style.fontSize='28px'; }
+  previewInner.appendChild(big); 
+  previewWrap.style.display='flex';
 }
 function hidePreview(){ previewWrap.style.display='none'; }
 previewWrap.addEventListener('click', hidePreview);
 window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') hidePreview(); });
 
-/******************
- * TILE FACTORY
- ******************/
+/* =========================================================
+   TILE FACTORY
+   ========================================================= */
 function createTileEl(a,b,opts){
-  opts=opts||{}; const role=opts.role||'chain'; const owner=Number.isInteger(opts.owner)?opts.owner:null;
-  const id=opts.uid||null; const draggable=!!opts.draggable; const orient=opts.orient||'h';
-  const el=document.createElement('div'); el.className='tile '+(orient==='v'?'vert ':'')+role;
-  el.dataset.a=a; el.dataset.b=b; el.dataset.orient=orient; if(id) el.dataset.uid=id; if(owner!==null) el.dataset.owner=String(owner);
-  el.style.left=(opts.left||0)+'px'; el.style.top=(opts.top||0)+'px';
+  opts=opts||{}; 
+  const role=opts.role||'chain'; 
+  const owner=Number.isInteger(opts.owner)?opts.owner:null; 
+  const id=opts.uid||null; 
+  const draggable=!!opts.draggable; 
+  const orient=opts.orient||'h';
+
+  const el=document.createElement('div'); 
+  el.className='tile '+(orient==='v'?'vert ':'')+role; 
+  el.dataset.a=a; 
+  el.dataset.b=b; 
+  el.dataset.orient=orient; 
+  if(id) el.dataset.uid=id; 
+  if(owner!==null) el.dataset.owner=String(owner);
+  el.style.left=(opts.left||0)+'px'; 
+  el.style.top=(opts.top||0)+'px';
   el.innerHTML='<div class="half"><b>'+a+'</b></div><div class="sep"></div><div class="half"><b>'+b+'</b></div>';
-  const bs=el.getElementsByTagName('b'); for(let i=0;i<bs.length;i++){ bs[i].style.fontSize=fontSizeFor(bs[i].textContent)+'px'; }
+
+  const bs=el.getElementsByTagName('b'); 
+  for(let i=0;i<bs.length;i++){ bs[i].style.fontSize=fontSizeFor(bs[i].textContent)+'px'; }
 
   el.addEventListener('click', ()=>showPreview(a,b,orient));
-  if(draggable){
-    el.setAttribute('draggable','true');
-    el.addEventListener('dragstart', (e)=>{ dragging={a:a,b:b,uid:id,owner:owner}; e.dataTransfer.setData('text/plain','domino'); hidePreview(); highlightDropZones(true); });
-    el.addEventListener('dragend', ()=>{ dragging=null; highlightDropZones(false); });
+  if(draggable){ 
+    el.setAttribute('draggable','true'); 
+    el.addEventListener('dragstart', (e)=>{
+      dragging={a:a,b:b,uid:id,owner:owner}; 
+      e.dataTransfer.setData('text/plain','domino'); 
+      hidePreview(); 
+      highlightDropZones(true);
+    }); 
+    el.addEventListener('dragend', ()=>{
+      dragging=null; 
+      highlightDropZones(false);
+    }); 
   }
   return el;
 }
 
-/******************
- * HANDS
- ******************/
+/* =========================================================
+   HANDS RENDER
+   ========================================================= */
 function renderHands(){
   handsEl.innerHTML='';
   for(let i=0;i<playerNames.length;i++){
-    const tray=document.createElement('div'); tray.className='tray';
-    if(i===currentPlayer){
-      const hand=hands[i]||[];
-      for(let j=0;j<hand.length;j++){ const t=hand[j]; tray.appendChild(createTileEl(t.a,t.b,{role:'hand',owner:i,uid:t.uid,draggable:true})); }
-    } else {
-      tray.textContent=playerNames[i]+': ('+(hands[i]?hands[i].length:0)+' костяшек)';
+    const tray=document.createElement('div'); 
+    tray.className='tray';
+    if(i===currentPlayer){ 
+      const hand=hands[i]||[]; 
+      for(let j=0;j<hand.length;j++){ 
+        const t=hand[j]; 
+        tray.appendChild(createTileEl(t.a,t.b,{role:'hand',owner:i,uid:t.uid,draggable:true}));
+      } 
+    }
+    else{ 
+      tray.textContent=playerNames[i]+': ('+(hands[i]?hands[i].length:0)+' костяшек)'; 
     }
     handsEl.appendChild(tray);
   }
 }
 
-/******************
- * HUD
- ******************/
+/* =========================================================
+   HUD
+   ========================================================= */
 function renderPlayersBar(){
   playersBarEl.innerHTML='';
   for(let i=0;i<playerNames.length;i++){
@@ -267,20 +516,32 @@ function renderPlayersBar(){
   }
 }
 function updateControls(){
+  const nodes=playersBarEl.getElementsByClassName('player');
+  for(let i=0;i<nodes.length;i++){
+    if(i===currentPlayer) nodes[i].classList.add('active'); 
+    else nodes[i].classList.remove('active');
+  }
   turnInfo.textContent='Ход: '+playerNames[currentPlayer];
+
   const playable=hasPlayable(hands[currentPlayer]||[]);
-  drawBtn.disabled = (!freeMode && playable) || deck.length===0;
+  if (freeMode) {
+    // в свободном режиме можно брать всегда (если есть), не блокируем
+    drawBtn.disabled = deck.length===0;
+  } else {
+    drawBtn.disabled = playable || deck.length===0;
+  }
 }
 
-/******************
- * LAYOUT «ЗМЕЙКА» + DROP ZONES
- ******************/
+/* =========================================================
+   SNAKE LAYOUT & DROP ZONES
+   ========================================================= */
 function newEnd(x,y,dir){ return {x:x,y:y,dir:dir}; }
-function canPlaceHoriz(end){
-  const W=br().w; const nx=end.x + end.dir*(TILE_W+GAP);
-  return nx>=0 && (nx+TILE_W)<=W;
+function canPlaceHoriz(end){ 
+  const W=br().w; 
+  const nx=end.x + end.dir*(TILE_W+GAP); 
+  return nx>=0 && (nx+TILE_W)<=W; 
 }
-function cornerPos(end){ // переход вертикально вниз от шва
+function cornerPos(end){ // переход вниз вертикально (вниз по рядам)
   const cx = end.x + (end.dir===1 ? TILE_W - VERT_W : 0);
   const cy = end.y + TILE_H + GAP;
   return {x:cx, y:cy, orient:'v'};
@@ -293,7 +554,10 @@ function nextPos(end){
 }
 function applyPlaced(end,n){
   if(n.orient==='h'){ end.x=n.x; end.y=n.y; return; }
-  end.x=n.x; end.y=n.y + (VERT_H - TILE_H); end.dir=-end.dir;
+  // вертикально — выравниваем низ и переворачиваем направление змейки
+  end.x=n.x; 
+  end.y=n.y + (VERT_H - TILE_H); 
+  end.dir=-end.dir;
 }
 function zonePos(end){
   if(canPlaceHoriz(end)){
@@ -301,11 +565,12 @@ function zonePos(end){
       ? { left:end.x + TILE_W + GAP, top:end.y + Math.round((TILE_H-ZH)/2) }
       : { left:end.x - GAP - ZW,      top:end.y + Math.round((TILE_H-ZH)/2) };
   }
-  const seamX = end.dir===1 ? (end.x + TILE_W) : end.x;
+  const seamX = end.dir===1 ? (end.x + TILE_W) : end.x; // центр соединения
   return { left: Math.round(seamX - ZW/2), top: end.y + TILE_H + GAP };
 }
 function ensureDropZones(){
-  let zl=document.getElementById('drop-left'); let zr=document.getElementById('drop-right');
+  let zl=document.getElementById('drop-left'); 
+  let zr=document.getElementById('drop-right');
   if(!zl){ zl=document.createElement('div'); zl.id='drop-left'; zl.className='drop-zone'; chainZoom.appendChild(zl); }
   if(!zr){ zr=document.createElement('div'); zr.id='drop-right'; zr.className='drop-zone'; chainZoom.appendChild(zr); }
   const pl=zonePos(endLeft), pr=zonePos(endRight);
@@ -313,24 +578,32 @@ function ensureDropZones(){
   zr.style.left=pr.left+'px'; zr.style.top=pr.top+'px';
 }
 function highlightDropZones(on){
-  const zl=document.getElementById('drop-left'); const zr=document.getElementById('drop-right');
+  const zl=document.getElementById('drop-left'); 
+  const zr=document.getElementById('drop-right');
   if(!zl||!zr) return;
   if(on && dragging){
     if(freeMode || dragging.a===openLeft || dragging.b===openLeft) zl.classList.add('active'); else zl.classList.remove('active');
     if(freeMode || dragging.a===openRight|| dragging.b===openRight) zr.classList.add('active'); else zr.classList.remove('active');
-  } else { zl.classList.remove('active'); zr.classList.remove('active'); }
+  } else { 
+    zl.classList.remove('active'); 
+    zr.classList.remove('active'); 
+  }
 }
-window.addEventListener('resize', ()=>{ if(endLeft && endRight) ensureDropZones(); });
+window.addEventListener('resize', function(){ if(endLeft && endRight) ensureDropZones(); });
 
-/******************
- * FIT CHAIN TO BOARD (автомасштаб при переполнении)
- ******************/
+/* =========================================================
+   FIT CHAIN (масштабируем цепочку при переполнении поля)
+   ========================================================= */
 function fitChain(){
   const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')];
-  if(!tiles.length){ chainZoom.style.transform='scale(1)'; chainZoom.style.left='0px'; chainZoom.style.top='0px'; return; }
+  if(!tiles.length){ 
+    chainZoom.style.transform='scale(1)';
+    return; 
+  }
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
   tiles.forEach(t=>{
-    const x=parseInt(t.style.left||'0',10), y=parseInt(t.style.top||'0',10),
+    const x=parseInt(t.style.left||'0',10), 
+          y=parseInt(t.style.top||'0',10),
           w=t.classList.contains('vert')?VERT_W:TILE_W,
           h=t.classList.contains('vert')?VERT_H:TILE_H;
     minX=Math.min(minX,x); minY=Math.min(minY,y);
@@ -338,20 +611,15 @@ function fitChain(){
   });
   const chainW=maxX-minX, chainH=maxY-minY;
   const boardW=br().w, boardH=br().h;
-  const pad=10;
+  const pad=8;
   const sx=(boardW-pad)/chainW, sy=(boardH-pad)/chainH;
   const s=Math.min(1, sx, sy);
-  // центрируем bbox в доске
-  const cx=minX + chainW/2, cy=minY + chainH/2;
-  const left = Math.max(0, (boardW - chainW*s)/2 - (cx - chainW/2)*s + (boardW/2 - cx*s));
-  const top  = Math.max(0, (boardH - chainH*s)/2 - (cy - chainH/2)*s + (boardH/2 - cy*s));
   chainZoom.style.transform=`scale(${s})`;
-  chainZoom.style.left=0; chainZoom.style.top=0; // оставим в нуле — масштаб достаточно, дропзоны вместе с ним
 }
 
-/******************
- * GAME LOGIC
- ******************/
+/* =========================================================
+   GAME LOGIC
+   ========================================================= */
 function hasPlayable(hand){
   if (freeMode) return true;
   for(let i=0;i<hand.length;i++){
@@ -360,113 +628,253 @@ function hasPlayable(hand){
   }
   return false;
 }
-function award(i,pts){ if(typeof pts!=='number') pts=1; scores[i]=(scores[i]||0)+pts; const el=document.getElementById('score-'+i); if(el) el.textContent=String(scores[i]); }
-function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderHands(); renderPlayersBar(); updateControls(); }
-function endByWinner(i){ endMessage.style.display='block'; endMessage.textContent='Игра окончена! Победитель: '+playerNames[i]+' (сбросил все костяшки)'; }
-
-/* размещение фишки на конкретном конце */
-function placeAt(whichEnd, a,b){
-  const e=(whichEnd==='left')?endLeft:endRight; const n=nextPos(e);
-  const el=createTileEl(a,b,{orient:n.orient,left:n.x,top:n.y}); chainZoom.appendChild(el);
-  applyPlaced(e,n); ensureDropZones(); fitChain();
+function award(i,pts){ 
+  if(typeof pts!=='number') pts=1; 
+  scores[i]=(scores[i]||0)+pts; 
+  const el=document.getElementById('score-'+i); 
+  if(el) el.textContent=String(scores[i]); 
+}
+function nextPlayer(){ 
+  currentPlayer=(currentPlayer+1)%playerNames.length; 
+  renderHands(); 
+  renderPlayersBar(); 
+  updateControls(); 
+}
+function everyonePassed(){ 
+  for(let i=0;i<playerNames.length;i++){ if(!passes[i]) return false; } 
+  return true; 
+}
+function endByWinner(i){ 
+  endMessage.style.display='block'; 
+  endMessage.textContent='Игра окончена! Победитель: '+playerNames[i]+' (сбросил все костяшки)'; 
+}
+function endByPasses(){ 
+  let best=-Infinity, wi=0; 
+  for(let i=0;i<playerNames.length;i++){ 
+    const s=scores[i]||0; 
+    if(s>best){best=s; wi=i;} 
+  } 
+  endMessage.style.display='block'; 
+  endMessage.textContent='Игра окончена! Все пропустили. Победитель по очкам: '+playerNames[wi]+' ('+(scores[wi]||0)+')'; 
 }
 
-/* попытка положить перетаскиваемую */
+/* =========================================================
+   PLACE TILE
+   ========================================================= */
+function placeAt(whichEnd, a,b){
+  const e=(whichEnd==='left')?endLeft:endRight; 
+  const n=nextPos(e);
+  const el=createTileEl(a,b,{orient:n.orient,left:n.x,top=n.y}); 
+  chainZoom.appendChild(el);
+  applyPlaced(e,n); 
+  ensureDropZones(); 
+  fitChain();
+}
 function tryPlace(zone,data){
   if(!data) return false;
+
+  // Свободная игра — кладём без проверки, просто переносим значения концов
   if(freeMode){
-    if(zone.id==='drop-left'){ placeAt('left',data.a,data.b); openLeft=data.a; return true; }
-    if(zone.id==='drop-right'){ placeAt('right',data.a,data.b); openRight=data.b; return true; }
+    if(zone.id==='drop-left'){ 
+      placeAt('left',data.a,data.b); 
+      openLeft=data.a; 
+      return true; 
+    }
+    if(zone.id==='drop-right'){ 
+      placeAt('right',data.a,data.b); 
+      openRight=data.b; 
+      return true; 
+    }
     return false;
   }
+
+  // Обычные правила: совпадение на конце
   if(zone.id==='drop-left'){
-    if(data.a===openLeft){ placeAt('left',data.b,data.a); openLeft=data.b; return true; }
-    if(data.b===openLeft){ placeAt('left',data.a,data.b); openLeft=data.a; return true; }
+    if(data.a===openLeft){ 
+      placeAt('left',data.b,data.a); // поворачиваем, чтобы joint совпал
+      openLeft=data.b; 
+      return true; 
+    }
+    if(data.b===openLeft){ 
+      placeAt('left',data.a,data.b); 
+      openLeft=data.a; 
+      return true; 
+    }
   }
   if(zone.id==='drop-right'){
-    if(data.a===openRight){ placeAt('right',data.a,data.b); openRight=data.b; return true; }
-    if(data.b===openRight){ placeAt('right',data.b,data.a); openRight=data.a; return true; }
+    if(data.a===openRight){ 
+      placeAt('right',data.a,data.b); 
+      openRight=data.b; 
+      return true; 
+    }
+    if(data.b===openRight){ 
+      placeAt('right',data.b,data.a); 
+      openRight=data.a; 
+      return true; 
+    }
   }
   return false;
 }
 
-/******************
- * START
- ******************/
-function startGame(){
-  // 1) берём колоду из редактора
-  const saved = localStorage.getItem("dominoDeck");
-  if (saved) {
-    const data = JSON.parse(saved);
-    deck = data.deck.map((d,i)=>({a:d.a,b:d.b,uid:uid(i)}));
-    shuffle(deck);
-    freeMode = !!data.freeMode;
-    if(freeMode) document.getElementById("title").textContent += " · Свободная игра";
-  } else {
-    // запасной набор
-    const WORDS = ["CAT","DOG","SUN","MOON","STAR"];
-    deck=[]; for (let i=0;i<WORDS.length;i++){ for(let j=i;j<WORDS.length;j++){ deck.push({a:WORDS[i], b:WORDS[j], uid:uid(i+"_"+j)}); } }
-    shuffle(deck);
-    freeMode=false;
+/* =========================================================
+   DECK FROM EDITOR DATA
+   ========================================================= */
+function buildDeckFromData(data){
+  let out=[];
+  const A=data.listA||[], B=data.listB||[];
+  if(A.length && !B.length){
+    // только список A → классика i<=j
+    for(let i=0;i<A.length;i++){
+      for(let j=i;j<A.length;j++){
+        out.push({a:A[i], b:A[j], uid:uid(i+"_"+j)});
+      }
+    }
+  } else if(A.length && B.length){
+    // классика по A
+    for(let i=0;i<A.length;i++){
+      for(let j=i;j<A.length;j++){
+        out.push({a:A[i], b:A[j], uid:uid("A"+i+"_"+j)});
+      }
+    }
+    // классика по B
+    for(let i=0;i<B.length;i++){
+      for(let j=i;j<B.length;j++){
+        out.push({a:B[i], b:B[j], uid:uid("B"+i+"_"+j)});
+      }
+    }
+    // мостики A[i] ↔ B[i]
+    const n=Math.min(A.length,B.length);
+    for(let i=0;i<n;i++){
+      out.push({a:A[i], b:B[i], uid:uid("AB"+i)});
+    }
   }
-
-  // 2) имена/сброс
-  playerNames=[]; const c=+playerCountEl.value||2;
-  for(let i=0;i<c;i++){ const v=document.getElementById('pname'+i).value || ('Игрок '+(i+1)); playerNames.push(v); }
-  scores={}; passes={}; currentPlayer=0; hands={}; endMessage.style.display='none';
-  for(let k=0;k<playerNames.length;k++){ hands[k]=[]; scores[k]=0; passes[k]=0; }
-  // 3) раздача по 5
-  for(let r=0;r<5;r++){ for(let j=0;j<playerNames.length;j++){ if(deck.length) hands[j].push(deck.shift()); } }
-
-  // 4) стартовая кость
-  chainZoom.innerHTML=''; const W=br().w, H=br().h; const sx=Math.floor((W-TILE_W)/2), sy=Math.floor((H-TILE_H)/2);
-  const start=deck.shift(); const startEl=createTileEl(start.a,start.b,{left:sx,top:sy}); chainZoom.appendChild(startEl);
-  openLeft=start.a; openRight=start.b; endLeft=newEnd(sx,sy,-1); endRight=newEnd(sx,sy,1);
-  ensureDropZones(); fitChain();
-
-  // 5) UI
-  renderPlayersBar(); menuEl.style.display='none'; renderHands(); updateControls();
+  return shuffle(out);
 }
 
-/******************
- * CONTROLS & DND
- ******************/
+/* =========================================================
+   START GAME
+   ========================================================= */
+function startGame(){
+  // читаем данные из ?data=...
+  const data=getQueryData();
+  if(!data){
+    alert("Нет данных от редактора в параметре ?data=... — загрузим дефолт для теста.");
+    // fallback для локального теста
+    const WORDS=["CAT","DOG","SUN","MOON","STAR"];
+    deck=[]; for(let i=0;i<WORDS.length;i++){ for(let j=i;j<WORDS.length;j++){ deck.push({a:WORDS[i], b:WORDS[j], uid:uid(i+"_"+j)}); } }
+    freeMode=false;
+  } else {
+    deck=buildDeckFromData(data);
+    freeMode=!!data.freeMode;
+    if(freeMode) document.getElementById("title").textContent+=" · Свободная игра";
+  }
+
+  // имена игроков
+  playerNames=[]; 
+  const c=parseInt(playerCountEl.value,10)||2;
+  for(let i=0;i<c;i++){ 
+    const v=document.getElementById('pname'+i).value || ('Игрок '+(i+1)); 
+    playerNames.push(v); 
+  }
+
+  // сброс
+  scores={}; passes={}; currentPlayer=0; hands={}; endMessage.style.display='none';
+  for(let k=0;k<playerNames.length;k++){ hands[k]=[]; scores[k]=0; passes[k]=0; }
+
+  // раздача по 5
+  for(let r=0;r<5;r++){ 
+    for(let j=0;j<playerNames.length;j++){ 
+      if(deck.length) hands[j].push(deck.shift()); 
+    } 
+  }
+
+  // стартовая кость по центру
+  chainZoom.innerHTML=''; 
+  const W=br().w, H=br().h; 
+  const sx=Math.floor((W-TILE_W)/2), sy=Math.floor((H-TILE_H)/2);
+  const start=deck.shift(); 
+  const startEl=createTileEl(start.a,start.b,{left:sx,top:sy}); 
+  chainZoom.appendChild(startEl);
+  openLeft=start.a; 
+  openRight=start.b; 
+  endLeft=newEnd(sx,sy,-1); 
+  endRight=newEnd(sx,sy,1); 
+  ensureDropZones(); 
+  fitChain();
+
+  renderPlayersBar(); 
+  menuEl.style.display='none'; 
+  renderHands(); 
+  updateControls();
+}
+
+/* =========================================================
+   CONTROLS
+   ========================================================= */
 drawBtn.addEventListener('click', function(){
-  if(deck.length===0) return;
+  if(deck.length===0) return; 
   const hand=hands[currentPlayer]||[];
-  if(!freeMode && hasPlayable(hand)) return;
-  hand.push(deck.shift()); hands[currentPlayer]=hand; renderHands(); updateControls();
+  if(!freeMode && hasPlayable(hand)) return; 
+  const idx=Math.floor(Math.random()*deck.length); 
+  const t=deck.splice(idx,1)[0]; 
+  hand.push(t); 
+  hands[currentPlayer]=hand; 
+  renderHands(); 
+  updateControls();
 });
-skipBtn.addEventListener('click', function(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderHands(); renderPlayersBar(); updateControls(); });
-restartBtn.addEventListener('click', ()=>location.reload());
+
+skipBtn.addEventListener('click', function(){ 
+  passes[currentPlayer]=(passes[currentPlayer]||0)+1; 
+  if(everyonePassed()){ endByPasses(); return; } 
+  nextPlayer(); 
+});
+
+restartBtn.addEventListener('click', ()=>{ location.reload(); });
+
 startBtn.addEventListener('click', startGame);
 
-// drag-n-drop обработчики на зоны
+/* =========================================================
+   DRAG & DROP
+   ========================================================= */
 document.addEventListener('dragover', function(ev){
-  const t=ev.target; if(t && t.classList && t.classList.contains('drop-zone')){ ev.preventDefault(); t.classList.add('active'); }
-});
-document.addEventListener('dragleave', function(ev){
-  const t=ev.target; if(t && t.classList && t.classList.contains('drop-zone')) t.classList.remove('active');
-});
-document.addEventListener('drop', function(ev){
-  const t=ev.target; if(!dragging) return;
+  const t=ev.target; 
   if(t && t.classList && t.classList.contains('drop-zone')){
-    ev.preventDefault();
-    const ok=tryPlace(t,dragging);
-    t.classList.remove('active'); highlightDropZones(false);
-    if(ok){
-      // удалить из руки
-      const arr=hands[dragging.owner]||[];
-      hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid);
-      award(dragging.owner,1); renderHands();
-      if(hands[dragging.owner].length===0){ endByWinner(dragging.owner); dragging=null; return; }
-      resetPasses(); currentPlayer=(currentPlayer+1)%playerNames.length; renderPlayersBar(); updateControls();
-    }
-    dragging=null;
+    ev.preventDefault(); 
+    t.classList.add('active'); 
   }
 });
-
-(function init(){ renderNameInputs(); console.log('ready'); })();
+document.addEventListener('dragleave', function(ev){
+  const t=ev.target; 
+  if(t && t.classList && t.classList.contains('drop-zone')) 
+    t.classList.remove('active'); 
+});
+document.addEventListener('drop', function(ev){
+  const t=ev.target; 
+  if(!dragging) return; 
+  if(t && t.classList && t.classList.contains('drop-zone')){
+    ev.preventDefault(); 
+    const ok=tryPlace(t,dragging); 
+    t.classList.remove('active'); 
+    highlightDropZones(false); 
+    if(ok){
+      // удалить из руки
+      const arr=hands[dragging.owner]||[]; 
+      hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid);
+      award(dragging.owner,1); 
+      renderHands();
+      // победа по сбросу всех костяшек
+      if(hands[dragging.owner].length===0){ 
+        endByWinner(dragging.owner); 
+        dragging=null; 
+        return; 
+      }
+      resetPasses(); 
+      nextPlayer(); 
+    }
+    dragging=null; 
+    fitChain();
+  }
+});
 </script>
 </body>
 </html>
