@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Domino · Cozy Edition</title>
 <style>
   :root{
@@ -10,17 +10,36 @@
     --tile:#fffaf5; --tile-edge:#e2c0ff; --tile-shadow:rgba(0,0,0,.25);
   }
   *{box-sizing:border-box}
-  body{margin:0; background:var(--bg); color:#fdf4ff; font:500 16px "Inter", system-ui;
-       display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
-       width:960px; height:540px; overflow:hidden}
+
+  /* ВНЕШНЯЯ ВЬЮПОРТ-ОБЛАСТЬ — центрируем сцену и масштабируем под любое окно */
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:#fdf4ff; font:500 16px "Inter", system-ui;
+    overflow:hidden;
+  }
+  #stage{
+    position:absolute; left:50%; top:50%;
+    width:960px; height:540px;         /* БАЗОВЫЙ 16:9 */
+    transform:translate(-50%,-50%) scale(1);
+    transform-origin:center center;
+    display:flex; flex-direction:column; align-items:center;
+  }
+
   h1{margin:8px 0 6px; font-size:22px; color:var(--accent2); text-shadow:0 0 8px rgba(255,218,139,.7)}
 
-  .menu{position:fixed; inset:0; background:rgba(59,42,66,.96); display:flex; flex-direction:column;
-        align-items:center; justify-content:center; gap:14px; z-index:10; padding:30px}
-  .menu input{padding:8px 12px; border-radius:8px; border:2px solid var(--accent); background:#fdf4ff; color:#2c1a32;
-              margin:6px 0; font-size:14px; width:220px}
-  .menu button{padding:10px 16px; border-radius:8px; border:none; background:var(--accent); color:#2c1a32;
-               cursor:pointer; font-weight:700; font-size:14px}
+  .menu{
+    position:absolute; inset:0;
+    background:rgba(59,42,66,.96); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:14px; z-index:10; padding:30px
+  }
+  .menu input{
+    padding:8px 12px; border-radius:8px; border:2px solid var(--accent);
+    background:#fdf4ff; color:#2c1a32; margin:6px 0; font-size:14px; width:220px
+  }
+  .menu button{
+    padding:10px 16px; border-radius:8px; border:none; background:var(--accent); color:#2c1a32;
+    cursor:pointer; font-weight:700; font-size:14px
+  }
 
   .topbar{width:95%; display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:2px}
   .players{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
@@ -29,45 +48,65 @@
   .score{margin-left:4px; font-weight:800; color:#2c1a32}
 
   .controls{display:flex; gap:6px}
-  .btn{padding:6px 12px; border-radius:8px; border:none; background:var(--accent2); color:#2c1a32; cursor:pointer;
-       font-weight:700; font-size:12px}
+  .btn{
+    padding:6px 12px; border-radius:8px; border:none; background:var(--accent2); color:#2c1a32;
+    cursor:pointer; font-weight:700; font-size:12px
+  }
   .btn:disabled{opacity:.5; cursor:not-allowed}
 
-  .board{position:relative; flex:1; width:95%; height:65%; border:3px solid var(--accent2); margin:6px 0;
-         border-radius:14px; display:flex; align-items:center; justify-content:center; background:var(--panel);
-         padding:4px; overflow:hidden}
-  .chain{position:relative; width:100%; height:100%;}
+  .board{
+    position:relative; width:95%; height:65%;
+    border:3px solid var(--accent2); margin:6px 0; border-radius:14px;
+    background:var(--panel); padding:4px; overflow:hidden
+  }
 
-  .tile{width:150px; height:60px; background:var(--tile); border:2px solid var(--tile-edge); border-radius:10px;
-        display:grid; grid-template-columns:1fr 1fr; position:absolute; box-shadow:0 2px 6px var(--tile-shadow);
-        overflow:hidden; user-select:none; transition:transform .12s}
+  /* Внутри доски отдельный слой, который можно масштабировать при переполнении цепочки */
+  .chain{position:relative; width:100%; height:100%; overflow:hidden}
+  #chainZoom{position:absolute; left:0; top:0; width:100%; height:100%; transform-origin:0 0; transform:scale(1)}
+
+  .tile{
+    width:150px; height:60px; background:var(--tile); border:2px solid var(--tile-edge); border-radius:10px;
+    display:grid; grid-template-columns:1fr 1fr; position:absolute; box-shadow:0 2px 6px var(--tile-shadow);
+    overflow:hidden; user-select:none; transition:transform .12s
+  }
   .tile:hover{transform:scale(1.05)}
   .tile b{font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#2c1a32}
   .tile.hand{position:relative; cursor:grab}
   .sep{position:absolute; left:50%; top:0; bottom:0; width:0; background:var(--tile-edge)}
   .half{display:flex; align-items:center; justify-content:center; padding:0 4px; text-align:center}
 
-  .drop-zone{position:absolute; width:70px; height:70px; border:2px dashed var(--accent2); border-radius:10px;
-             display:flex; align-items:center; justify-content:center; opacity:.9; transition:all .2s}
+  /* Вертикальная костяшка для «змейки» */
+  .tile.vert{width:60px; height:150px; grid-template-columns:1fr; grid-template-rows:1fr 1fr}
+  .tile.vert .sep{left:0; top:50%; width:100%; height:0;}
+
+  .drop-zone{
+    position:absolute; width:70px; height:70px; border:2px dashed var(--accent2); border-radius:10px;
+    display:flex; align-items:center; justify-content:center; opacity:.9; transition:all .2s
+  }
   .drop-zone.active{background:rgba(255,218,139,.3); box-shadow:0 0 10px var(--accent2)}
 
   .hands{width:100%; display:flex; flex-direction:column; gap:6px; padding:6px 0}
-  .tray{width:95%; display:flex; gap:6px; flex-wrap:wrap; justify-content:center; padding:6px;
-        border-top:2px dashed var(--accent2); background:rgba(230,168,255,.08); border-radius:10px}
+  .tray{
+    width:95%; display:flex; gap:6px; flex-wrap:wrap; justify-content:center; padding:6px;
+    border-top:2px dashed var(--accent2); background:rgba(230,168,255,.08); border-radius:10px
+  }
   .tray > .tile{position:static}
 
   .end-message{font-size:16px; color:var(--accent2); margin:4px 0; display:none; text-align:center}
 
-  #tilePreview{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:50}
+  #tilePreview{position:absolute; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:50}
   #tilePreview .tile{position:static; box-shadow:0 0 20px rgba(0,0,0,.6)}
   #tilePreview .tile b{font-size:24px}
 </style>
 </head>
 <body>
+<div id="stage">
   <h1 id="title">Domino · Cozy Edition</h1>
 
   <div id="menu" class="menu">
-    <label>Количество игроков: <input type="number" id="playerCount" min="2" max="4" value="2"></label>
+    <label>Количество игроков:
+      <input type="number" id="playerCount" min="2" max="4" value="2">
+    </label>
     <div id="nameInputs"></div>
     <button id="startBtn">Начать игру</button>
   </div>
@@ -83,13 +122,25 @@
   <div class="turn" id="turnInfo"></div>
 
   <div class="board">
-    <div class="chain" id="chain"></div>
+    <div class="chain" id="chain">
+      <div id="chainZoom"></div><!-- сюда кладём плитки и дропзоны; масштабируем при переполнении -->
+    </div>
   </div>
+
   <div class="hands" id="hands"></div>
   <div id="endMessage" class="end-message"></div>
   <div id="tilePreview"><div id="tilePreviewInner"></div></div>
+</div>
 
 <script>
+/* ---------- 16:9 авто-скейл сцены ----------- */
+function fitStage(){
+  const W=960, H=540;
+  const s=Math.min(window.innerWidth/W, window.innerHeight/H);
+  document.getElementById('stage').style.transform = `translate(-50%,-50%) scale(${s})`;
+}
+window.addEventListener('resize', fitStage); fitStage();
+
 /******************
  * DATA & STATE
  ******************/
@@ -99,6 +150,7 @@ var playerCountEl=document.getElementById('playerCount');
 var startBtn=document.getElementById('startBtn');
 var playersBarEl=document.getElementById('playersBar');
 var chainEl=document.getElementById('chain');
+var chainZoom=document.getElementById('chainZoom');
 var handsEl=document.getElementById('hands');
 var drawBtn=document.getElementById('drawBtn');
 var skipBtn=document.getElementById('skipBtn');
@@ -108,7 +160,7 @@ var endMessage=document.getElementById('endMessage');
 var previewWrap=document.getElementById('tilePreview');
 var previewInner=document.getElementById('tilePreviewInner');
 
-var TILE_W=150, TILE_H=60, GAP=6;
+var TILE_W=150, TILE_H=60, VERT_W=60, VERT_H=150, GAP=6;
 var ZW=70, ZH=70;
 
 var playerNames=[];    
@@ -117,28 +169,28 @@ var deck=[];
 var currentPlayer=0;
 var scores={};
 var passes={};
-var openLeft=null, openRight=null; 
-var endLeft=null, endRight=null;   
-var dragging=null;                 
+var openLeft=null, openRight=null;      // значения на концах цепи
+var endLeft=null, endRight=null;        // геометрия концов {x,y,dir}
+var dragging=null;                       // перетаскиваемая фишка
 var freeMode=false;
 
 /******************
  * UTILS
  ******************/
-function shuffle(arr){ for(var i=arr.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=arr[i]; arr[i]=arr[j]; arr[j]=t; } return arr; }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; }
 function uid(i){ return 't'+i+'_'+Math.random().toString(36).slice(2,7); }
-function fontSizeFor(s){ var n=(s||'').length; if(n<=7) return 14; if(n<=10) return 12; return 11; }
+function fontSizeFor(s){ const n=(s||'').length; if(n<=7) return 14; if(n<=10) return 12; return 11; }
 function br(){ return {w:chainEl.clientWidth,h:chainEl.clientHeight}; }
-function resetPasses(){ for(var k in passes){ passes[k]=0; } }
+function resetPasses(){ Object.keys(passes).forEach(k=>passes[k]=0); }
 
 /******************
  * INPUT UI
  ******************/
 function renderNameInputs(){
   nameInputsEl.innerHTML='';
-  var c=parseInt(playerCountEl.value,10)||2;
-  for(var i=0;i<c;i++){
-    var inp=document.createElement('input');
+  const c=+playerCountEl.value||2;
+  for(let i=0;i<c;i++){
+    const inp=document.createElement('input');
     inp.placeholder='Имя игрока '+(i+1);
     inp.id='pname'+i;
     nameInputsEl.appendChild(inp);
@@ -151,29 +203,36 @@ playerCountEl.addEventListener('input', renderNameInputs); renderNameInputs();
  ******************/
 function showPreview(a,b,orient){
   previewInner.innerHTML='';
-  var big=document.createElement('div'); big.className='tile';
-  big.style.width='400px'; big.style.height='160px';
+  const big=document.createElement('div'); big.className='tile '+(orient==='v'?'vert':'');
+  big.style.position='static';
+  big.style.width = orient==='v' ? '120px' : '400px';
+  big.style.height= orient==='v' ? '300px' : '160px';
   big.innerHTML='<div class="half"><b>'+a+'</b></div><div class="sep"></div><div class="half"><b>'+b+'</b></div>';
-  var bs=big.getElementsByTagName('b'); for(var i=0;i<bs.length;i++){ bs[i].style.fontSize='32px'; }
+  const bs=big.getElementsByTagName('b'); for(let i=0;i<bs.length;i++){ bs[i].style.fontSize='28px'; }
   previewInner.appendChild(big); previewWrap.style.display='flex';
 }
 function hidePreview(){ previewWrap.style.display='none'; }
 previewWrap.addEventListener('click', hidePreview);
-window.addEventListener('keydown', function(e){ if(e.key==='Escape') hidePreview(); });
+window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') hidePreview(); });
 
 /******************
  * TILE FACTORY
  ******************/
 function createTileEl(a,b,opts){
-  opts=opts||{}; var role=opts.role||'chain'; var owner=typeof opts.owner==='number'?opts.owner:null; var id=opts.uid||null; var draggable=!!opts.draggable;
-  var el=document.createElement('div'); el.className='tile '+role; 
-  el.dataset.a=a; el.dataset.b=b; if(id) el.dataset.uid=id; if(owner!==null) el.dataset.owner=String(owner);
+  opts=opts||{}; const role=opts.role||'chain'; const owner=Number.isInteger(opts.owner)?opts.owner:null;
+  const id=opts.uid||null; const draggable=!!opts.draggable; const orient=opts.orient||'h';
+  const el=document.createElement('div'); el.className='tile '+(orient==='v'?'vert ':'')+role;
+  el.dataset.a=a; el.dataset.b=b; el.dataset.orient=orient; if(id) el.dataset.uid=id; if(owner!==null) el.dataset.owner=String(owner);
   el.style.left=(opts.left||0)+'px'; el.style.top=(opts.top||0)+'px';
   el.innerHTML='<div class="half"><b>'+a+'</b></div><div class="sep"></div><div class="half"><b>'+b+'</b></div>';
-  var bs=el.getElementsByTagName('b'); for(var i=0;i<bs.length;i++){ bs[i].style.fontSize=fontSizeFor(bs[i].textContent)+'px'; }
+  const bs=el.getElementsByTagName('b'); for(let i=0;i<bs.length;i++){ bs[i].style.fontSize=fontSizeFor(bs[i].textContent)+'px'; }
 
-  el.addEventListener('click', function(){ showPreview(a,b,'h'); });
-  if(draggable){ el.setAttribute('draggable','true'); el.addEventListener('dragstart', function(e){ dragging={a:a,b:b,uid:id,owner:owner}; e.dataTransfer.setData('text/plain','domino'); hidePreview(); highlightDropZones(true); }); el.addEventListener('dragend', function(){ dragging=null; highlightDropZones(false); }); }
+  el.addEventListener('click', ()=>showPreview(a,b,orient));
+  if(draggable){
+    el.setAttribute('draggable','true');
+    el.addEventListener('dragstart', (e)=>{ dragging={a:a,b:b,uid:id,owner:owner}; e.dataTransfer.setData('text/plain','domino'); hidePreview(); highlightDropZones(true); });
+    el.addEventListener('dragend', ()=>{ dragging=null; highlightDropZones(false); });
+  }
   return el;
 }
 
@@ -182,10 +241,14 @@ function createTileEl(a,b,opts){
  ******************/
 function renderHands(){
   handsEl.innerHTML='';
-  for(var i=0;i<playerNames.length;i++){
-    var tray=document.createElement('div'); tray.className='tray';
-    if(i===currentPlayer){ var hand=hands[i]||[]; for(var j=0;j<hand.length;j++){ var t=hand[j]; tray.appendChild(createTileEl(t.a,t.b,{role:'hand',owner:i,uid:t.uid,draggable:true})); } }
-    else{ tray.textContent=playerNames[i]+': ('+(hands[i]?hands[i].length:0)+' костяшек)'; }
+  for(let i=0;i<playerNames.length;i++){
+    const tray=document.createElement('div'); tray.className='tray';
+    if(i===currentPlayer){
+      const hand=hands[i]||[];
+      for(let j=0;j<hand.length;j++){ const t=hand[j]; tray.appendChild(createTileEl(t.a,t.b,{role:'hand',owner:i,uid:t.uid,draggable:true})); }
+    } else {
+      tray.textContent=playerNames[i]+': ('+(hands[i]?hands[i].length:0)+' костяшек)';
+    }
     handsEl.appendChild(tray);
   }
 }
@@ -195,8 +258,8 @@ function renderHands(){
  ******************/
 function renderPlayersBar(){
   playersBarEl.innerHTML='';
-  for(var i=0;i<playerNames.length;i++){
-    var el=document.createElement('div');
+  for(let i=0;i<playerNames.length;i++){
+    const el=document.createElement('div');
     el.className='player'+(i===currentPlayer?' active':'');
     el.id='pbar'+i;
     el.innerHTML=playerNames[i]+' <span class="score" id="score-'+i+'">'+(scores[i]||0)+'</span>';
@@ -205,8 +268,85 @@ function renderPlayersBar(){
 }
 function updateControls(){
   turnInfo.textContent='Ход: '+playerNames[currentPlayer];
-  var playable=hasPlayable(hands[currentPlayer]||[]);
+  const playable=hasPlayable(hands[currentPlayer]||[]);
   drawBtn.disabled = (!freeMode && playable) || deck.length===0;
+}
+
+/******************
+ * LAYOUT «ЗМЕЙКА» + DROP ZONES
+ ******************/
+function newEnd(x,y,dir){ return {x:x,y:y,dir:dir}; }
+function canPlaceHoriz(end){
+  const W=br().w; const nx=end.x + end.dir*(TILE_W+GAP);
+  return nx>=0 && (nx+TILE_W)<=W;
+}
+function cornerPos(end){ // переход вертикально вниз от шва
+  const cx = end.x + (end.dir===1 ? TILE_W - VERT_W : 0);
+  const cy = end.y + TILE_H + GAP;
+  return {x:cx, y:cy, orient:'v'};
+}
+function nextPos(end){
+  if(canPlaceHoriz(end)){
+    return {x: end.dir===1 ? end.x + TILE_W + GAP : end.x - TILE_W - GAP, y:end.y, orient:'h'};
+  }
+  return cornerPos(end);
+}
+function applyPlaced(end,n){
+  if(n.orient==='h'){ end.x=n.x; end.y=n.y; return; }
+  end.x=n.x; end.y=n.y + (VERT_H - TILE_H); end.dir=-end.dir;
+}
+function zonePos(end){
+  if(canPlaceHoriz(end)){
+    return end.dir===1
+      ? { left:end.x + TILE_W + GAP, top:end.y + Math.round((TILE_H-ZH)/2) }
+      : { left:end.x - GAP - ZW,      top:end.y + Math.round((TILE_H-ZH)/2) };
+  }
+  const seamX = end.dir===1 ? (end.x + TILE_W) : end.x;
+  return { left: Math.round(seamX - ZW/2), top: end.y + TILE_H + GAP };
+}
+function ensureDropZones(){
+  let zl=document.getElementById('drop-left'); let zr=document.getElementById('drop-right');
+  if(!zl){ zl=document.createElement('div'); zl.id='drop-left'; zl.className='drop-zone'; chainZoom.appendChild(zl); }
+  if(!zr){ zr=document.createElement('div'); zr.id='drop-right'; zr.className='drop-zone'; chainZoom.appendChild(zr); }
+  const pl=zonePos(endLeft), pr=zonePos(endRight);
+  zl.style.left=pl.left+'px'; zl.style.top=pl.top+'px';
+  zr.style.left=pr.left+'px'; zr.style.top=pr.top+'px';
+}
+function highlightDropZones(on){
+  const zl=document.getElementById('drop-left'); const zr=document.getElementById('drop-right');
+  if(!zl||!zr) return;
+  if(on && dragging){
+    if(freeMode || dragging.a===openLeft || dragging.b===openLeft) zl.classList.add('active'); else zl.classList.remove('active');
+    if(freeMode || dragging.a===openRight|| dragging.b===openRight) zr.classList.add('active'); else zr.classList.remove('active');
+  } else { zl.classList.remove('active'); zr.classList.remove('active'); }
+}
+window.addEventListener('resize', ()=>{ if(endLeft && endRight) ensureDropZones(); });
+
+/******************
+ * FIT CHAIN TO BOARD (автомасштаб при переполнении)
+ ******************/
+function fitChain(){
+  const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')];
+  if(!tiles.length){ chainZoom.style.transform='scale(1)'; chainZoom.style.left='0px'; chainZoom.style.top='0px'; return; }
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  tiles.forEach(t=>{
+    const x=parseInt(t.style.left||'0',10), y=parseInt(t.style.top||'0',10),
+          w=t.classList.contains('vert')?VERT_W:TILE_W,
+          h=t.classList.contains('vert')?VERT_H:TILE_H;
+    minX=Math.min(minX,x); minY=Math.min(minY,y);
+    maxX=Math.max(maxX,x+w); maxY=Math.max(maxY,y+h);
+  });
+  const chainW=maxX-minX, chainH=maxY-minY;
+  const boardW=br().w, boardH=br().h;
+  const pad=10;
+  const sx=(boardW-pad)/chainW, sy=(boardH-pad)/chainH;
+  const s=Math.min(1, sx, sy);
+  // центрируем bbox в доске
+  const cx=minX + chainW/2, cy=minY + chainH/2;
+  const left = Math.max(0, (boardW - chainW*s)/2 - (cx - chainW/2)*s + (boardW/2 - cx*s));
+  const top  = Math.max(0, (boardH - chainH*s)/2 - (cy - chainH/2)*s + (boardH/2 - cy*s));
+  chainZoom.style.transform=`scale(${s})`;
+  chainZoom.style.left=0; chainZoom.style.top=0; // оставим в нуле — масштаб достаточно, дропзоны вместе с ним
 }
 
 /******************
@@ -214,54 +354,119 @@ function updateControls(){
  ******************/
 function hasPlayable(hand){
   if (freeMode) return true;
-  for(var i=0;i<hand.length;i++){
-    var t=hand[i];
+  for(let i=0;i<hand.length;i++){
+    const t=hand[i];
     if(t.a===openLeft || t.b===openLeft || t.a===openRight || t.b===openRight) return true;
   }
   return false;
 }
-function award(i,pts){ if(typeof pts!=='number') pts=1; scores[i]=(scores[i]||0)+pts; var el=document.getElementById('score-'+i); if(el) el.textContent=String(scores[i]); }
+function award(i,pts){ if(typeof pts!=='number') pts=1; scores[i]=(scores[i]||0)+pts; const el=document.getElementById('score-'+i); if(el) el.textContent=String(scores[i]); }
 function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderHands(); renderPlayersBar(); updateControls(); }
-function endByWinner(i){ endMessage.style.display='block'; endMessage.textContent='Игра окончена! Победитель: '+playerNames[i]; }
+function endByWinner(i){ endMessage.style.display='block'; endMessage.textContent='Игра окончена! Победитель: '+playerNames[i]+' (сбросил все костяшки)'; }
+
+/* размещение фишки на конкретном конце */
+function placeAt(whichEnd, a,b){
+  const e=(whichEnd==='left')?endLeft:endRight; const n=nextPos(e);
+  const el=createTileEl(a,b,{orient:n.orient,left:n.x,top:n.y}); chainZoom.appendChild(el);
+  applyPlaced(e,n); ensureDropZones(); fitChain();
+}
+
+/* попытка положить перетаскиваемую */
+function tryPlace(zone,data){
+  if(!data) return false;
+  if(freeMode){
+    if(zone.id==='drop-left'){ placeAt('left',data.a,data.b); openLeft=data.a; return true; }
+    if(zone.id==='drop-right'){ placeAt('right',data.a,data.b); openRight=data.b; return true; }
+    return false;
+  }
+  if(zone.id==='drop-left'){
+    if(data.a===openLeft){ placeAt('left',data.b,data.a); openLeft=data.b; return true; }
+    if(data.b===openLeft){ placeAt('left',data.a,data.b); openLeft=data.a; return true; }
+  }
+  if(zone.id==='drop-right'){
+    if(data.a===openRight){ placeAt('right',data.a,data.b); openRight=data.b; return true; }
+    if(data.b===openRight){ placeAt('right',data.b,data.a); openRight=data.a; return true; }
+  }
+  return false;
+}
 
 /******************
  * START
  ******************/
 function startGame(){
-  var saved = localStorage.getItem("dominoDeck");
+  // 1) берём колоду из редактора
+  const saved = localStorage.getItem("dominoDeck");
   if (saved) {
-    var data = JSON.parse(saved);
+    const data = JSON.parse(saved);
     deck = data.deck.map((d,i)=>({a:d.a,b:d.b,uid:uid(i)}));
     shuffle(deck);
-    freeMode = data.freeMode || false;
+    freeMode = !!data.freeMode;
     if(freeMode) document.getElementById("title").textContent += " · Свободная игра";
   } else {
-    var WORDS = ["CAT","DOG","SUN","MOON","STAR"];
-    deck = []; for (var i=0;i<WORDS.length;i++){ for(var j=i;j<WORDS.length;j++){ deck.push({a:WORDS[i], b:WORDS[j], uid:uid(i+"_"+j)}); } }
+    // запасной набор
+    const WORDS = ["CAT","DOG","SUN","MOON","STAR"];
+    deck=[]; for (let i=0;i<WORDS.length;i++){ for(let j=i;j<WORDS.length;j++){ deck.push({a:WORDS[i], b:WORDS[j], uid:uid(i+"_"+j)}); } }
     shuffle(deck);
     freeMode=false;
   }
 
-  playerNames=[]; var c=parseInt(playerCountEl.value,10)||2;
-  for(var i=0;i<c;i++){ var v=document.getElementById('pname'+i).value; if(!v) v='Игрок '+(i+1); playerNames.push(v); }
+  // 2) имена/сброс
+  playerNames=[]; const c=+playerCountEl.value||2;
+  for(let i=0;i<c;i++){ const v=document.getElementById('pname'+i).value || ('Игрок '+(i+1)); playerNames.push(v); }
   scores={}; passes={}; currentPlayer=0; hands={}; endMessage.style.display='none';
-  for(var k=0;k<playerNames.length;k++){ hands[k]=[]; scores[k]=0; passes[k]=0; }
-  for(var r=0;r<5;r++){ for(var j=0;j<playerNames.length;j++){ if(deck.length) hands[j].push(deck.shift()); } }
-  chainEl.innerHTML='';
-  var W=br().w, H=br().h; var sx=Math.floor((W-TILE_W)/2), sy=Math.floor((H-TILE_H)/2);
-  var start=deck.shift(); var startEl=createTileEl(start.a,start.b,{left:sx,top:sy}); chainEl.appendChild(startEl);
-  openLeft=start.a; openRight=start.b; endLeft={x:sx,y:sy,dir:-1}; endRight={x:sx,y:sy,dir:1};
+  for(let k=0;k<playerNames.length;k++){ hands[k]=[]; scores[k]=0; passes[k]=0; }
+  // 3) раздача по 5
+  for(let r=0;r<5;r++){ for(let j=0;j<playerNames.length;j++){ if(deck.length) hands[j].push(deck.shift()); } }
+
+  // 4) стартовая кость
+  chainZoom.innerHTML=''; const W=br().w, H=br().h; const sx=Math.floor((W-TILE_W)/2), sy=Math.floor((H-TILE_H)/2);
+  const start=deck.shift(); const startEl=createTileEl(start.a,start.b,{left:sx,top:sy}); chainZoom.appendChild(startEl);
+  openLeft=start.a; openRight=start.b; endLeft=newEnd(sx,sy,-1); endRight=newEnd(sx,sy,1);
+  ensureDropZones(); fitChain();
+
+  // 5) UI
   renderPlayersBar(); menuEl.style.display='none'; renderHands(); updateControls();
 }
 
 /******************
- * CONTROLS
+ * CONTROLS & DND
  ******************/
-drawBtn.addEventListener('click', function(){ if(deck.length===0) return; var hand=hands[currentPlayer]||[]; if(!freeMode && hasPlayable(hand)) return; var idx=Math.floor(Math.random()*deck.length); var t=deck.splice(idx,1)[0]; hand.push(t); hands[currentPlayer]=hand; renderHands(); updateControls(); });
+drawBtn.addEventListener('click', function(){
+  if(deck.length===0) return;
+  const hand=hands[currentPlayer]||[];
+  if(!freeMode && hasPlayable(hand)) return;
+  hand.push(deck.shift()); hands[currentPlayer]=hand; renderHands(); updateControls();
+});
 skipBtn.addEventListener('click', function(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderHands(); renderPlayersBar(); updateControls(); });
-restartBtn.addEventListener('click', ()=>{ location.reload(); });
+restartBtn.addEventListener('click', ()=>location.reload());
 startBtn.addEventListener('click', startGame);
-(function init(){ renderNameInputs(); })();
+
+// drag-n-drop обработчики на зоны
+document.addEventListener('dragover', function(ev){
+  const t=ev.target; if(t && t.classList && t.classList.contains('drop-zone')){ ev.preventDefault(); t.classList.add('active'); }
+});
+document.addEventListener('dragleave', function(ev){
+  const t=ev.target; if(t && t.classList && t.classList.contains('drop-zone')) t.classList.remove('active');
+});
+document.addEventListener('drop', function(ev){
+  const t=ev.target; if(!dragging) return;
+  if(t && t.classList && t.classList.contains('drop-zone')){
+    ev.preventDefault();
+    const ok=tryPlace(t,dragging);
+    t.classList.remove('active'); highlightDropZones(false);
+    if(ok){
+      // удалить из руки
+      const arr=hands[dragging.owner]||[];
+      hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid);
+      award(dragging.owner,1); renderHands();
+      if(hands[dragging.owner].length===0){ endByWinner(dragging.owner); dragging=null; return; }
+      resetPasses(); currentPlayer=(currentPlayer+1)%playerNames.length; renderPlayersBar(); updateControls();
+    }
+    dragging=null;
+  }
+});
+
+(function init(){ renderNameInputs(); console.log('ready'); })();
 </script>
 </body>
 </html>
