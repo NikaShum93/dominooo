@@ -2,93 +2,71 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Domino · Cozy Editor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Domino Editor</title>
 <style>
-  :root{
-    --bg:#3b2a42; --panel:#4a3657; --accent:#e6a8ff; --accent2:#ffda8b;
+  body{
+    background:#2c1a32; color:#fdf4ff; font:16px "Inter", sans-serif;
+    display:flex; flex-direction:column; align-items:center; padding:20px; min-height:100vh
   }
-  body{margin:0; min-height:100vh; background:var(--bg); color:#fdf4ff; font:500 16px "Inter", system-ui;
-       display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px}
-  h1{margin:12px 0 20px; font-size:28px; color:var(--accent2); text-shadow:0 0 8px rgba(255,218,139,.7)}
-  .panel{background:var(--panel); padding:24px; border-radius:16px; display:flex; flex-direction:column;
-         align-items:center; gap:14px; box-shadow:0 4px 20px rgba(0,0,0,.4); width:340px}
-  textarea{width:100%; height:100px; padding:12px; border-radius:10px; border:2px solid var(--accent);
-           background:#fffaf5; color:#2c1a32; font-size:15px; resize:none}
-  label{font-size:14px; display:flex; align-items:center; gap:8px}
-  input[type=checkbox]{transform:scale(1.2)}
-  .btn{padding:12px 20px; border-radius:10px; border:none; background:var(--accent2); color:#2c1a32;
-       cursor:pointer; font-weight:700; font-size:15px; transition:all .2s}
-  .btn:hover{transform:scale(1.05)}
-  .note{font-size:13px; color:#ddd; text-align:center; margin-top:8px}
-  #embedCodeBox{display:none; margin-top:16px; text-align:center; width:100%}
-  #embedCode{width:100%; height:80px; border-radius:10px; border:2px solid var(--accent); padding:8px; font-size:13px}
+  h1{color:#ffda8b; text-shadow:0 0 6px rgba(255,218,139,.7)}
+  textarea{
+    width:90%; max-width:600px; min-height:80px; margin:10px 0;
+    padding:10px; border-radius:8px; border:2px solid #e6a8ff; background:#fffaf5; color:#2c1a32
+  }
+  label{margin:8px 0; display:flex; align-items:center; gap:6px}
+  button{
+    padding:12px 20px; border-radius:10px; border:none; background:#ffda8b;
+    color:#2c1a32; cursor:pointer; font-weight:700; font-size:16px; margin:14px 0
+  }
+  #embedCodeBox{display:none; margin-top:20px; width:90%; max-width:700px}
+  #embedCode{
+    width:100%; min-height:100px; padding:10px; border-radius:8px; background:#1e1022; color:#ffda8b;
+    font-family:monospace; font-size:14px
+  }
 </style>
 </head>
 <body>
-  <h1>Domino · Cozy Editor</h1>
-  <div class="panel">
-    <textarea id="listA" placeholder="Список A (например: CAT, DOG, SUN или ссылки на картинки)"></textarea>
-    <textarea id="listB" placeholder="Список B (опционально: 🐱, 🐶, ☀️)"></textarea>
+  <h1>Domino · Editor</h1>
 
-    <label><input type="checkbox" id="freeMode"> Свободная игра (без правил)</label>
+  <p>Введите список A (слова или ссылки на картинки, через запятую или с новой строки):</p>
+  <textarea id="listA" placeholder="CAT, DOG, SUN, MOON"></textarea>
 
-    <button id="saveBtn" class="btn">Сохранить набор</button>
-    <p class="note">После сохранения появится код для вставки в Genially</p>
+  <p>Введите список B (опционально: картинки или слова для пар, в том же порядке):</p>
+  <textarea id="listB" placeholder="🐱, 🐶, ☀️, 🌙"></textarea>
 
-    <div id="embedCodeBox">
-      <p>Скопируй этот код и вставь в Genially:</p>
-      <textarea id="embedCode" readonly></textarea>
-    </div>
+  <label><input type="checkbox" id="freeMode"> Свободная игра (без правил)</label>
+
+  <button id="generateBtn">Сгенерировать iframe</button>
+
+  <div id="embedCodeBox">
+    <p>Скопируй этот код и вставь в Genially:</p>
+    <textarea id="embedCode" readonly></textarea>
   </div>
 
 <script>
-function buildDeckClassic(list) {
-  var out=[];
-  for (var i=0;i<list.length;i++){
-    for (var j=i;j<list.length;j++){
-      out.push({a:list[i], b:list[j]});
-    }
-  }
-  return out;
+function cleanList(raw){
+  return raw.split(/[\n,]+/).map(x=>x.trim()).filter(x=>x);
 }
-function buildDeckAdvanced(listA, listB) {
-  var out=[];
-  out = out.concat(buildDeckClassic(listA)); // слова
-  out = out.concat(buildDeckClassic(listB)); // картинки
-  for (var k=0;k<listA.length && k<listB.length;k++){ // мостики слово ↔ картинка
-    out.push({a:listA[k], b:listB[k]});
-  }
-  return out;
-}
+document.getElementById("generateBtn").addEventListener("click", ()=>{
+  const A = cleanList(document.getElementById("listA").value);
+  const B = cleanList(document.getElementById("listB").value);
+  const freeMode = document.getElementById("freeMode").checked;
 
-function showEmbedCode() {
-  const url = window.location.origin + window.location.pathname.replace("edit.html","main.html");
-  const code = `<iframe src="${url}" width="960" height="540" style="border:0;" allowfullscreen></iframe>`;
-  document.getElementById("embedCode").value = code;
-  document.getElementById("embedCodeBox").style.display = "block";
-}
-
-document.getElementById("saveBtn").addEventListener("click", ()=>{
-  var listA = document.getElementById("listA").value.split(",").map(w=>w.trim()).filter(Boolean);
-  var listB = document.getElementById("listB").value.split(",").map(w=>w.trim()).filter(Boolean);
-  var freeMode = document.getElementById("freeMode").checked;
-
-  if (!listA.length) {
-    alert("Введите хотя бы один элемент в список A");
+  if (!A.length){
+    alert("Список A обязателен!");
     return;
   }
 
-  var deck;
-  if (listB.length) {
-    deck = buildDeckAdvanced(listA, listB);
-  } else {
-    deck = buildDeckClassic(listA);
-  }
+  const data = {listA:A, listB:B, freeMode:freeMode};
+  const json = encodeURIComponent(JSON.stringify(data));
 
-  localStorage.setItem("dominoDeck", JSON.stringify({deck:deck, freeMode:freeMode}));
-  alert("✅ Набор сохранён!");
-  showEmbedCode();
+  // ⚡ меняешь путь под свой репозиторий GitHub Pages
+  const url = `main.html?data=${json}`;
+
+  const code = `<iframe src="${url}" width="960" height="540" style="border:0;" allowfullscreen></iframe>`;
+  document.getElementById("embedCode").value = code;
+  document.getElementById("embedCodeBox").style.display="block";
 });
 </script>
 </body>
