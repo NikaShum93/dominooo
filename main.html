@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Domino · Cozy Edition</title>
+<style>
+  :root{
+    --bg:#3b2a42; --panel:#4a3657; --accent:#e6a8ff; --accent2:#ffda8b;
+    --tile:#fffaf5; --tile-edge:#e2c0ff; --tile-shadow:rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box}
+  body{margin:0; min-height:100vh; background:var(--bg); color:#fdf4ff; font:500 16px "Inter", system-ui;
+       display:flex; flex-direction:column; align-items:center}
+  h1{margin:12px 0 6px; font-size:28px; color:var(--accent2); text-shadow:0 0 8px rgba(255,218,139,.7)}
+
+  .menu{position:fixed; inset:0; background:rgba(59,42,66,.96); display:flex; flex-direction:column;
+        align-items:center; justify-content:center; gap:14px; z-index:10; padding:30px}
+  .menu input{padding:10px 14px; border-radius:8px; border:2px solid var(--accent); background:#fdf4ff; color:#2c1a32;
+              margin:6px 0; font-size:16px; width:260px}
+  .menu button{padding:12px 20px; border-radius:10px; border:none; background:var(--accent); color:#2c1a32;
+               cursor:pointer; font-weight:700; font-size:16px}
+
+  .topbar{width:95%; display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:8px}
+  .players{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .player{padding:6px 12px; border-radius:14px; background:rgba(230,168,255,.15); font-size:14px}
+  .player.active{background:var(--accent2); color:#2c1a32; font-weight:800; box-shadow:0 0 14px var(--accent2)}
+  .score{margin-left:6px; font-weight:800; color:#2c1a32}
+
+  .controls{display:flex; gap:10px}
+  .btn{padding:10px 16px; border-radius:10px; border:none; background:var(--accent2); color:#2c1a32; cursor:pointer;
+       font-weight:700; font-size:15px}
+  .btn:disabled{opacity:.5; cursor:not-allowed}
+
+  .board{position:relative; flex:1; width:95%; height:70vh; border:3px solid var(--accent2); margin:10px 0;
+         border-radius:20px; display:flex; align-items:center; justify-content:center; background:var(--panel);
+         padding:8px; overflow:hidden}
+  .chain{position:relative; width:100%; height:100%;}
+  .board::before, .board::after{content:none !important; display:none !important;}
+
+  .tile{width:200px; height:70px; background:var(--tile); border:2px solid var(--tile-edge); border-radius:12px;
+        display:grid; grid-template-columns:1fr 1fr; position:absolute; box-shadow:0 4px 10px var(--tile-shadow);
+        overflow:hidden; user-select:none; transition:transform .12s}
+  .tile:hover{transform:scale(1.04)}
+  .tile b{font-size:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#2c1a32}
+  .tile.hand{position:relative; cursor:grab}
+  .sep{position:absolute; left:50%; top:0; bottom:0; width:0; background:var(--tile-edge)}
+  .half{display:flex; align-items:center; justify-content:center; padding:0 6px; text-align:center}
+
+  .tile.vert{width:70px; height:200px; grid-template-columns:1fr; grid-template-rows:1fr 1fr}
+  .tile.vert .sep{left:0; top:50%; width:100%; height:0;}
+
+  .hands{width:100%; display:flex; flex-direction:column; gap:12px; padding:8px 0 14px}
+  .tray{width:95%; display:flex; gap:8px; flex-wrap:wrap; justify-content:center; padding:10px;
+        border-top:2px dashed var(--accent2); background:rgba(230,168,255,.08); border-radius:14px}
+  .tray > .tile{position:static}
+
+  .drop-zone{position:absolute; width:84px; height:96px; border:2px dashed var(--accent2); border-radius:10px;
+             display:flex; align-items:center; justify-content:center; opacity:.9; transition:all .2s}
+  .drop-zone.active{background:rgba(255,218,139,.3); box-shadow:0 0 10px var(--accent2)}
+
+  .end-message{font-size:20px; color:var(--accent2); margin:6px 0 10px; display:none; text-align:center}
+
+  #tilePreview{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:50}
+  #tilePreview .tile{position:static; box-shadow:0 0 32px rgba(0,0,0,.6)}
+  #tilePreview .tile b{font-size:32px}
+</style>
+</head>
+<body>
+  <h1>Domino · Cozy Edition</h1>
+
+  <div id="menu" class="menu">
+    <label>Количество игроков: <input type="number" id="playerCount" min="2" max="4" value="2"></label>
+    <div id="nameInputs"></div>
+    <button id="startBtn">Начать игру</button>
+  </div>
+
+  <div class="topbar">
+    <div id="playersBar" class="players"></div>
+    <div class="controls">
+      <button id="drawBtn" class="btn">Взять из базы</button>
+      <button id="skipBtn" class="btn">Пропустить ход</button>
+    </div>
+  </div>
+  <div class="turn" id="turnInfo"></div>
+
+  <div class="board">
+    <div class="chain" id="chain"></div>
+  </div>
+  <div class="hands" id="hands"></div>
+  <div id="endMessage" class="end-message"></div>
+  <div id="tilePreview"><div id="tilePreviewInner"></div></div>
+
+<script>
+/******************
+ * DATA & STATE
+ ******************/
+var menuEl=document.getElementById('menu');
+var nameInputsEl=document.getElementById('nameInputs');
+var playerCountEl=document.getElementById('playerCount');
+var startBtn=document.getElementById('startBtn');
+var playersBarEl=document.getElementById('playersBar');
+var chainEl=document.getElementById('chain');
+var handsEl=document.getElementById('hands');
+var drawBtn=document.getElementById('drawBtn');
+var skipBtn=document.getElementById('skipBtn');
+var turnInfo=document.getElementById('turnInfo');
+var endMessage=document.getElementById('endMessage');
+var previewWrap=document.getElementById('tilePreview');
+var previewInner=document.getElementById('tilePreviewInner');
+
+var TILE_W=200, TILE_H=70, VERT_W=70, VERT_H=200, GAP=8;
+var ZW=84, ZH=96;
+
+var playerNames=[];    
+var hands={};          
+var deck=[];           
+var currentPlayer=0;
+var scores={};
+var passes={};
+var openLeft=null, openRight=null; 
+var endLeft=null, endRight=null;   
+var dragging=null;                 
+var freeMode=false;
+
+/******************
+ * UTILS
+ ******************/
+function shuffle(arr){ for(var i=arr.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=arr[i]; arr[i]=arr[j]; arr[j]=t; } return arr; }
+function uid(i){ return 't'+i+'_'+Math.random().toString(36).slice(2,7); }
+function buildDeck(words) { 
+  var out=[]; 
+  for (var i=0;i<words.length;i++){ for (var j=i;j<words.length;j++){ out.push({a:words[i], b:words[j], uid:uid(i+"_"+j)}); } } 
+  return out;
+}
+function fontSizeFor(s){ var n=(s||'').length; if(n<=7) return 18; if(n<=10) return 16; if(n<=14) return 14; return 12; }
+function br(){ return {w:chainEl.clientWidth,h:chainEl.clientHeight}; }
+function resetPasses(){ for(var k in passes){ passes[k]=0; } }
+
+/******************
+ * INPUT UI
+ ******************/
+function renderNameInputs(){
+  nameInputsEl.innerHTML='';
+  var c=parseInt(playerCountEl.value,10)||2;
+  for(var i=0;i<c;i++){
+    var inp=document.createElement('input');
+    inp.placeholder='Имя игрока '+(i+1);
+    inp.id='pname'+i;
+    nameInputsEl.appendChild(inp);
+  }
+}
+playerCountEl.addEventListener('input', renderNameInputs); renderNameInputs();
+
+/******************
+ * PREVIEW
+ ******************/
+function showPreview(a,b,orient){
+  previewInner.innerHTML='';
+  var big=document.createElement('div'); big.className='tile '+(orient==='v'?'vert ':'');
+  big.style.width = orient==='h' ? '560px' : '200px';
+  big.style.height= orient==='h' ? '220px' : '560px';
+  big.style.position='static';
+  big.innerHTML='<div class="half"><b>'+a+'</b></div><div class="sep"></div><div class="half"><b>'+b+'</b></div>';
+  var bs=big.getElementsByTagName('b'); for(var i=0;i<bs.length;i++){ bs[i].style.fontSize='34px'; }
+  previewInner.appendChild(big); previewWrap.style.display='flex';
+}
+function hidePreview(){ previewWrap.style.display='none'; }
+previewWrap.addEventListener('click', hidePreview);
+window.addEventListener('keydown', function(e){ if(e.key==='Escape') hidePreview(); });
+
+/******************
+ * TILE FACTORY
+ ******************/
+function createTileEl(a,b,opts){
+  opts=opts||{}; var role=opts.role||'chain'; var owner=typeof opts.owner==='number'?opts.owner:null; var id=opts.uid||null; var draggable=!!opts.draggable; var orient=opts.orient||'h';
+  var el=document.createElement('div'); el.className='tile '+(orient==='v'?'vert ':'')+role; el.dataset.a=a; el.dataset.b=b; el.dataset.orient=orient; if(id) el.dataset.uid=id; if(owner!==null) el.dataset.owner=String(owner);
+  el.style.left=(opts.left||0)+'px'; el.style.top=(opts.top||0)+'px';
+  el.innerHTML='<div class="half"><b>'+a+'</b></div><div class="sep"></div><div class="half"><b>'+b+'</b></div>';
+  var bs=el.getElementsByTagName('b'); for(var i=0;i<bs.length;i++){ bs[i].style.fontSize=fontSizeFor(bs[i].textContent)+'px'; }
+
+  el.addEventListener('click', function(){ showPreview(a,b,orient); });
+  if(draggable){ el.setAttribute('draggable','true'); el.addEventListener('dragstart', function(e){ dragging={a:a,b:b,uid:id,owner:owner}; e.dataTransfer.setData('text/plain','domino'); hidePreview(); highlightDropZones(true); }); el.addEventListener('dragend', function(){ dragging=null; highlightDropZones(false); }); }
+  return el;
+}
+
+/******************
+ * HANDS
+ ******************/
+function renderHands(){
+  handsEl.innerHTML='';
+  for(var i=0;i<playerNames.length;i++){
+    var tray=document.createElement('div'); tray.className='tray';
+    if(i===currentPlayer){ var hand=hands[i]||[]; for(var j=0;j<hand.length;j++){ var t=hand[j]; tray.appendChild(createTileEl(t.a,t.b,{role:'hand',owner:i,uid:t.uid,draggable:true})); } }
+    else{ tray.textContent=playerNames[i]+': ('+(hands[i]?hands[i].length:0)+' костяшек)'; }
+    handsEl.appendChild(tray);
+  }
+}
+
+/******************
+ * HUD
+ ******************/
+function renderPlayersBar(){
+  playersBarEl.innerHTML='';
+  for(var i=0;i<playerNames.length;i++){
+    var el=document.createElement('div');
+    el.className='player'+(i===currentPlayer?' active':'');
+    el.id='pbar'+i;
+    el.innerHTML=playerNames[i]+' <span class="score" id="score-'+i+'">'+(scores[i]||0)+'</span>';
+    playersBarEl.appendChild(el);
+  }
+}
+function updateControls(){
+  var nodes=playersBarEl.getElementsByClassName('player');
+  for(var i=0;i<nodes.length;i++){
+    if(i===currentPlayer) nodes[i].classList.add('active'); else nodes[i].classList.remove('active');
+  }
+  turnInfo.textContent='Ход: '+playerNames[currentPlayer];
+  var playable=hasPlayable(hands[currentPlayer]||[]);
+  if (freeMode) {
+    drawBtn.disabled = deck.length===0;
+  } else {
+    drawBtn.disabled = playable || deck.length===0;
+  }
+}
+
+/******************
+ * GAME LOGIC
+ ******************/
+function hasPlayable(hand){
+  if (freeMode) return true;
+  for(var i=0;i<hand.length;i++){
+    var t=hand[i];
+    if(t.a===openLeft || t.b===openLeft || t.a===openRight || t.b===openRight) return true;
+  }
+  return false;
+}
+function award(i,pts){ if(typeof pts!=='number') pts=1; scores[i]=(scores[i]||0)+pts; var el=document.getElementById('score-'+i); if(el) el.textContent=String(scores[i]); }
+function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderHands(); updateControls(); }
+function everyonePassed(){ for(var i=0;i<playerNames.length;i++){ if(!passes[i]) return false; } return true; }
+function endByWinner(i){ endMessage.style.display='block'; endMessage.textContent='Игра окончена! Победитель: '+playerNames[i]+' (сбросил все костяшки)'; }
+function endByPasses(){ var best=-Infinity, wi=0; for(var i=0;i<playerNames.length;i++){ var s=scores[i]||0; if(s>best){best=s; wi=i;} } endMessage.style.display='block'; endMessage.textContent='Игра окончена! Все пропустили. Победитель по очкам: '+playerNames[wi]+' ('+(scores[wi]||0)+')'; }
+
+function startGame(){
+  // загружаем слова из localStorage
+  var saved = localStorage.getItem("dominoDeck");
+  if (saved) {
+    var data = JSON.parse(saved);
+    deck = data.deck.map((d,i)=>({a:d.a, b:d.b, uid:uid(i)}));
+    shuffle(deck);
+    freeMode = data.freeMode || false;
+  } else {
+    var WORDS = ["CAT","DOG","SUN","MOON","STAR"];
+    deck = buildDeck(WORDS); shuffle(deck);
+    freeMode=false;
+  }
+
+  playerNames=[]; var c=parseInt(playerCountEl.value,10)||2;
+  for(var i=0;i<c;i++){ var v=document.getElementById('pname'+i).value; if(!v) v='Игрок '+(i+1); playerNames.push(v); }
+  scores={}; passes={}; currentPlayer=0; hands={}; endMessage.style.display='none';
+  for(var k=0;k<playerNames.length;k++){ hands[k]=[]; scores[k]=0; passes[k]=0; }
+  for(var r=0;r<5;r++){ for(var j=0;j<playerNames.length;j++){ if(deck.length) hands[j].push(deck.shift()); } }
+  chainEl.innerHTML=''; var W=br().w, H=br().h; var sx=Math.floor((W-TILE_W)/2), sy=Math.floor((H-TILE_H)/2);
+  var start=deck.shift(); var startEl=createTileEl(start.a,start.b,{left:sx,top:sy}); chainEl.appendChild(startEl);
+  openLeft=start.a; openRight=start.b; endLeft={x:sx,y:sy,dir:-1}; endRight={x:sx,y:sy,dir:1};
+  renderPlayersBar(); menuEl.style.display='none'; renderHands(); updateControls();
+}
+
+/******************
+ * CONTROLS
+ ******************/
+drawBtn.addEventListener('click', function(){ if(deck.length===0) return; var hand=hands[currentPlayer]||[]; if(!freeMode && hasPlayable(hand)) return; var idx=Math.floor(Math.random()*deck.length); var t=deck.splice(idx,1)[0]; hand.push(t); hands[currentPlayer]=hand; renderHands(); updateControls(); });
+skipBtn.addEventListener('click', function(){ passes[currentPlayer]=(passes[currentPlayer]||0)+1; if(everyonePassed()){ endByPasses(); return; } nextPlayer(); });
+startBtn.addEventListener('click', startGame);
+(function init(){ renderNameInputs(); console.log('ready'); })();
+</script>
+</body>
+</html>
