@@ -57,6 +57,8 @@
     background-image:var(--wood); background-size:800px 800px;
     box-shadow:inset 0 0 80px rgba(0,0,0,.45), inset 0 0 140px rgba(0,0,0,.35);
     border-radius:12px;
+    will-change: transform;
+    backface-visibility: hidden;
   }
 
   h1{
@@ -81,7 +83,7 @@
   }
   .menu button{
     padding:10px 16px; border-radius:10px; border:2px solid #7a5525; font-weight:900; cursor:pointer;
-    background:linear-gradient(#f1c97a,#e7b85f); color:#2b1a10; box-shadow:0 2px 0 #6b4a1d, inset 0 1px 0 rgba(255,255,255,.35);
+    background:linear-gradient(#f1c97a,#e7b85f); color:#2b1a10; box-shadow:0 2px 0 #6b4a1d, inset 0 1px 0 rgba(255,255,255,.35)
   }
 
   /* =========================
@@ -119,7 +121,11 @@
   }
   .chain{position:relative; width:100%; height:100%}
   /* ONLY this inner surface scales */
-  #chainZoom{position:absolute; inset:0; transform-origin:0 0; transform:scale(1)}
+  #chainZoom{
+    position:absolute; inset:0; transform-origin:0 0; transform:scale(1);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
 
   /* =========================
      SEATS AROUND TABLE
@@ -165,10 +171,14 @@
     overflow:hidden; user-select:none; transition:transform .12s;
   }
   .tile:hover{transform:scale(1.04)}
-  .tile .half{display:flex; align-items:center; justify-content:center; padding:0 6px; text-align:center; overflow:hidden}
+  .tile .half{
+    display:flex; align-items:center; justify-content:center; padding:0 6px; text-align:center;
+    overflow:hidden; min-width:0;   /* важно, чтобы грид позволял сжимать половинки */
+  }
   .tile b{
     display:block; line-height:1.05; font-weight:900; color:#1c1712;
-    white-space:nowrap;  /* << NO WRAP ever */
+    white-space:nowrap;   /* << NO WRAP ever */
+    max-width:100%;
   }
   .tile .sep{position:absolute; left:50%; top:0; bottom:0; width:2px; background:#d8c8aa}
   .tile.vert{width:60px; height:150px; grid-template-columns:1fr; grid-template-rows:1fr 1fr}
@@ -205,16 +215,27 @@
   }
 
   /* =========================
-     END + PREVIEW
+     END MESSAGE
      ========================= */
   .end-message{font-size:18px; color:#ffda8b; margin:6px 0; display:none; text-align:center}
 
-  /* full isolation — no bleed */
-  #tilePreview{position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:100001; background:rgba(0,0,0,.6); isolation:isolate}
-  #tilePreview *{pointer-events:none}
-  #tilePreview .tile{position:static; width:560px; height:220px; box-shadow:0 18px 60px rgba(0,0,0,.55), inset 0 0 0 2px #e0d3bd}
-  #tilePreview .tile .sep{background:#d8c8aa}
-  #tilePreview .tile b{font-size:36px}
+  /* =========================
+     PREVIEW OVERLAY (OUTSIDE STAGE)
+     ========================= */
+  #tilePreview{
+    position:fixed; inset:0; display:none;
+    align-items:center; justify-content:center;
+    z-index:999999; background:rgba(0,0,0,.6);
+    isolation:isolate;            /* не «протекают» свечения */
+    backface-visibility:hidden;   /* убираем любые швы композитинга */
+  }
+  #tilePreview *{ pointer-events:none }
+  #tilePreview .tile{
+    position:static; width:560px; height:220px;
+    box-shadow:0 18px 60px rgba(0,0,0,.55), inset 0 0 0 2px #e0d3bd
+  }
+  #tilePreview .tile .sep{ background:#d8c8aa }
+  #tilePreview .tile b{ font-size:36px; white-space:nowrap }
 </style>
 </head>
 <body>
@@ -228,7 +249,7 @@
     <button id="startBtn">Начать игру</button>
     <div style="opacity:.75; font-size:12px; max-width:520px; text-align:center">
       Данные приходят в <code>?data=</code> (JSON из редактора), например:
-      <code>{"listA":["кот","пёс"],"listB":[],"freeMode":false}</code>
+      <code>{"listA":["кот","пёс","луна"],"listB":[],"freeMode":false}</code>
     </div>
   </div>
 
@@ -263,8 +284,10 @@
   </div>
 
   <div id="endMessage" class="end-message"></div>
-  <div id="tilePreview"><div id="tilePreviewInner"></div></div>
 </div>
+
+<!-- Preview overlay OUTSIDE the scaled stage -->
+<div id="tilePreview"><div id="tilePreviewInner"></div></div>
 
 <script>
 /* =========================
@@ -284,16 +307,26 @@ function uid(i){return 't'+i+'_'+Math.random().toString(36).slice(2,7);}
 function getQueryData(){const raw=new URLSearchParams(location.search).get('data'); if(!raw) return null; try{return JSON.parse(decodeURIComponent(raw));}catch(e){return null;}}
 function br(){return {w:chainEl.clientWidth,h:chainEl.clientHeight};}
 function resetPasses(){Object.keys(passes).forEach(k=>passes[k]=0);}
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }  /* NEW: for arrow clamping */
 
 /* TEXT FIT: tiles — only shrink, never wrap/cut */
-function fitTextNoWrap(bEl, text, start=22, min=8){
+function fitTextNoWrap(bEl, text, start=22, min=4){
   bEl.textContent = text;
   bEl.style.whiteSpace = 'nowrap';
+  bEl.style.letterSpacing = '0';
+  bEl.style.fontWeight = 900;
+
   let s = start;
   bEl.style.fontSize = s + 'px';
-  const fits = ()=> (bEl.scrollWidth <= bEl.parentElement.clientWidth) && (bEl.scrollHeight <= bEl.parentElement.clientHeight);
-  while(s > min && !fits()){
-    s--; bEl.style.fontSize = s + 'px';
+
+  const box = bEl.parentElement;
+  const fits = () =>
+    (bEl.scrollWidth <= (box.clientWidth - 2)) &&
+    (bEl.scrollHeight <= (box.clientHeight - 2));
+
+  while (s > min && !fits()){
+    s -= 1;
+    bEl.style.fontSize = s + 'px';
   }
 }
 
@@ -384,8 +417,8 @@ function createTileEl(a,b,opts={}){
   el.innerHTML='<div class="half"><b></b></div><div class="sep"></div><div class="half"><b></b></div>';
   const halves=el.getElementsByClassName('half');
   const startSize = role==='hand'? 18 : 22;
-  fitTextNoWrap(halves[0].firstElementChild,a,startSize,8);
-  fitTextNoWrap(halves[1].firstElementChild,b,startSize,8);
+  fitTextNoWrap(halves[0].firstElementChild,a,startSize,4);
+  fitTextNoWrap(halves[1].firstElementChild,b,startSize,4);
 
   el.addEventListener('click',()=>showPreview(a,b));
   if(draggable){
@@ -564,7 +597,7 @@ function applyPlaced(end,n){
 }
 
 /* =========================
-   ARROWS (only feasible & outward)
+   ARROWS (only feasible & outward, clamped to edges)
    ========================= */
 function zones4(end){
   const s=seam(end);
@@ -582,6 +615,8 @@ function inwardBlocked(endId, choice){
   return false;
 }
 function clearZones(){ [...chainZoom.querySelectorAll('.dz')].forEach(n=>n.remove()); }
+
+/* UPDATED: show arrows even if target is outside; visually clamp to edges */
 function renderDirectionalZones(){
   clearZones();
   if(!dragging) return;
@@ -596,10 +631,7 @@ function renderDirectionalZones(){
     for(const key of Object.keys(pack)){
       if(inwardBlocked(side.id,key)) continue;
 
-      const pos=pack[key];
-      if(pos.left<0 || pos.top<0 || pos.left+DZ>br().w || pos.top+DZ>br().h) continue;
-
-      // simulate actual placement
+      // simulate actual placement; if overlaps — skip
       let rect;
       if (dragging.a === dragging.b){
         const cp = crossPosForDouble(side.e, key);
@@ -610,9 +642,20 @@ function renderDirectionalZones(){
       }
       if (collidesWithExisting(rect)) continue;
 
+      // clamp arrow into the board viewport so user can drop even near edges
+      const W = br().w, H = br().h, pad = 2;
+      const pos=pack[key];
+      const clampedLeft = clamp(pos.left, pad, W - DZ - pad);
+      const clampedTop  = clamp(pos.top,  pad, H - DZ - pad);
+
       const z=document.createElement('div');
-      z.className='dz active'; z.style.left=pos.left+'px'; z.style.top=pos.top+'px';
-      z.id=`dz-${side.id}-${key}`; z.dataset.dir=pos.dir; z.dataset.end=side.id; z.dataset.k=key;
+      z.className='dz active';
+      z.style.left=clampedLeft+'px';
+      z.style.top =clampedTop +'px';
+      z.id=`dz-${side.id}-${key}`;
+      z.dataset.dir=pos.dir;
+      z.dataset.end=side.id;
+      z.dataset.k=key;
       chainZoom.appendChild(z);
     }
   }
