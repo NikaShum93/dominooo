@@ -5,19 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Domino · Cozy Edition</title>
 
-<!--
-  Полная финальная версия main.html (обновлённая)
-  ✔ Без «шва»: стол центрируется flex-раскладкой BODY (нет translate(-50%,-50%))
-  ✔ Масштабируется ТОЛЬКО область цепочки (#chainZoom)
-  ✔ Предпросмотр: текст в половинках домино автоматически ДОРАСТАЕТ до максимума
-  ✔ Кости тянутся, стрелки только допустимые и прижимаются к краям
-  ✔ Наложение запрещено (коллизии)
-  ✔ Шрифт на костях в поле и в руке уменьшается (без переносов и обрезаний)
-  ✔ Вертикальные имена игроков (право/лево), авто-уменьшение шрифта
-  ✔ Свободный режим поддержан
-  ✔ Меню: старт всегда кликается; имена всегда видны
--->
-
 <style>
   :root{
     --accent:#e6a8ff;
@@ -27,7 +14,6 @@
     --tile-shadow:rgba(0,0,0,.25);
     --seat-fs:14px;
 
-    /* «дерево» как встроенный вектор */
     --wood: url("data:image/svg+xml;utf8,\
     <svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'>\
       <defs>\
@@ -57,24 +43,22 @@
     color:#fdf4ff;
     background:#3b281b;
     overflow:hidden;
-
-    /* Центровка сцены без transform, чтобы не было артефактов/«шва» */
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    display:flex; align-items:center; justify-content:center;
   }
 
-  /* ===== 16:9 стол БЕЗ translate() ===== */
+  /* Сцена 16:9 — без translate(), фон не тайлится (чтобы не было вертикального «шва») */
   #stage{
-    position:relative;   /* больше никаких translate(-50%,-50%) */
-    width:960px; height:540px;   /* реальный размер ещё обновляет JS (fitStage) */
-
+    position:relative;
+    width:960px; height:540px;
     display:flex; flex-direction:column; align-items:center;
-    background-image:var(--wood); background-size:800px 800px;
+
+    background-image:var(--wood);
+    background-repeat:no-repeat;
+    background-size:cover;
+    background-position:center;
+
     box-shadow:inset 0 0 80px rgba(0,0,0,.45), inset 0 0 140px rgba(0,0,0,.35);
     border-radius:12px;
-
-    /* лёгкая защита от случайных GPU-артефактов */
     transform:translateZ(0);
   }
 
@@ -85,16 +69,15 @@
     text-shadow:0 1px 0 #402b16,0 0 18px rgba(0,0,0,.45),0 0 2px rgba(0,0,0,.6);
   }
 
-  /* ===== Меню ===== */
   .menu{
     position:absolute; inset:0;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
     padding:30px; z-index:100000;
     background: linear-gradient(rgba(32,21,12,.92), rgba(32,21,12,.94)), var(--wood);
-    background-size:cover; box-shadow:inset 0 0 80px rgba(0,0,0,.55); border-radius:12px;
-    pointer-events:auto; /* клики доходят до меню */
+    background-size:cover; background-repeat:no-repeat; background-position:center;
+    box-shadow:inset 0 0 80px rgba(0,0,0,.55); border-radius:12px;
+    pointer-events:auto;
   }
-  #menu { pointer-events:auto; } /* дубль-защита */
   .menu label{ color:#f2d39a; font-weight:800; text-shadow:0 1px 0 #3b2715; }
   .menu input{
     padding:8px 12px; width:220px; border-radius:8px; border:2px solid #8c5c2f;
@@ -106,7 +89,6 @@
     box-shadow:0 2px 0 #6b4a1d, inset 0 1px 0 rgba(255,255,255,.35)
   }
 
-  /* ===== Верхняя панель ===== */
   .topbar{width:95%; display:flex; align-items:center; justify-content:space-between; gap:10px}
   .players{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
   .player{padding:6px 12px; border-radius:14px; background:rgba(230,168,255,.15); font-size:12px}
@@ -121,7 +103,6 @@
   }
   .btn:disabled{opacity:.6; cursor:not-allowed}
 
-  /* ===== Доска ===== */
   .board{
     position:relative; width:95%; height:68%; margin:6px 0;
     background: radial-gradient(120% 100% at 50% 50%, #3c2a3e 0, #2e2130 70%) padding-box;
@@ -138,11 +119,10 @@
   .chain{position:relative; width:100%; height:100%}
   #chainZoom{
     position:absolute; inset:0;
-    transform-origin:0 0; transform:scale(1);   /* масштабируем только змейку */
+    transform-origin:0 0; transform:scale(1);
     backface-visibility:hidden;
   }
 
-  /* ===== Места игроков вокруг стола ===== */
   #seats{ pointer-events:none; position:absolute; inset:0; }
   .seat{
     position:absolute;
@@ -155,8 +135,6 @@
   }
   .seat-bottom{ left:50%; transform:translateX(-50%); bottom:8px; }
   .seat-top   { left:50%; transform:translateX(-50%); top:8px; }
-
-  /* верт. подписи — без rotate */
   .seat-right, .seat-left{
     writing-mode: vertical-rl; text-orientation: mixed;
     top:50%; transform:translateY(-50%);
@@ -164,14 +142,10 @@
   }
   .seat-right{ right:8px; }
   .seat-left { left:8px;  }
-
-  .seat span{
-    display:block; white-space:nowrap; max-width:220px; overflow:hidden;
-  }
+  .seat span{ display:block; white-space:nowrap; max-width:220px; overflow:hidden; }
   .seat-right span, .seat-left span{ max-width:none; max-height:100%; }
   .seat.hidden{ display:none; }
 
-  /* ===== Кости ===== */
   .tile{
     width:150px; height:60px;
     background:
@@ -185,41 +159,26 @@
     -webkit-user-drag: element;
   }
   .tile:hover{transform:scale(1.04)}
-  .tile .half{
-    display:flex; align-items:center; justify-content:center; padding:0 6px; text-align:center;
-    overflow:hidden; min-width:0;   /* половинки могут сжиматься */
-  }
-  .tile b{
-    display:block; line-height:1.05; font-weight:900; color:#1c1712;
-    white-space:nowrap; max-width:100%;    /* НИКОГДА не переносим */
-  }
+  .tile .half{ display:flex; align-items:center; justify-content:center; padding:0 6px; text-align:center; overflow:hidden; min-width:0; }
+  .tile b{ display:block; line-height:1.05; font-weight:900; color:#1c1712; white-space:nowrap; max-width:100%; }
   .tile .sep{position:absolute; left:50%; top:0; bottom:0; width:2px; background:#d8c8aa}
   .tile.vert{width:60px; height:150px; grid-template-columns:1fr; grid-template-rows:1fr 1fr}
   .tile.vert .sep{left:0; top:50%; width:100%; height:2px}
 
-  /* ===== Рука ===== */
   .hands{width:100%; display:flex; flex-direction:column; gap:6px; padding:8px 0}
-  .hand-header{
-    width:95%; margin:0 auto; text-align:center;
-    font-weight:900; color:#e9d2a2; text-shadow:0 1px 0 #3b2715
-  }
+  .hand-header{ width:95%; margin:0 auto; text-align:center; font-weight:900; color:#e9d2a2; text-shadow:0 1px 0 #3b2715 }
   .tray{
     width:95%; margin:0 auto; height:56px;
     display:flex; gap:8px; flex-wrap:nowrap; align-items:center; justify-content:flex-start;
     overflow-x:auto; overflow-y:hidden; padding:8px 10px;
     border:2px solid #8c5c2f; background:#5a3b21; border-radius:12px;
     box-shadow:inset 0 0 18px rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.35);
-    scroll-behavior:smooth;
-    transform:translateZ(0);
+    scroll-behavior:smooth; transform:translateZ(0);
   }
   .tray > .tile{position:static}
-  .tile.hand{
-    transform:scale(.5); transform-origin:left center; cursor:grab;
-    filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))
-  }
-  .tile.hand *{ pointer-events:none } /* тянем за всю плитку */
+  .tile.hand{ transform:scale(.5); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)) }
+  .tile.hand *{ pointer-events:none }
 
-  /* ===== Зоны-стрелки ===== */
   .dz{
     position:absolute; width:38px; height:38px; border:2px dashed #b68a3e; border-radius:10px; display:none;
     background:rgba(255,215,120,.08); box-shadow:inset 0 0 10px rgba(0,0,0,.25)
@@ -233,48 +192,40 @@
 
   .end-message{font-size:18px; color:#ffda8b; margin:6px 0; display:none; text-align:center}
 
-  /* ===== Оверлей предпросмотра (вне стола) ===== */
+  /* Предпросмотр */
   #tilePreview{
-    position:fixed; inset:0; display:none;
-    align-items:center; justify-content:center;
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
     z-index:999999; background:rgba(0,0,0,.6);
-    isolation:isolate; backface-visibility:hidden;
-    pointer-events:auto;
+    isolation:isolate; backface-visibility:hidden; pointer-events:auto;
   }
   #tilePreview *{ pointer-events:none }
   #tilePreview .tile{
-    position:static; width:560px; height:220px;
+    position:static; width:680px; height:260px;   /* Чуть больше, чтобы текст был ещё крупнее */
     box-shadow:0 18px 60px rgba(0,0,0,.55), inset 0 0 0 2px #e0d3bd
   }
   #tilePreview .tile .sep{ background:#d8c8aa }
-  #tilePreview .tile b{ white-space:nowrap } /* размеры шрифта задаёт JS growTextToFit */
+  #tilePreview .tile b{ white-space:nowrap }
 </style>
 </head>
 <body>
 <div id="stage">
   <h1 id="title">Domino · Cozy Edition</h1>
 
-  <!-- Меню старта -->
-  <div id="menu" class="menu" style="pointer-events:auto">
+  <div id="menu" class="menu">
     <label>Количество игроков:
       <input type="number" id="playerCount" min="1" max="4" value="2">
     </label>
-
-    <!-- Дефолтные поля имён, даже если JS не успел отрисовать -->
     <div id="nameInputs">
       <input id="pname0" placeholder="Имя игрока 1">
       <input id="pname1" placeholder="Имя игрока 2">
     </div>
-
     <button id="startBtn" type="button">Начать игру</button>
-
     <div style="opacity:.75; font-size:12px; max-width:520px; text-align:center">
       Данные приходят в <code>?data=</code> (JSON из редактора), напр.:
       <code>{"listA":["кот","пёс","луна"],"listB":[],"freeMode":false}</code>
     </div>
   </div>
 
-  <!-- Верхняя панель -->
   <div class="topbar">
     <div id="playersBar" class="players"></div>
     <div class="controls">
@@ -285,14 +236,8 @@
   </div>
   <div class="turn" id="turnInfo"></div>
 
-  <!-- Доска -->
   <div class="board">
-    <div class="chain" id="chain">
-      <!-- ТОЛЬКО эта обёртка масштабируется -->
-      <div id="chainZoom"></div>
-    </div>
-
-    <!-- Имёнки игроков у кромок -->
+    <div class="chain" id="chain"><div id="chainZoom"></div></div>
     <div id="seats">
       <div class="seat seat-bottom"><span></span></div>
       <div class="seat seat-right"><span></span></div>
@@ -301,7 +246,6 @@
     </div>
   </div>
 
-  <!-- Рука -->
   <div class="hands">
     <div id="handHeader" class="hand-header"></div>
     <div id="tray" class="tray"></div>
@@ -310,29 +254,20 @@
   <div id="endMessage" class="end-message"></div>
 </div>
 
-<!-- Превью кости (над всем) -->
 <div id="tilePreview"><div id="tilePreviewInner"></div></div>
 
 <script>
-/* =========================
-   16:9 подгон без «шва»
-   ========================= */
 function fitStage(){
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  const vw = window.innerWidth, vh = window.innerHeight;
   const w  = Math.min(vw, Math.floor(vh * (16/9)));
   const h  = Math.floor(w * (9/16));
   const stage = document.getElementById('stage');
   stage.style.width  = w + 'px';
   stage.style.height = h + 'px';
-  // после изменения размеров поджать масштаб змейки
   setTimeout(fitChain, 0);
 }
 window.addEventListener('resize',fitStage); fitStage();
 
-/* =========================
-   Утилиты
-   ========================= */
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function uid(i){return 't'+i+'_'+Math.random().toString(36).slice(2,7);}
 function getQueryData(){const raw=new URLSearchParams(location.search).get('data'); if(!raw) return null; try{return JSON.parse(decodeURIComponent(raw));}catch(e){return null;}}
@@ -340,7 +275,6 @@ function br(){return {w:chainEl.clientWidth,h:chainEl.clientHeight};}
 function resetPasses(){Object.keys(passes).forEach(k=>passes[k]=0);}
 function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 
-/* уменьшение шрифта, без переносов и обрезания (для обычных костей) */
 function fitTextNoWrap(bEl, text, start=22, min=4){
   bEl.textContent = text;
   bEl.style.whiteSpace='nowrap';
@@ -352,8 +286,7 @@ function fitTextNoWrap(bEl, text, start=22, min=4){
   while (s > min && !fits()){ s -= 1; bEl.style.fontSize = s + 'px'; }
 }
 
-/* РАСТИМ шрифт до максимума (для предпросмотра) */
-function growTextToFit(bEl, start=24, max=180, step=2, pad=10){
+function growTextToFit(bEl, start=24, max=200, step=2, pad=12){
   bEl.style.whiteSpace = 'nowrap';
   bEl.style.fontWeight = 900;
   let s = start; bEl.style.fontSize = s + 'px';
@@ -369,9 +302,6 @@ function growTextToFit(bEl, start=24, max=180, step=2, pad=10){
   }
 }
 
-/* =========================
-   Ссылки на DOM
-   ========================= */
 const menuEl=document.getElementById('menu');
 const nameInputsEl=document.getElementById('nameInputs');
 const playerCountEl=document.getElementById('playerCount');
@@ -389,7 +319,6 @@ const endMessage=document.getElementById('endMessage');
 const previewWrap=document.getElementById('tilePreview');
 const previewInner=document.getElementById('tilePreviewInner');
 
-/* Имена вокруг стола */
 const seats = {
   bottom: document.querySelector('.seat-bottom span'),
   right:  document.querySelector('.seat-right span'),
@@ -403,21 +332,12 @@ const seatBoxes = {
   left:   document.querySelector('.seat-left'),
 };
 
-/* =========================
-   Состояние
-   ========================= */
 let playerNames=[]; let hands={}; let deck=[]; let currentPlayer=0; let scores={}; let passes={};
 let openLeft=null, openRight=null; let endLeft=null, endRight=null; let dragging=null; let freeMode=false;
 
-/* =========================
-   Геометрия
-   ========================= */
 const TILE_W=150, TILE_H=60, VERT_W=60, VERT_H=150;
 const GAP=4, DZ=38;
 
-/* =========================
-   Поля меню для ввода имён
-   ========================= */
 function renderNameInputs(){
   nameInputsEl.innerHTML='';
   const c=parseInt(playerCountEl.value,10)||2;
@@ -430,33 +350,30 @@ function renderNameInputs(){
 }
 playerCountEl.addEventListener('input',renderNameInputs); renderNameInputs();
 
-/* =========================
-   Превью кости (теперь шрифт растёт до максимума)
-   ========================= */
 function showPreview(a,b){
   previewInner.innerHTML='';
   const big=document.createElement('div'); 
   big.className='tile'; 
   big.style.position='static';
-  big.style.width='560px';
-  big.style.height='220px';
+  big.style.width='680px';
+  big.style.height='260px';
   big.innerHTML='<div class="half"><b></b></div><div class="sep"></div><div class="half"><b></b></div>';
+
+  // СНАЧАЛА в DOM, потом — рост шрифта (иначе измерения 0 и текст получается мелкий)
+  previewInner.appendChild(big);
   const leftB  = big.querySelector('.half:first-child > b');
   const rightB = big.querySelector('.half:last-child > b');
   leftB.textContent  = a;
   rightB.textContent = b;
-  growTextToFit(leftB,  24, 180, 2, 10);
-  growTextToFit(rightB, 24, 180, 2, 10);
-  previewInner.appendChild(big); 
+  growTextToFit(leftB,  36, 220, 2, 14);
+  growTextToFit(rightB, 36, 220, 2, 14);
+
   previewWrap.style.display='flex';
 }
 function hidePreview(){previewWrap.style.display='none';}
 previewWrap.addEventListener('click',hidePreview);
 window.addEventListener('keydown',e=>{if(e.key==='Escape') hidePreview();});
 
-/* =========================
-   Создание DOM-элемента кости
-   ========================= */
 function createTileEl(a,b,opts={}){
   const role=opts.role||'chain'; const owner=Number.isInteger(opts.owner)?opts.owner:null; const id=opts.uid||null; const draggable=!!opts.draggable; const orient=opts.orient||'h';
   const el=document.createElement('div'); el.className='tile '+(orient==='v'?'vert ':'')+role;
@@ -480,9 +397,6 @@ function createTileEl(a,b,opts={}){
   return el;
 }
 
-/* =========================
-   Рука (нижняя панель)
-   ========================= */
 function renderHand(){
   handHeader.textContent = `${playerNames[currentPlayer]}: (${(hands[currentPlayer]?.length||0)} костяшек)`;
   trayEl.innerHTML='';
@@ -493,9 +407,6 @@ function renderHand(){
   updateSeats();
 }
 
-/* =========================
-   HUD / верхняя панель
-   ========================= */
 function renderPlayersBar(){
   playersBarEl.innerHTML='';
   for(let i=0;i<playerNames.length;i++){
@@ -512,9 +423,6 @@ function updateControls(){
   drawBtn.disabled = (!freeMode && playable) || deck.length===0;
 }
 
-/* =========================
-   Подписи игроков на борту
-   ========================= */
 function shrinkToFit(span, minPx){
   let fs = parseInt(getComputedStyle(span.parentElement).fontSize, 10) || 14;
   const fits = () => span.scrollWidth <= span.clientWidth && span.scrollHeight <= span.clientHeight;
@@ -545,7 +453,6 @@ function updateSeats(){
   if(!playerNames.length) return;
   const n = playerNames.length;
   setDensity();
-
   const order = [ currentPlayer, (currentPlayer+1)%n, (currentPlayer+2)%n, (currentPlayer+3)%n ];
   const map = [
     {box: seatBoxes.bottom, i: order[0], fit: fitSeatTextHorizontal},
@@ -553,7 +460,6 @@ function updateSeats(){
     {box: seatBoxes.top,    i: order[2], fit: fitSeatTextHorizontal},
     {box: seatBoxes.left,   i: order[3], fit: fitSeatTextVertical},
   ];
-
   map.forEach((row, idx) => {
     if(idx < n){
       const i = row.i;
@@ -569,18 +475,15 @@ function updateSeats(){
   });
 }
 
-/* =========================
-   Развёртка змейки и варианты направления
-   ========================= */
 function newEnd(x,y,dir){ return {x:x,y:y,dir:dir}; }
 function canPlaceHoriz(end){ const W=br().w; const nx=end.x + end.dir*(TILE_W+GAP); return nx>=0 && (nx+TILE_W)<=W; }
 function seam(end){ return end.dir===1 ? {x:end.x+TILE_W,y:end.y} : {x:end.x,y:end.y}; }
 
 function cornerPos(end){
-  if (end.dir === 1){ // вправо → вниз
+  if (end.dir === 1){
     const cx=end.x + (TILE_W - VERT_W), cy=end.y + TILE_H + GAP;
     return {x:cx,y:cy,orient:'v',nextDir:-1,seamAt:'bottom'};
-  } else {            // влево → вверх
+  } else {
     const cx=end.x, cy=end.y - (VERT_H + GAP);
     return {x:cx,y:cy,orient:'v',nextDir:-1,seamAt:'top'};
   }
@@ -600,7 +503,6 @@ function nextPosByChoice(end, choice){
   return nextPosSnake(end);
 }
 
-/* Дубль — поперёк «крестом» */
 function crossPosForDouble(end, choice){
   const s = end.dir === 1 ? {x:end.x + TILE_W, y:end.y} : {x:end.x, y:end.y};
   if (choice === 'left' || choice === 'right' || (!choice && canPlaceHoriz(end))){
@@ -610,16 +512,9 @@ function crossPosForDouble(end, choice){
   return { x: Math.round(s.x - TILE_W/2), y: Math.round(seamY - TILE_H/2), orient:'h', cross:true };
 }
 
-/* =========================
-   Запрет наложения (коллизии)
-   ========================= */
 function rectOf(orient,x,y){ return {x,y,w:(orient==='v'?VERT_W:TILE_W), h:(orient==='v'?VERT_H:TILE_H)}; }
 function intersects(r1, r2){
-  /* касание тоже считаем коллизией — нельзя класть поверх */
-  return !(r2.x >= r1.x + r1.w ||
-           r2.x + r2.w <= r1.x ||
-           r2.y >= r1.y + r1.h ||
-           r2.y + r2.h <= r1.y);
+  return !(r2.x >= r1.x + r1.w || r2.x + r2.w <= r1.x || r2.y >= r1.y + r1.h || r2.y + r2.h <= r1.y);
 }
 function collidesWithExisting(r){
   const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')];
@@ -632,9 +527,6 @@ function collidesWithExisting(r){
   return false;
 }
 
-/* =========================
-   Сдвиг конца цепи после постановки
-   ========================= */
 function applyPlaced(end,n){
   if(n.orient==='h'){ end.x=n.x; end.y=n.y; end.dir=n.nextDir; return; }
   if(n.seamAt==='bottom'){ end.x=n.x; end.y=n.y + (VERT_H - TILE_H); }
@@ -642,9 +534,6 @@ function applyPlaced(end,n){
   end.dir=n.nextDir;
 }
 
-/* =========================
-   Подсказки-стрелки (к краю прижимаем)
-   ========================= */
 function zones4(end){
   const s=seam(end);
   return {
@@ -675,7 +564,6 @@ function renderDirectionalZones(){
     for(const key of Object.keys(pack)){
       if(inwardBlocked(side.id,key)) continue;
 
-      // Симулируем постановку и сразу отбрасываем те варианты, что наложатся
       let rect;
       if (dragging.a === dragging.b){
         const cp = crossPosForDouble(side.e, key);
@@ -686,7 +574,6 @@ function renderDirectionalZones(){
       }
       if (collidesWithExisting(rect)) continue;
 
-      // Визуально прижимаем стрелку к границе поля
       const W = br().w, H = br().h, pad = 2;
       const pos=pack[key];
       const z=document.createElement('div');
@@ -701,9 +588,6 @@ function renderDirectionalZones(){
 }
 window.addEventListener('resize',()=>{ if(dragging) renderDirectionalZones(); });
 
-/* =========================
-   Масштаб цепочки (только chainZoom)
-   ========================= */
 function fitChain(){
   const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')];
   if(!tiles.length){ chainZoom.style.transform='scale(1)'; return; }
@@ -718,9 +602,6 @@ function fitChain(){
   chainZoom.style.transform=`scale(${s})`;
 }
 
-/* =========================
-   Правила/очки
-   ========================= */
 function hasPlayable(hand){
   if (freeMode) return true;
   for(const t of hand){ if(t.a===openLeft || t.b===openLeft || t.a===openRight || t.b===openRight) return true; }
@@ -732,9 +613,6 @@ function everyonePassed(){ for(let i=0;i<playerNames.length;i++){ if(!passes[i])
 function endByWinner(i){ endMessage.style.display='block'; endMessage.textContent='Игра окончена! Победитель: '+playerNames[i]+' (сбросил все костяшки)'; }
 function endByPasses(){ let best=-Infinity, wi=0; for(let i=0;i<playerNames.length;i++){ const s=scores[i]||0; if(s>best){best=s; wi=i;} } endMessage.style.display='block'; endMessage.textContent='Игра окончена! Все пропустили. Победитель по очкам: '+playerNames[wi]+' ('+(scores[wi]||0)+')'; }
 
-/* =========================
-   Постановка кости
-   ========================= */
 function placeAt(whichEnd, a, b, choice){
   const e = (whichEnd === 'left') ? endLeft : endRight;
   const endId = (whichEnd === 'left') ? 'L' : 'R';
@@ -756,7 +634,6 @@ function placeAt(whichEnd, a, b, choice){
   applyPlaced(e,n); fitChain();
 }
 
-/* Дроп по стрелке */
 function tryPlace(target,data){
   if(!data || !target.classList.contains('dz')) return false;
   const isLeft = target.dataset.end==='L';
@@ -781,9 +658,6 @@ function tryPlace(target,data){
   return false;
 }
 
-/* =========================
-   Колода из ?data= (устойчиво)
-   ========================= */
 function buildDeckFromData(data){
   const out=[]; const A=(data && Array.isArray(data.listA))?data.listA:[]; const B=(data && Array.isArray(data.listB))?data.listB:[];
   const pairAll=(arr,tag='')=>{
@@ -802,17 +676,10 @@ function buildDeckFromData(data){
   return out;
 }
 
-/* =========================
-   Старт игры (устойчивый и ГАРАНТИРОВАННЫЙ)
-   ========================= */
 function startGame(){
-  menuEl.style.pointerEvents='auto';
-  menuEl.style.zIndex='100000';
-
   const data = getQueryData() || {};
   freeMode = !!data.freeMode;
 
-  // 1) Имена игроков (1..4)
   playerNames.length = 0;
   const c = Math.max(1, Math.min(4, parseInt(playerCountEl.value,10) || 2));
   for (let i=0;i<c;i++){
@@ -820,27 +687,23 @@ function startGame(){
     playerNames.push(v);
   }
 
-  // 2) Колода
   deck = buildDeckFromData(data);
   const FALLBACK = ["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море"];
 
-  const need = playerNames.length * 5 + 1; // по 5 в руку + 1 стартовая
+  const need = playerNames.length * 5 + 1;
   const ensureFrom = (arr, tag='X')=>{
     for(let i=0;i<arr.length;i++)
       for(let j=i;j<arr.length;j++)
         deck.push({a:arr[i], b:arr[j], uid:uid(tag+i+'_'+j)});
   };
-
   if (deck.length < need && Array.isArray(data.listA) && data.listA.length) ensureFrom(data.listA,'A2');
   if (deck.length < need) ensureFrom(FALLBACK,'F');
   if (deck.length === 0){ ensureFrom(["раз","два","три"],'M'); }
   shuffle(deck);
 
-  // 3) сброс состояния
   scores={}; passes={}; currentPlayer=0; hands={}; endMessage.style.display='none';
   for (let k=0;k<playerNames.length;k++){ hands[k]=[]; scores[k]=0; passes[k]=0; }
 
-  // 4) раздача по 5 (или сколько есть)
   for (let r=0;r<5;r++){
     for (let j=0;j<playerNames.length;j++){
       if (!deck.length) break;
@@ -848,7 +711,6 @@ function startGame(){
     }
   }
 
-  // 5) стартовая кость
   let start = deck.shift();
   if (!start){
     const h0 = hands[0]||[];
@@ -856,31 +718,23 @@ function startGame(){
     hands[0] = h0;
   }
 
-  // 6) отрисовка поля
   chainZoom.innerHTML='';
   const sx = Math.floor((br().w - TILE_W)/2), sy = Math.floor((br().h - TILE_H)/2);
   chainZoom.appendChild(createTileEl(start.a, start.b, {left:sx, top:sy}));
   openLeft=start.a; openRight=start.b; endLeft={x:sx,y:sy,dir:-1}; endRight={x:sx,y:sy,dir:1};
   fitChain();
 
-  // 7) UI
   renderPlayersBar(); renderHand(); updateControls(); updateSeats();
   if (freeMode) document.getElementById('title').textContent='Domino · Cozy Edition · Свободная игра';
-
-  // 8) прячем меню
   menuEl.style.display='none';
 }
 
-/* =========================
-   Кнопки и DnD
-   ========================= */
 drawBtn.addEventListener('click', function(){
   if(deck.length===0) return;
   const hand=hands[currentPlayer]||[];
-  if(!freeMode && hasPlayable(hand)) return; // нельзя брать, если есть ход (классика)
+  if(!freeMode && hasPlayable(hand)) return;
   hand.push(deck.splice(Math.floor(Math.random()*deck.length),1)[0]);
-  hands[currentPlayer]=hand;
-  renderHand(); updateControls();
+  hands[currentPlayer]=hand; renderHand(); updateControls();
 });
 skipBtn.addEventListener('click', function(){
   passes[currentPlayer]=(passes[currentPlayer]||0)+1;
@@ -888,13 +742,10 @@ skipBtn.addEventListener('click', function(){
   nextPlayer();
 });
 restartBtn.addEventListener('click', ()=>location.reload());
-startBtn.addEventListener('click', startGame);    // обработчик №1
-startBtn.onclick = startGame;                     // обработчик №2 (дубль-защита)
+startBtn.addEventListener('click', startGame);
+startBtn.onclick = startGame;
 
-/* dragover — разрешаем перенос по доске; дроп только на .dz */
-document.addEventListener('dragover', function(ev){
-  if(dragging) ev.preventDefault();
-});
+document.addEventListener('dragover', function(ev){ if(dragging) ev.preventDefault(); });
 document.addEventListener('drop', function(ev){
   const t=ev.target; if(!dragging) return;
   if(t && t.classList && t.classList.contains('dz')){
@@ -911,69 +762,31 @@ document.addEventListener('drop', function(ev){
   }
 });
 
-/* колесо — горизонтальный скролл руки */
 trayEl.addEventListener('wheel',(e)=>{ trayEl.scrollLeft += e.deltaY; }, {passive:true});
 
-/* =========================
-   ЖЁСТКИЙ ИНИТ
-   ========================= */
 (function hardInit(){
-  window.addEventListener('error', (e)=>{
-    console.error('JS Error:', e.error || e.message);
-  });
-
   function safeRenderNames(){
     try {
       if (typeof renderNameInputs === 'function') renderNameInputs();
-      const c = parseInt(document.getElementById('playerCount')?.value || '2', 10) || 2;
+      const c = parseInt(playerCountEl?.value || '2', 10) || 2;
       for (let i=0; i<c; i++){
         if (!document.getElementById('pname'+i)){
           const inp = document.createElement('input');
-          inp.id = 'pname'+i;
-          inp.placeholder = 'Имя игрока ' + (i+1);
-          document.getElementById('nameInputs')?.appendChild(inp);
+          inp.id = 'pname'+i; inp.placeholder = 'Имя игрока ' + (i+1);
+          nameInputsEl?.appendChild(inp);
         }
       }
     } catch {}
   }
-
   function bindMenu(){
-    const startBtn = document.getElementById('startBtn');
-    const playerCountEl = document.getElementById('playerCount');
     if (!startBtn || !playerCountEl) return;
-
     startBtn.onclick = startGame;
     startBtn.addEventListener('click', startGame);
-
-    playerCountEl.addEventListener('input', () => {
-      if (typeof renderNameInputs === 'function') {
-        renderNameInputs();
-      } else {
-        const box = document.getElementById('nameInputs');
-        if (!box) return;
-        box.innerHTML = '';
-        const c = parseInt(playerCountEl.value || '2', 10) || 2;
-        for (let i=0; i<c; i++){
-          const inp = document.createElement('input');
-          inp.id = 'pname'+i;
-          inp.placeholder = 'Имя игрока ' + (i+1);
-          box.appendChild(inp);
-        }
-      }
-    }, {passive:true});
+    playerCountEl.addEventListener('input', renderNameInputs, {passive:true});
   }
-
-  const menu = document.getElementById('menu');
-  if (menu){
-    menu.style.pointerEvents = 'auto';
-    menu.style.zIndex = '100000';
-  }
-
   if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', () => { fitStage(); safeRenderNames(); bindMenu(); });
-  } else {
-    fitStage(); safeRenderNames(); bindMenu();
-  }
+    document.addEventListener('DOMContentLoaded', ()=>{ fitStage(); safeRenderNames(); bindMenu(); });
+  } else { fitStage(); safeRenderNames(); bindMenu(); }
 })();
 </script>
 </body>
