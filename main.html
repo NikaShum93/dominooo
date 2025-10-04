@@ -1,923 +1,919 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Falling Items — Game (КГБ)</title>
+<title>Domino · Cozy Edition</title>
 
 <!--
-  Основные цели этого файла:
-  1) Полностью прозрачный фон вокруг игровой сцены (для встраивания в Genially).
-  2) Визуальная тема HUD/оверлеев берётся из настроек «рамки» редактора.
-     - Если в редакторе выбран цвет рамки → он становится Primary для HUD.
-     - Цвет фона рамки → Secondary/подложки.
-     - Если вместо «рамки» в редакторе указана картинка, она используется как фоновая
-       текстура под элементами (но HUD всё равно красится из цветов рамки).
-  3) Стартовый экран + локализация (RU/EN/ES/FR/DE/JA/ZH/AR). Автовыбор по ?language=.
-  4) Поправлен хитбокс: клики по падающим элементам не блокируются (z-index, pointer-events).
-  5) Геометрия фигур: звезда/ромб/круг не приплющиваются, блок квадратится под контент.
-  6) Сверху — «мягкий» градиент задника сцены, но не перекрывает клики.
-  7) Полный код без вырезок, >500 строк.
+  Полная финальная версия main.html
+  ✔ Без "шва" — стол 16:9 без transform:scale()
+  ✔ Масштабируется ТОЛЬКО область цепочки (#chainZoom)
+  ✔ Кости тянутся, стрелки показываются только допустимые, к краям прижимаются
+  ✔ Наложение запрещено (коллизии)
+  ✔ Шрифт на костях уменьшается, ничего не переносится и не обрезается
+  ✔ Вертикальные имена игроков (право/лево), авто-уменьшение шрифта
+  ✔ Свободный режим поддержан
+  ✔ Запуск устойчивый: колода достраивается при недостатке данных
 -->
 
 <style>
-/* ===== CSS-ПЕРЕМЕННЫЕ ТЕМЫ (перекрашиваются из URL-параметров) ===== */
-:root{
-  /* Интерфейс (HUD/оверлеи) — перетаскиваем из «рамки» редактора */
-  --ui-primary: #ffd700;    /* основной акцент (берём из borderColor) */
-  --ui-on-primary: #000;    /* цвет текста на акценте */
-  --ui-bg: #151515;         /* фон панелей интерфейса (берём из bgColor) */
-  --ui-stroke: #2a2a2a;     /* тон границ */
-  --ui-ink: #e9e9e9;        /* основной текст HUD */
-  --ui-muted: #bdbdbd;      /* вторичный текст */
-  --ui-shadow: rgba(0,0,0,.38);
+  :root{
+    --accent:#e6a8ff;
+    --accent2:#ffda8b;
+    --tile:#fffaf5;
+    --tile-edge:#e2c0ff;
+    --tile-shadow:rgba(0,0,0,.25);
+    --seat-fs:14px;
 
-  /* Текст элементов (слова) */
-  --text-color: #ffffff;
-  --text-font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  --text-size-px: 24px;
+    /* «дерево» как встроенный вектор, чтобы не зависеть от внешних файлов */
+    --wood: url("data:image/svg+xml;utf8,\
+    <svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'>\
+      <defs>\
+        <linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>\
+          <stop offset='0%'  stop-color='%232b1d12'/>\
+          <stop offset='100%' stop-color='%2354321e'/>\
+        </linearGradient>\
+        <filter id='noise'>\
+          <feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/>\
+          <feColorMatrix type='saturate' values='0.2'/>\
+          <feComponentTransfer><feFuncA type='table' tableValues='0 0.08'/></feComponentTransfer>\
+        </filter>\
+      </defs>\
+      <rect width='512' height='512' fill='url(%23g)'/>\
+      <g opacity='0.25'><rect width='512' height='512' filter='url(%23noise)'/></g>\
+      <g opacity='0.35' stroke='%2329160d' stroke-width='6'>\
+        <path d='M0 80h512M0 160h512M0 240h512M0 320h512M0 400h512'/>\
+      </g>\
+    </svg>");
+  }
 
-  /* Эффекты для падающих элементов */
-  --glow: #00f0ff;
-
-  /* Радиусы панелей */
-  --r-s: 10px;
-  --r-m: 12px;
-  --r-l: 16px;
-}
-
-/* ===== БАЗОВАЯ СЦЕНА (всё вокруг прозрачно) ===== */
-html, body{
-  height:100%;
+  *{box-sizing:border-box}
+  html,body{height:100%}
+ body{
   margin:0;
-  background: transparent;   /* чтобы в iFrame вокруг было прозрачно */
-}
-body{
-  color: var(--ui-ink);
-  font-family: var(--text-font);
-  overflow: hidden;          /* игра внутри контейнера, фон прозрачен */
-}
-
-/* Контейнер сцены; фон сцены — прозрачный или мягкий градиент с нулями кликов */
-.scene{
-  position: relative;
-  width:100%;
-  height:100%;
+  font:500 16px "Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  color:#fdf4ff;
+  background:#3b281b;
   overflow:hidden;
-  isolation:isolate;         /* корректная иерархия слоёв */
+
+  /* Центровка без transform — чтобы не было «шва» */
+  display:flex; 
+  align-items:center; 
+  justify-content:center;
 }
 
-/* Мягкий градиент фона сцены. ВНИМАНИЕ: выключаем pointer-events, чтобы не красть клики. */
-.scene::before{
-  content:"";
-  position:absolute; inset:0;
-  background: radial-gradient(1200px 800px at 50% 0%,
-              rgba(255,255,255,.08), rgba(0,0,0,0) 60%),
-              linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.6));
-  filter: none;
-  pointer-events:none;     /* клики идут сквозь подложку */
-  z-index: 0;
+  /* ===== 16:9 стол БЕЗ scale() ===== */
+  #stage{
+  /* Больше НИКАКИХ transform: translate(...)! */
+  position:relative;
+
+  /* реальные размеры всё равно задаются из JS (fitStage), но держим дефолт */
+  width:960px; height:540px;
+
+  display:flex; flex-direction:column; align-items:center;
+  background-image:var(--wood); background-size:800px 800px;
+  box-shadow:inset 0 0 80px rgba(0,0,0,.45), inset 0 0 140px rgba(0,0,0,.35);
+  border-radius:12px;
 }
 
-/* ===== HUD ===== */
-.hud{
-  position:absolute; inset:12px 12px auto 12px; /* top-left-right */
-  display:flex; align-items:center; justify-content:space-between;
-  pointer-events:none;  /* HUD не блокирует клики по элементам */
-  z-index: 5;
-}
+  h1{
+    margin:8px 0 6px;
+    font-size:24px; font-weight:900; letter-spacing:.5px;
+    color:#f2d39a;
+    text-shadow:0 1px 0 #402b16,0 0 18px rgba(0,0,0,.45),0 0 2px rgba(0,0,0,.6);
+  }
 
-/* Отдельные бейджи HUD */
-.badge{
-  pointer-events:none;
-  background: rgba(0,0,0,.45);
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: var(--r-l);
-  padding: 10px 14px;
-  font-weight: 800;
-  box-shadow:
-    0 14px 38px var(--ui-shadow),
-    0 0 18px rgba(255, 215, 0, .10) inset;
-  user-select:none;
-}
-.badge.level   { color: var(--ui-primary) }
-.badge.timer   { min-width:110px; text-align:center }
-.badge.score   { min-width:110px; text-align:center }
+  /* ===== Меню ===== */
+  .menu{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    padding:30px; z-index:100000;
+    background: linear-gradient(rgba(32,21,12,.92), rgba(32,21,12,.94)), var(--wood);
+    background-size:cover; box-shadow:inset 0 0 80px rgba(0,0,0,.55); border-radius:12px;
+  }
+  .menu label{ color:#f2d39a; font-weight:800; text-shadow:0 1px 0 #3b2715; }
+  .menu input{
+    padding:8px 12px; width:220px; border-radius:8px; border:2px solid #8c5c2f;
+    background:#fff6e7; color:#2b1a10; box-shadow:inset 0 1px 2px rgba(0,0,0,.2);
+  }
+  .menu button{
+    padding:10px 16px; border-radius:10px; border:2px solid #7a5525; font-weight:900; cursor:pointer;
+    background:linear-gradient(#f1c97a,#e7b85f); color:#2b1a10;
+    box-shadow:0 2px 0 #6b4a1d, inset 0 1px 0 rgba(255,255,255,.35)
+  }
 
-/* ===== Справа внизу — мини-меню (настройки), по клику открываем панель ===== */
-.menuBtn{
-  position:absolute; right:12px; bottom:12px;
-  width:44px; height:44px; border-radius:10px;
-  background: rgba(0,0,0,.6);
-  color:#fff; border:1px solid rgba(255,255,255,.2);
-  display:flex; align-items:center; justify-content:center;
-  z-index:6;
-}
-.menuDots{ width:18px; height:18px; position:relative }
-.menuDots::before, .menuDots::after, .menuDots span{
-  content:""; display:block; width:4px; height:4px; border-radius:999px; background:#fff;
-  position:absolute; left:50%; transform:translateX(-50%);
-}
-.menuDots::before{ top:2px}
-.menuDots span{ top:7px}
-.menuDots::after{ top:12px}
+  /* ===== Верхняя панель ===== */
+  .topbar{width:95%; display:flex; align-items:center; justify-content:space-between; gap:10px}
+  .players{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .player{padding:6px 12px; border-radius:14px; background:rgba(230,168,255,.15); font-size:12px}
+  .player.active{background:#f2c56a; color:#2b1a10; font-weight:900; box-shadow:0 0 14px #f2c56a, inset 0 0 10px rgba(255,255,255,.35)}
+  .score{margin-left:4px; font-weight:900; color:#2c1a32}
+  .controls{display:flex; gap:8px}
+  .btn{
+    padding:8px 14px; border-radius:10px; border:2px solid #7a5525;
+    background:linear-gradient(#f1c97a,#e7b85f);
+    color:#2c1a32; font-weight:800; cursor:pointer;
+    box-shadow:0 2px 0 #6b4a1d, inset 0 1px 0 rgba(255,255,255,.35)
+  }
+  .btn:disabled{opacity:.6; cursor:not-allowed}
 
-/* ===== Панель настроек (локализация + инфо), скрыта по умолчанию ===== */
-.panel{
-  position:absolute; right:12px; bottom:64px;
-  background: var(--ui-bg);
-  border: 1px solid var(--ui-stroke);
-  border-radius: 14px;
-  padding: 14px;
-  color: var(--ui-ink);
-  font-size: 14px;
-  width: 320px;
-  box-shadow: 0 10px 40px rgba(0,0,0,.5);
-  display:none;
-  z-index: 6;
-}
-.panel.open{ display:block }
-.panel h3{
-  margin:0 0 8px; color: var(--ui-primary); font-size:16px
-}
-.panel .row{ display:grid; grid-template-columns:120px 1fr; gap:10px; align-items:center; margin:8px 0 }
-.panel label{ color:#fff; font-weight:700 }
-.panel select, .panel input[type=color]{
-  width:100%; background:#0f0f0f; color:#fff; border:1px solid #2a2a2a; border-radius:10px; padding:8px; outline:none
-}
+  /* ===== Доска ===== */
+  .board{
+    position:relative; width:95%; height:68%; margin:6px 0;
+    background: radial-gradient(120% 100% at 50% 50%, #3c2a3e 0, #2e2130 70%) padding-box;
+    border:10px solid transparent; border-radius:18px;
+    border-image:url("data:image/svg+xml;utf8,\
+      <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'>\
+        <rect width='20' height='20' fill='%2354321e'/>\
+        <rect x='1' y='1' width='18' height='18' fill='none' stroke='%238c5c2f' stroke-width='1.5'/>\
+      </svg>") 30 round;
+    box-shadow:0 8px 24px rgba(0,0,0,.45), inset 0 0 18px rgba(0,0,0,.35);
+    overflow:hidden;
+  }
+  .chain{position:relative; width:100%; height:100%}
+  #chainZoom{
+    position:absolute; inset:0;
+    transform-origin:0 0; transform:scale(1);   /* масштабируем только змейку */
+    backface-visibility:hidden;
+  }
 
-/* ===== КНОПКА НАЗАД (влево) — на случай многоуровневого набора ===== */
-.backBtn{
-  position:absolute; left:12px; bottom:12px;
-  width:44px; height:44px; border-radius:10px;
-  background: rgba(0,0,0,.6);
-  color:#fff; border:1px solid rgba(255,255,255,.2);
-  display:flex; align-items:center; justify-content:center;
-  z-index:6;
-}
-.backBtn svg{ width:20px; height:20px; fill:#fff }
+  /* ===== Места игроков вокруг стола ===== */
+  #seats{ pointer-events:none; position:absolute; inset:0; }
+  .seat{
+    position:absolute;
+    background:rgba(0,0,0,.25);
+    border:1px solid rgba(255,218,139,.45);
+    color:#f5e6bf; font-weight:800; padding:6px 10px; border-radius:12px;
+    box-shadow:0 2px 10px rgba(0,0,0,.35), inset 0 0 8px rgba(255,218,139,.15);
+    backdrop-filter: blur(2px);
+    font-size: var(--seat-fs,14px);
+  }
+  .seat-bottom{ left:50%; transform:translateX(-50%); bottom:8px; }
+  .seat-top   { left:50%; transform:translateX(-50%); top:8px; }
 
-/* ===== СТАРТОВОЕ ОКНО ===== */
-.overlay{
-  position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column;
-  background: radial-gradient(40vmax 40vmax at center, rgba(0,0,0,.50), rgba(0,0,0,.85));
-  z-index:10;
-}
-.overlay .panel{
-  display:block;
-  width:auto; min-width:320px; max-width:70vw;
-  background: rgba(0,0,0,.55);
-  border:1px solid rgba(255,255,255,.12);
-  border-radius: 16px;
-  padding: 20px 26px;
-  text-align:center;
-  color:#fff;
-  box-shadow: 0 0 26px rgba(255,215,0,.1);
-}
-.overlay .title{
-  font-size:22px; color:#fff; font-weight:900; margin:0 0 10px
-}
-.overlay .hint{
-  font-size:14px; color: var(--ui-muted); margin: 0 0 16px
-}
-.overlay .startBtn{
-  background: linear-gradient(90deg, var(--ui-primary), #ffde49);
-  color: var(--ui-on-primary);
-  border: 0; border-radius: 10px;
-  font-weight: 900; padding: 12px 18px; cursor: pointer
-}
+  /* верт. подписи — без rotate */
+  .seat-right, .seat-left{
+    writing-mode: vertical-rl; text-orientation: mixed;
+    top:50%; transform:translateY(-50%);
+    max-height:60%; padding:8px 6px;
+  }
+  .seat-right{ right:8px; }
+  .seat-left { left:8px;  }
 
-/* ===== СОБСТВЕННО ИГРОВОЕ ПОЛЕ (слой с падающими элементами) ===== */
-#game{
-  position: absolute; inset:0;
-  z-index: 1;              /* ниже HUD и оверлеев, выше подложки сцены */
-  pointer-events: auto;    /* ловим клики на элементах */
-}
+  .seat span{
+    display:block; white-space:nowrap; max-width:220px; overflow:hidden;
+  }
+  .seat-right span, .seat-left span{ max-width:none; max-height:100%; }
+  .seat.hidden{ display:none; }
 
-/* Падающий контейнер-элемент */
-.item{
-  position:absolute;
-  top:-140px;
-  left:0;
-  transform:translateZ(0);
-  will-change:transform, top, left;
-  display:inline-flex;
-  align-items:center; justify-content:center;
-  min-width:120px; min-height:80px;
-  padding:0;          /* padding идёт в .content */
-  user-select:none; cursor:pointer;
-}
-.item .bg{
-  position:absolute; inset:0;
-  background:#222;   /* перекрывается из JS: цвет или bgImage */
-  opacity:1;
-  border:0 solid #fff;
-  box-shadow:none;
-  transition:filter .15s ease;
-}
-.item .content{
-  position:relative; z-index:1; pointer-events:none; /* клики идут на контейнер */
-  display:flex; align-items:center; justify-content:center;
-  padding:20px 26px;
-  max-width:320px; max-height:220px;
-  text-align:center; line-height:1.15;
-}
-.item .content span{
-  display:inline-block; font-weight:800; white-space:nowrap;
-  color: var(--text-color);
-  font-family: var(--text-font);
-  font-size: var(--text-size-px);
-}
-.item .content img{
-  display:block; max-width:180px; max-height:140px; object-fit:contain; pointer-events:none;
-}
+  /* ===== Кости ===== */
+  .tile{
+    width:150px; height:60px;
+    background:
+      radial-gradient(120% 120% at 20% 20%, rgba(0,0,0,.08), transparent 60%),
+      linear-gradient(#fffdf8,#fff6e7);
+    border:2px solid #e7dbc9; border-radius:12px;
+    display:grid; grid-template-columns:1fr 1fr;
+    position:absolute;
+    box-shadow:0 2px 6px rgba(0,0,0,.35), inset 0 0 0 2px #e0d3bd, inset 0 -10px 20px rgba(0,0,0,.06);
+    overflow:hidden; user-select:none; transition:transform .12s;
+    -webkit-user-drag: element;
+  }
+  .tile:hover{transform:scale(1.04)}
+  .tile .half{
+    display:flex; align-items:center; justify-content:center; padding:0 6px; text-align:center;
+    overflow:hidden; min-width:0;   /* половинки могут сжиматься */
+  }
+  .tile b{
+    display:block; line-height:1.05; font-weight:900; color:#1c1712;
+    white-space:nowrap; max-width:100%;    /* НИКОГДА не переносим */
+  }
+  .tile .sep{position:absolute; left:50%; top:0; bottom:0; width:2px; background:#d8c8aa}
+  .tile.vert{width:60px; height:150px; grid-template-columns:1fr; grid-template-rows:1fr 1fr}
+  .tile.vert .sep{left:0; top:50%; width:100%; height:2px}
 
-/* ФИГУРЫ: клипуем только фон (.bg), контент остаётся невырезанным */
-.shape-rect .bg    { border-radius:10px }
-.shape-rounded .bg { border-radius:20px }
-.shape-circle .bg  { border-radius:50% }
-.shape-diamond .bg { clip-path:polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%) }
-.shape-star   .bg  { clip-path:polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%) }
+  /* ===== Рука ===== */
+  .hands{width:100%; display:flex; flex-direction:column; gap:6px; padding:8px 0}
+  .hand-header{
+    width:95%; margin:0 auto; text-align:center;
+    font-weight:900; color:#e9d2a2; text-shadow:0 1px 0 #3b2715
+  }
+  .tray{
+    width:95%; margin:0 auto; height:56px;
+    display:flex; gap:8px; flex-wrap:nowrap; align-items:center; justify-content:flex-start;
+    overflow-x:auto; overflow-y:hidden; padding:8px 10px;
+    border:2px solid #8c5c2f; background:#5a3b21; border-radius:12px;
+    box-shadow:inset 0 0 18px rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.35);
+    scroll-behavior:smooth;
+  }
+  .tray > .tile{position:static}
+  .tile.hand{
+    transform:scale(.5); transform-origin:left center; cursor:grab;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))
+  }
+  .tile.hand *{ pointer-events:none } /* тянем за всю плитку */
 
-/* Эффекты */
-.fx-shadow  .bg{ box-shadow:0 10px 30px rgba(0,0,0,.5) }
-.fx-3d      .bg{ box-shadow:7px 7px 20px rgba(0,0,0,.5), inset -5px -5px 12px rgba(255,255,255,.22) }
-.fx-glow    .bg{ box-shadow:0 0 18px var(--glow) }
-.fx-border  .bg{ border-style:solid }
+  /* ===== Зоны-стрелки ===== */
+  .dz{
+    position:absolute; width:38px; height:38px; border:2px dashed #b68a3e; border-radius:10px; display:none;
+    background:rgba(255,215,120,.08); box-shadow:inset 0 0 10px rgba(0,0,0,.25)
+  }
+  .dz.active{display:block; background:rgba(255,215,120,.28); box-shadow:0 0 16px rgba(255,215,120,.7), inset 0 0 10px rgba(255,255,255,.2)}
+  .dz::after{
+    content:attr(data-dir); font-size:11px; color:#2c1a32; font-weight:900;
+    background:#f2c56a; padding:2px 6px; border-radius:8px; position:absolute; left:50%; top:50%;
+    transform:translate(-50%,-50%)
+  }
 
-/* Анимация «поймано» */
-.caught{ animation:pop .45s ease forwards }
-@keyframes pop{
-  0%{ transform:scale(1); opacity:1 }
-  50%{ transform:scale(1.15); opacity:1 }
-  100%{ transform:scale(0.85); opacity:0 }
-}
+  .end-message{font-size:18px; color:#ffda8b; margin:6px 0; display:none; text-align:center}
 
-/* Блёстки при попадании */
-.sparkle{
-  position:absolute; width:6px; height:6px; border-radius:50%;
-  background:rgba(255,255,255,.9);
-  pointer-events:none;
-  animation:spark 0.9s forwards;
-  filter:drop-shadow(0 0 6px #fff);
-  z-index:7; /* поверх HUD */
-}
-@keyframes spark{
-  from{ opacity:1; transform:translate(0,0) scale(1) }
-  to  { opacity:0; transform:translate(var(--dx), var(--dy)) scale(.2) }
-}
-
-/* Сообщения об ошибках */
-#errorBox{
-  position:absolute; left:0; right:0; bottom:0;
-  color:#ffc6c6; text-align:center; padding:6px 14px 10px; white-space:pre-wrap;
-  z-index:8; pointer-events:none; text-shadow:0 2px 6px rgba(0,0,0,.6)
-}
+  /* ===== Оверлей предпросмотра (вне стола) ===== */
+  #tilePreview{
+    position:fixed; inset:0; display:none;
+    align-items:center; justify-content:center;
+    z-index:999999; background:rgba(0,0,0,.6);
+    isolation:isolate; backface-visibility:hidden;
+  }
+  #tilePreview *{ pointer-events:none }
+  #tilePreview .tile{
+    position:static; width:560px; height:220px;
+    box-shadow:0 18px 60px rgba(0,0,0,.55), inset 0 0 0 2px #e0d3bd
+  }
+  #tilePreview .tile .sep{ background:#d8c8aa }
+  #tilePreview .tile b{ font-size:36px; white-space:nowrap }
 </style>
 </head>
 <body>
+<div id="stage">
+  <h1 id="title">Domino · Cozy Edition</h1>
 
-<div class="scene">
-
-  <!-- HUD -->
-  <div class="hud" aria-hidden="true">
-    <div class="badge level" id="hudLevel">—</div>
-    <div class="badge timer" id="hudTimer">00</div>
-    <div class="badge score" id="hudScore">0</div>
-  </div>
-
-  <!-- Игровое поле -->
-  <div id="game" role="application" aria-label="Falling Items game"></div>
-
-  <!-- Стартовое окно -->
-  <div class="overlay" id="startOverlay" aria-modal="true" role="dialog">
-    <div class="panel">
-      <div class="title" id="startTitle">Готово к старту</div>
-      <p class="hint" id="startHint">Нажми, чтобы начать. Первый клик включает звук.</p>
-      <button class="startBtn" id="startBtn">Старт</button>
+  <!-- Меню старта -->
+  <div id="menu" class="menu">
+    <label>Количество игроков: <input type="number" id="playerCount" min="1" max="4" value="2"></label>
+    <div id="nameInputs"></div>
+    <button id="startBtn">Начать игру</button>
+    <div style="opacity:.75; font-size:12px; max-width:520px; text-align:center">
+      Данные приходят в <code>?data=</code> (JSON из редактора), напр.:
+      <code>{"listA":["кот","пёс","луна"],"listB":[],"freeMode":false}</code>
     </div>
   </div>
 
-  <!-- Кнопка «назад» (кастомное действие — напр., перезапуск) -->
-  <button class="backBtn" id="backBtn" title="Заново" aria-label="Restart">
-    <svg viewBox="0 0 24 24" focusable="false"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-  </button>
+  <!-- Верхняя панель -->
+  <div class="topbar">
+    <div id="playersBar" class="players"></div>
+    <div class="controls">
+      <button id="drawBtn" class="btn">Взять</button>
+      <button id="skipBtn" class="btn">Пропустить</button>
+      <button id="restartBtn" class="btn">Перезапустить</button>
+    </div>
+  </div>
+  <div class="turn" id="turnInfo"></div>
 
-  <!-- Мини-меню -->
-  <button class="menuBtn" id="menuBtn" title="Меню" aria-label="Menu">
-    <span class="menuDots"><span></span></span>
-  </button>
-  <div class="panel" id="menuPanel" aria-hidden="true">
-    <h3 id="menuTitle">Параметры</h3>
-    <div class="row">
-      <label for="uiLang">Язык</label>
-      <select id="uiLang"></select>
+  <!-- Доска -->
+  <div class="board">
+    <div class="chain" id="chain">
+      <!-- ТОЛЬКО эта обёртка масштабируется -->
+      <div id="chainZoom"></div>
     </div>
-    <div class="row">
-      <label for="uiPrimary">Акцент HUD</label>
-      <input type="color" id="uiPrimary" value="#ffd700" />
-    </div>
-    <div class="row">
-      <label for="uiBg">Фон панелей</label>
-      <input type="color" id="uiBg" value="#151515" />
-    </div>
-    <div style="margin-top:10px; color:var(--ui-muted)">
-      <div id="menuHint">Изменения применяются сразу для интерфейса. Сцена остаётся прозрачной.</div>
+
+    <!-- Имёнки игроков у кромок -->
+    <div id="seats">
+      <div class="seat seat-bottom"><span></span></div>
+      <div class="seat seat-right"><span></span></div>
+      <div class="seat seat-top"><span></span></div>
+      <div class="seat seat-left"><span></span></div>
     </div>
   </div>
 
-  <div id="errorBox" aria-live="polite"></div>
+  <!-- Рука -->
+  <div class="hands">
+    <div id="handHeader" class="hand-header"></div>
+    <div id="tray" class="tray"></div>
+  </div>
+
+  <div id="endMessage" class="end-message"></div>
 </div>
 
-<!-- Звук «поп» -->
-<audio id="popSound" src="pop.mp3" preload="auto"></audio>
-
-<!-- MathJax для LaTeX (если язык math) -->
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" defer></script>
+<!-- Превью кости (над всем) -->
+<div id="tilePreview"><div id="tilePreviewInner"></div></div>
 
 <script>
-/* =========================================================================
-   ПАРСИНГ ПАРАМЕТРОВ И ТЕМА ИЗ «РАМКИ» (редактора)
-   ========================================================================= */
-const qp = Object.fromEntries(new URLSearchParams(location.search).entries());
+/* =========================
+   16:9 без scale() (убрали «шов» навсегда)
+   ========================= */
+function fitStage(){
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const w  = Math.min(vw, Math.floor(vh * (16/9)));
+  const h  = Math.floor(w * (9/16));
+  const stage = document.getElementById('stage');
+  stage.style.width  = w + 'px';
+  stage.style.height = h + 'px';
+  // после изменения размеров поджать масштаб змейки
+  setTimeout(fitChain, 0);
+}
+window.addEventListener('resize',fitStage); fitStage();
 
-/* Параметры с дефолтами */
-function val(k, d){ return qp[k] !== undefined ? qp[k] : d }
+/* =========================
+   Утилиты
+   ========================= */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function uid(i){return 't'+i+'_'+Math.random().toString(36).slice(2,7);}
+function getQueryData(){const raw=new URLSearchParams(location.search).get('data'); if(!raw) return null; try{return JSON.parse(decodeURIComponent(raw));}catch(e){return null;}}
+function br(){return {w:chainEl.clientWidth,h:chainEl.clientHeight};}
+function resetPasses(){Object.keys(passes).forEach(k=>passes[k]=0);}
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 
-/* Глобальные переменные настроек (из JSON/редактора) */
-let CFG = {
-  language:   'ru',
-  font:       'Rubik',
-  fontSize:   24,
-  textColor:  '#ffffff',
-  speed:      5,   // 1..10
-  style: {
-    shape:       'rounded',
-    bgColor:     '#1a1a1a',
-    bgImage:     '',
-    borderOn:    true,
-    borderColor: '#ffd700',
-    borderWidth: 1,
-    shadow:      true,
-    glow:        false,
-    glowColor:   '#00f0ff',
-    fx3d:        false,
-    opacity:     1
-  },
-  randomLevels: false,
-  levels: []  // [{target, correct[], wrong[], timer}]
+/* уменьшение шрифта, без переносов и обрезания */
+function fitTextNoWrap(bEl, text, start=22, min=4){
+  bEl.textContent = text;
+  bEl.style.whiteSpace='nowrap';
+  bEl.style.letterSpacing='0';
+  bEl.style.fontWeight=900;
+  let s = start; bEl.style.fontSize = s + 'px';
+  const box = bEl.parentElement;
+  const fits = () => (bEl.scrollWidth <= (box.clientWidth - 2)) && (bEl.scrollHeight <= (box.clientHeight - 2));
+  while (s > min && !fits()){ s -= 1; bEl.style.fontSize = s + 'px'; }
+}
+
+/* =========================
+   Ссылки на DOM
+   ========================= */
+const menuEl=document.getElementById('menu');
+const nameInputsEl=document.getElementById('nameInputs');
+const playerCountEl=document.getElementById('playerCount');
+const startBtn=document.getElementById('startBtn');
+const playersBarEl=document.getElementById('playersBar');
+const chainEl=document.getElementById('chain');
+const chainZoom=document.getElementById('chainZoom');
+const handHeader=document.getElementById('handHeader');
+const trayEl=document.getElementById('tray');
+const drawBtn=document.getElementById('drawBtn');
+const skipBtn=document.getElementById('skipBtn');
+const restartBtn=document.getElementById('restartBtn');
+const turnInfo=document.getElementById('turnInfo');
+const endMessage=document.getElementById('endMessage');
+const previewWrap=document.getElementById('tilePreview');
+const previewInner=document.getElementById('tilePreviewInner');
+
+/* Имена вокруг стола */
+const seats = {
+  bottom: document.querySelector('.seat-bottom span'),
+  right:  document.querySelector('.seat-right span'),
+  top:    document.querySelector('.seat-top span'),
+  left:   document.querySelector('.seat-left span'),
+};
+const seatBoxes = {
+  bottom: document.querySelector('.seat-bottom'),
+  right:  document.querySelector('.seat-right'),
+  top:    document.querySelector('.seat-top'),
+  left:   document.querySelector('.seat-left'),
 };
 
-/* ===== загрузка JSON с данными уровней =====
-   Есть две схемы:
-   1) ?data=data:application/json,... (передаёт редактор до публикации)
-   2) ?id=... → грузим https://nikashum93.github.io/texts/data/<id>.json
-   -------------------------------------------------------------------- */
-async function loadGameData(){
-  const BASE_TXT = 'https://nikashum93.github.io/texts/data/';
+/* =========================
+   Состояние
+   ========================= */
+let playerNames=[]; let hands={}; let deck=[]; let currentPlayer=0; let scores={}; let passes={};
+let openLeft=null, openRight=null; let endLeft=null, endRight=null; let dragging=null; let freeMode=false;
 
-  // приоритет: data → id → пустой
-  if(qp.data){
-    const url = decodeURIComponent(qp.data);
-    const r = await fetch(url, {cache:'no-store'});
-    if(!r.ok) throw new Error('Не удалось загрузить data: JSON');
-    return r.json();
+/* =========================
+   Геометрия
+   ========================= */
+const TILE_W=150, TILE_H=60, VERT_W=60, VERT_H=150;  // размеры костей
+const GAP=4, DZ=38;                                  // зазоры и размер стрелки
+
+/* =========================
+   Поля меню для ввода имён
+   ========================= */
+function renderNameInputs(){
+  nameInputsEl.innerHTML='';
+  const c=parseInt(playerCountEl.value,10)||2;
+  for(let i=0;i<c;i++){
+    const inp=document.createElement('input');
+    inp.placeholder='Имя игрока '+(i+1);
+    inp.id='pname'+i;
+    nameInputsEl.appendChild(inp);
   }
-  if(qp.id){
-    const url = `${BASE_TXT}${encodeURIComponent(qp.id)}.json?v=${Date.now()}`;
-    const r = await fetch(url, {cache:'no-store'});
-    if(!r.ok) throw new Error('Не найдено или недоступно: ' + url);
-    return r.json();
+}
+playerCountEl.addEventListener('input',renderNameInputs); renderNameInputs();
+
+/* =========================
+   Превью кости
+   ========================= */
+function showPreview(a,b){
+  previewInner.innerHTML='';
+  const big=document.createElement('div'); 
+  big.className='tile'; 
+  big.style.position='static';
+  big.style.width='560px';
+  big.style.height='220px';
+  big.innerHTML='<div class="half"><b></b></div><div class="sep"></div><div class="half"><b></b></div>';
+
+  const leftB  = big.querySelector('.half:first-child > b');
+  const rightB = big.querySelector('.half:last-child > b');
+
+  // Заполняем текстом и растим шрифт до предела
+  leftB.textContent  = a;
+  rightB.textContent = b;
+  growTextToFit(leftB,  24, 180, 2, 10);
+  growTextToFit(rightB, 24, 180, 2, 10);
+
+  previewInner.appendChild(big);
+  previewWrap.style.display='flex';
+}
+function hidePreview(){previewWrap.style.display='none';}
+previewWrap.addEventListener('click',hidePreview);
+window.addEventListener('keydown',e=>{if(e.key==='Escape') hidePreview();});
+
+/* =========================
+   Создание DOM-элемента кости
+   ========================= */
+function createTileEl(a,b,opts={}){
+  const role=opts.role||'chain'; const owner=Number.isInteger(opts.owner)?opts.owner:null; const id=opts.uid||null; const draggable=!!opts.draggable; const orient=opts.orient||'h';
+  const el=document.createElement('div'); el.className='tile '+(orient==='v'?'vert ':'')+role;
+  el.title=a+' | '+b; el.dataset.a=a; el.dataset.b=b; el.dataset.orient=orient; if(id) el.dataset.uid=id; if(owner!==null) el.dataset.owner=String(owner);
+  el.style.left=(opts.left||0)+'px'; el.style.top=(opts.top||0)+'px';
+  el.innerHTML='<div class="half"><b></b></div><div class="sep"></div><div class="half"><b></b></div>';
+  const halves=el.getElementsByClassName('half');
+  fitTextNoWrap(halves[0].firstElementChild,a, role==='hand'?18:22,4);
+  fitTextNoWrap(halves[1].firstElementChild,b, role==='hand'?18:22,4);
+  // Увеличиваем шрифт по максимуму в пределах half-клетки (без переносов/обрезаний)
+function growTextToFit(bEl, start=18, max=160, step=2, pad=8){
+  bEl.style.whiteSpace = 'nowrap';
+  bEl.style.fontWeight = 900;
+  let s = start;
+  const fits = () => (
+    bEl.scrollWidth  <= (bEl.parentElement.clientWidth  - pad) &&
+    bEl.scrollHeight <= (bEl.parentElement.clientHeight - pad)
+  );
+  // сначала уменьшить (если вдруг слишком большой пришёл)
+  while (s > 6 && !fits()){ s -= step; bEl.style.fontSize = s + 'px'; }
+  // затем максимально нарастить
+  while (s < max){
+    bEl.style.fontSize = (s + step) + 'px';
+    if (!fits()){ bEl.style.fontSize = s + 'px'; break; }
+    s += step;
   }
-  // пустой прототип
+}
+  el.addEventListener('click',()=>showPreview(a,b));
+  if(draggable){
+    el.setAttribute('draggable','true');
+    el.addEventListener('dragstart',e=>{
+      dragging={a:a,b:b,uid:id,owner:owner};
+      e.dataTransfer.setData('text/plain','domino');
+      hidePreview();
+      renderDirectionalZones();
+    });
+    el.addEventListener('dragend',()=>{dragging=null; clearZones();});
+  }
+  return el;
+}
+
+/* =========================
+   Рука (нижняя панель)
+   ========================= */
+function renderHand(){
+  handHeader.textContent = `${playerNames[currentPlayer]}: (${(hands[currentPlayer]?.length||0)} костяшек)`;
+  trayEl.innerHTML='';
+  const hand=hands[currentPlayer]||[];
+  for(const t of hand){
+    trayEl.appendChild(createTileEl(t.a,t.b,{role:'hand',owner:currentPlayer,uid:t.uid,draggable:true,orient:'h'}));
+  }
+  updateSeats();
+}
+
+/* =========================
+   HUD / верхняя панель
+   ========================= */
+function renderPlayersBar(){
+  playersBarEl.innerHTML='';
+  for(let i=0;i<playerNames.length;i++){
+    const el=document.createElement('div');
+    el.className='player'+(i===currentPlayer?' active':''); el.id='pbar'+i;
+    el.innerHTML=`${playerNames[i]} <span class="score" id="score-${i}">${(scores[i]||0)}</span>`;
+    playersBarEl.appendChild(el);
+  }
+}
+function updateControls(){
+  [...playersBarEl.getElementsByClassName('player')].forEach((n,idx)=>{n.classList.toggle('active', idx===currentPlayer);});
+  turnInfo.textContent=`Ход: ${playerNames[currentPlayer]}`;
+  const playable=hasPlayable(hands[currentPlayer]||[]);
+  drawBtn.disabled = (!freeMode && playable) || deck.length===0;
+}
+
+/* =========================
+   Подписи игроков на борту
+   ========================= */
+function shrinkToFit(span, minPx){
+  let fs = parseInt(getComputedStyle(span.parentElement).fontSize, 10) || 14;
+  const fits = () => span.scrollWidth <= span.clientWidth && span.scrollHeight <= span.clientHeight;
+  span.style.whiteSpace = 'nowrap';
+  while(!fits() && fs > minPx){ fs--; span.parentElement.style.fontSize = fs + 'px'; }
+}
+function fitSeatTextHorizontal(seatBox, text){
+  const span = seatBox.querySelector('span');
+  span.textContent = text;
+  seatBox.style.fontSize = 'var(--seat-fs,14px)';
+  shrinkToFit(span, 9);
+}
+function fitSeatTextVertical(seatBox, text){
+  const span = seatBox.querySelector('span');
+  span.textContent = text;
+  seatBox.style.fontSize = 'var(--seat-fs,14px)';
+  const fits = () => span.scrollHeight <= seatBox.clientHeight && span.scrollWidth <= seatBox.clientWidth;
+  let fs = parseInt(getComputedStyle(seatBox).fontSize, 10) || 14;
+  span.style.whiteSpace = 'nowrap';
+  while(!fits() && fs > 9){ fs--; seatBox.style.fontSize = fs + 'px'; }
+}
+function setDensity(){
+  const n = playerNames.length;
+  const fs = (n>=4)?11:(n===3?12:14);
+  document.documentElement.style.setProperty('--seat-fs', fs + 'px');
+}
+function updateSeats(){
+  if(!playerNames.length) return;
+  const n = playerNames.length;
+  setDensity();
+
+  const order = [ currentPlayer, (currentPlayer+1)%n, (currentPlayer+2)%n, (currentPlayer+3)%n ];
+  const map = [
+    {box: seatBoxes.bottom, i: order[0], fit: fitSeatTextHorizontal},
+    {box: seatBoxes.right,  i: order[1], fit: fitSeatTextVertical},
+    {box: seatBoxes.top,    i: order[2], fit: fitSeatTextHorizontal},
+    {box: seatBoxes.left,   i: order[3], fit: fitSeatTextVertical},
+  ];
+
+  map.forEach((row, idx) => {
+    if(idx < n){
+      const i = row.i;
+      const name = String(playerNames[i]).trim().replace(/\s+/g,' ');
+      const cnt  = hands[i] ? hands[i].length : 0;
+      const label = `${name} (${cnt})`;
+      row.box.classList.remove('hidden');
+      row.fit(row.box, label);
+    } else {
+      row.box.classList.add('hidden');
+      row.box.querySelector('span').textContent = '';
+    }
+  });
+}
+
+/* =========================
+   Развёртка змейки и варианты направления
+   ========================= */
+function newEnd(x,y,dir){ return {x:x,y:y,dir:dir}; }
+function canPlaceHoriz(end){ const W=br().w; const nx=end.x + end.dir*(TILE_W+GAP); return nx>=0 && (nx+TILE_W)<=W; }
+function seam(end){ return end.dir===1 ? {x:end.x+TILE_W,y:end.y} : {x:end.x,y:end.y}; }
+
+function cornerPos(end){
+  if (end.dir === 1){ // вправо → вниз
+    const cx=end.x + (TILE_W - VERT_W), cy=end.y + TILE_H + GAP;
+    return {x:cx,y:cy,orient:'v',nextDir:-1,seamAt:'bottom'};
+  } else {            // влево → вверх
+    const cx=end.x, cy=end.y - (VERT_H + GAP);
+    return {x:cx,y:cy,orient:'v',nextDir:-1,seamAt:'top'};
+  }
+}
+function nextPosSnake(end){
+  if(canPlaceHoriz(end)){
+    return {x:end.dir===1 ? end.x + TILE_W + GAP : end.x - TILE_W - GAP, y:end.y, orient:'h', nextDir:end.dir};
+  }
+  return cornerPos(end);
+}
+function nextPosByChoice(end, choice){
+  const s=seam(end);
+  if(choice==='right') return {x:s.x + GAP,          y:end.y, orient:'h', nextDir: 1};
+  if(choice==='left')  return {x:s.x - GAP - TILE_W, y:end.y, orient:'h', nextDir:-1};
+  if(choice==='down')  return {x:(end.dir===1?s.x - VERT_W:s.x), y:end.y + TILE_H + GAP, orient:'v', nextDir:-end.dir, seamAt:'bottom'};
+  if(choice==='up')    return {x:(end.dir===1?s.x - VERT_W:s.x), y:end.y - (VERT_H + GAP), orient:'v', nextDir:-end.dir, seamAt:'top'};
+  return nextPosSnake(end);
+}
+
+/* Дубль — поперёк «крестом» */
+function crossPosForDouble(end, choice){
+  const s = end.dir === 1 ? {x:end.x + TILE_W, y:end.y} : {x:end.x, y:end.y};
+  if (choice === 'left' || choice === 'right' || (!choice && canPlaceHoriz(end))){
+    return { x: Math.round(s.x - VERT_W/2), y: Math.round(end.y - (VERT_H - TILE_H)/2), orient:'v', cross:true };
+  }
+  const seamY = (choice === 'down') ? (end.y + TILE_H) : end.y;
+  return { x: Math.round(s.x - TILE_W/2), y: Math.round(seamY - TILE_H/2), orient:'h', cross:true };
+}
+
+/* =========================
+   Запрет наложения (коллизии)
+   ========================= */
+function rectOf(orient,x,y){ return {x,y,w:(orient==='v'?VERT_W:TILE_W), h:(orient==='v'?VERT_H:TILE_H)}; }
+function intersects(r1, r2){
+  /* касание тоже считаем коллизией — нельзя класть поверх */
+  return !(r2.x >= r1.x + r1.w ||
+           r2.x + r2.w <= r1.x ||
+           r2.y >= r1.y + r1.h ||
+           r2.y + r2.h <= r1.y);
+}
+function collidesWithExisting(r){
+  const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')];
+  for(const t of tiles){
+    const w=t.classList.contains('vert')?VERT_W:TILE_W;
+    const h=t.classList.contains('vert')?VERT_H:TILE_H;
+    const r2={x:parseInt(t.style.left||0,10),y:parseInt(t.style.top||0,10),w,h};
+    if(intersects(r, r2)) return true;
+  }
+  return false;
+}
+
+/* =========================
+   Сдвиг конца цепи после постановки
+   ========================= */
+function applyPlaced(end,n){
+  if(n.orient==='h'){ end.x=n.x; end.y=n.y; end.dir=n.nextDir; return; }
+  if(n.seamAt==='bottom'){ end.x=n.x; end.y=n.y + (VERT_H - TILE_H); }
+  else { end.x=n.x; end.y=n.y; }
+  end.dir=n.nextDir;
+}
+
+/* =========================
+   Подсказки-стрелки (к краю прижимаем)
+   ========================= */
+function zones4(end){
+  const s=seam(end);
   return {
-    language: 'ru',
-    font: 'Rubik',
-    fontSize: 24,
-    textColor: '#ffffff',
-    speed: 5,
-    style: {
-      shape:'rounded', bgColor:'#1a1a1a', bgImage:'',
-      borderOn:true, borderColor:'#ffd700', borderWidth:1,
-      shadow:true, glow:false, glowColor:'#00f0ff', fx3d:false, opacity:1
-    },
-    randomLevels: false,
-    levels: [
-      { target: 'Demo', correct:['cat','sun','https://via.placeholder.com/160x120?text=img'], wrong:['dog','car'], timer: 30 }
-    ]
+    up   : { left: Math.round(s.x - DZ/2), top: s.y - DZ - GAP, dir:'↑', k:'up' },
+    right: { left: s.x + GAP,              top: Math.round(s.y + (TILE_H-DZ)/2), dir:'→', k:'right' },
+    down : { left: Math.round(s.x - DZ/2), top: s.y + TILE_H + GAP, dir:'↓', k:'down' },
+    left : { left: s.x - DZ - GAP,         top: Math.round(s.y + (TILE_H-DZ)/2), dir:'←', k:'left' }
   };
 }
+function inwardBlocked(endId, choice){
+  if(endId==='L' && choice==='right') return true;
+  if(endId==='R' && choice==='left')  return true;
+  return false;
+}
+function clearZones(){ [...chainZoom.querySelectorAll('.dz')].forEach(n=>n.remove()); }
 
-/* ===== локализация строк ===== */
-const L10N = {
-  ru: {
-    startTitle: 'Готово к старту',
-    startHint:  'Нажми, чтобы начать. Первый клик включает звук.',
-    startBtn:   'Старт',
-    menuTitle:  'Параметры',
-    menuHint:   'Изменения применяются сразу для интерфейса. Сцена остаётся прозрачной.',
-    levelLabel: (n,t)=> `Уровень ${n}${t?': '+t:''}`,
-  },
-  en: {
-    startTitle: 'Ready to start',
-    startHint:  'Click to start. The first click enables sound.',
-    startBtn:   'Start',
-    menuTitle:  'Settings',
-    menuHint:   'Changes apply to HUD instantly. Playfield stays transparent.',
-    levelLabel: (n,t)=> `Level ${n}${t?': '+t:''}`,
-  },
-  es: {
-    startTitle: 'Listo para empezar',
-    startHint:  'Haz clic para empezar. El primer clic habilita el sonido.',
-    startBtn:   'Iniciar',
-    menuTitle:  'Parámetros',
-    menuHint:   'Los cambios se aplican al HUD al instante. El campo de juego es transparente.',
-    levelLabel: (n,t)=> `Nivel ${n}${t?': '+t:''}`,
-  },
-  fr: {
-    startTitle: 'Prêt à démarrer',
-    startHint:  'Cliquez pour démarrer. Le premier clic active le son.',
-    startBtn:   'Démarrer',
-    menuTitle:  'Paramètres',
-    menuHint:   "Les changements s'appliquent au HUD immédiatement. Le terrain reste transparent.",
-    levelLabel: (n,t)=> `Niveau ${n}${t?': '+t:''}`,
-  },
-  de: {
-    startTitle: 'Bereit zum Start',
-    startHint:  'Klicken zum Starten. Der erste Klick aktiviert den Ton.',
-    startBtn:   'Start',
-    menuTitle:  'Einstellungen',
-    menuHint:   'Änderungen wirken sofort auf das HUD. Spielfeld bleibt transparent.',
-    levelLabel: (n,t)=> `Level ${n}${t?': '+t:''}`,
-  },
-  ja: {
-    startTitle: '開始の準備ができました',
-    startHint:  'クリックして開始。最初のクリックで音声が有効になります。',
-    startBtn:   'スタート',
-    menuTitle:  '設定',
-    menuHint:   '変更はすぐにHUDに適用されます。プレイフィールドは透明のままです。',
-    levelLabel: (n,t)=> `レベル ${n}${t?': '+t:''}`,
-  },
-  zh: {
-    startTitle: '准备开始',
-    startHint:  '点击开始。第一次点击会启用声音。',
-    startBtn:   '开始',
-    menuTitle:  '设置',
-    menuHint:   '修改会立即应用到HUD。场景保持透明。',
-    levelLabel: (n,t)=> `关卡 ${n}${t?': '+t:''}`,
-  },
-  ar: {
-    startTitle: 'جاهز للبدء',
-    startHint:  'انقر للبدء. أول نقرة تُفعِّل الصوت.',
-    startBtn:   'ابدأ',
-    menuTitle:  'الإعدادات',
-    menuHint:   'التغييرات تُطبّق فورًا على HUD. ساحة اللعب شفافة.',
-    levelLabel: (n,t)=> `المستوى ${n}${t?': '+t:''}`,
+function renderDirectionalZones(){
+  clearZones();
+  if(!dragging) return;
+
+  const ends=[{e:endLeft,id:'L',open:openLeft},{e:endRight,id:'R',open:openRight}];
+
+  for(const side of ends){
+    if(!side.e) continue;
+    if(!freeMode && !(dragging.a===side.open || dragging.b===side.open)) continue;
+
+    const pack=zones4(side.e);
+    for(const key of Object.keys(pack)){
+      if(inwardBlocked(side.id,key)) continue;
+
+      // Симулируем постановку и сразу отбрасываем те варианты, что наложатся
+      let rect;
+      if (dragging.a === dragging.b){
+        const cp = crossPosForDouble(side.e, key);
+        rect = rectOf(cp.orient, cp.x, cp.y);
+      } else {
+        const np = nextPosByChoice(side.e, key);
+        rect = rectOf(np.orient, np.x, np.y);
+      }
+      if (collidesWithExisting(rect)) continue;
+
+      // Визуально прижимаем стрелку к границе поля
+      const W = br().w, H = br().h, pad = 2;
+      const pos=pack[key];
+      const z=document.createElement('div');
+      z.className='dz active';
+      z.style.left=clamp(pos.left,pad,W-DZ-pad)+'px';
+      z.style.top =clamp(pos.top ,pad,H-DZ-pad)+'px';
+      z.id=`dz-${side.id}-${key}`;
+      z.dataset.dir=pos.dir; z.dataset.end=side.id; z.dataset.k=key;
+      chainZoom.appendChild(z);
+    }
   }
 }
+window.addEventListener('resize',()=>{ if(dragging) renderDirectionalZones(); });
 
-/* ===== применение темы интерфейса из «рамки» ===== */
-function applyThemeFromFrameStyle(){
-  const st = CFG.style || {};
-  /* Ключевая логика связки:
-     - primary ← borderColor
-     - bg      ← bgColor
-     - text    ← CFG.textColor
-     - font    ← CFG.font/fontSize
-  */
-  const primary  = st.borderColor || '#ffd700';
-  const panelBg  = st.bgColor     || '#151515';
-  const ink      = '#e9e9e9';
-  const stroke   = '#2a2a2a';
-
-  document.documentElement.style.setProperty('--ui-primary', primary);
-  document.documentElement.style.setProperty('--ui-bg', panelBg);
-  document.documentElement.style.setProperty('--ui-ink', ink);
-  document.documentElement.style.setProperty('--ui-stroke', stroke);
-  document.documentElement.style.setProperty('--text-color', CFG.textColor || '#ffffff');
-  document.documentElement.style.setProperty('--text-size-px', (parseInt(CFG.fontSize,10)||24) + 'px');
-
-  /* Шрифт из настроек */
-  const family = (CFG.font || 'Rubik').trim();
-  const gf = document.getElementById('gfLinkMain');
-  if(!gf){
-    const link = document.createElement('link');
-    link.id = 'gfLinkMain';
-    link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(family).replace(/%20/g,'+') + ':wght@400;700&display=swap';
-    document.head.appendChild(link);
-  }else{
-    gf.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(family).replace(/%20/g,'+') + ':wght@400;700&display=swap';
+/* =========================
+   Масштаб цепочки (только chainZoom)
+   ========================= */
+function fitChain(){
+  const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')];
+  if(!tiles.length){ chainZoom.style.transform='scale(1)'; return; }
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(const t of tiles){
+    const x=parseInt(t.style.left||'0',10), y=parseInt(t.style.top||'0',10),
+          w=t.classList.contains('vert')?VERT_W:TILE_W, h=t.classList.contains('vert')?VERT_H:TILE_H;
+    minX=Math.min(minX,x); minY=Math.min(minY,y); maxX=Math.max(maxX,x+w); maxY=Math.max(maxY,y+h);
   }
-  document.documentElement.style.setProperty('--text-font', `${family}, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`);
+  const chainW=maxX-minX, chainH=maxY-minY, pad=12;
+  const s=Math.min(1, (br().w-pad)/chainW, (br().h-pad)/chainH);
+  chainZoom.style.transform=`scale(${s})`;
 }
 
-/* =========================================================================
-   ИГРОВАЯ ЛОГИКА
-   ========================================================================= */
-const gameEl     = document.getElementById('game');
-const hudLevel   = document.getElementById('hudLevel');
-const hudTimer   = document.getElementById('hudTimer');
-const hudScore   = document.getElementById('hudScore');
-const errorBox   = document.getElementById('errorBox');
-
-const overlay    = document.getElementById('startOverlay');
-const startBtn   = document.getElementById('startBtn');
-
-const menuBtn    = document.getElementById('menuBtn');
-const menuPanel  = document.getElementById('menuPanel');
-const backBtn    = document.getElementById('backBtn');
-
-const uiLangSel  = document.getElementById('uiLang');
-const uiPrimary  = document.getElementById('uiPrimary');
-const uiBg       = document.getElementById('uiBg');
-
-const startTitle = document.getElementById('startTitle');
-const startHint  = document.getElementById('startHint');
-const menuTitle  = document.getElementById('menuTitle');
-const menuHint   = document.getElementById('menuHint');
-
-const popSound   = document.getElementById('popSound');
-
-let levelIndex = 0;
-let score = 0;
-let running = false;
-let levelTimerHandle = null;
-let spawnerHandle    = null;
-
-/* удобства */
-const clamp = (v,min,max)=> Math.max(min, Math.min(max,v));
-const rnd   = (a,b)=> a + Math.random()*(b-a);
-
-/* ===== локализация применить ===== */
-function applyL10n(){
-  const lang = (CFG.language || 'ru').toLowerCase();
-  const t = L10N[lang] || L10N.ru;
-  startTitle.textContent = t.startTitle;
-  startHint.textContent  = t.startHint;
-  startBtn.textContent   = t.startBtn;
-  menuTitle.textContent  = t.menuTitle;
-  menuHint.textContent   = t.menuHint;
-
-  // заполнить селектор языков
-  uiLangSel.innerHTML = '';
-  Object.keys(L10N).forEach(k=>{
-    const opt = document.createElement('option');
-    opt.value = k; opt.textContent = k.toUpperCase();
-    uiLangSel.appendChild(opt);
-  });
-  uiLangSel.value = lang;
+/* =========================
+   Правила/очки
+   ========================= */
+function hasPlayable(hand){
+  if (freeMode) return true;
+  for(const t of hand){ if(t.a===openLeft || t.b===openLeft || t.a===openRight || t.b===openRight) return true; }
+  return false;
 }
+function award(i,pts){ if(typeof pts!=='number') pts=1; scores[i]=(scores[i]||0)+pts; const el=document.getElementById('score-'+i); if(el) el.textContent=String(scores[i]); }
+function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderHand(); renderPlayersBar(); updateControls(); updateSeats(); }
+function everyonePassed(){ for(let i=0;i<playerNames.length;i++){ if(!passes[i]) return false; } return true; }
+function endByWinner(i){ endMessage.style.display='block'; endMessage.textContent='Игра окончена! Победитель: '+playerNames[i]+' (сбросил все костяшки)'; }
+function endByPasses(){ let best=-Infinity, wi=0; for(let i=0;i<playerNames.length;i++){ const s=scores[i]||0; if(s>best){best=s; wi=i;} } endMessage.style.display='block'; endMessage.textContent='Игра окончена! Все пропустили. Победитель по очкам: '+playerNames[wi]+' ('+(scores[wi]||0)+')'; }
 
-/* ===== меню HUD ===== */
-menuBtn.addEventListener('click', ()=>{
-  menuPanel.classList.toggle('open');
-  menuPanel.setAttribute('aria-hidden', menuPanel.classList.contains('open') ? 'false' : 'true');
-});
-uiLangSel.addEventListener('change', ()=>{
-  CFG.language = uiLangSel.value;
-  applyL10n();
-  updateHudLevelTitle();
-});
-uiPrimary.addEventListener('input', ()=>{
-  document.documentElement.style.setProperty('--ui-primary', uiPrimary.value || '#ffd700');
-});
-uiBg.addEventListener('input', ()=>{
-  document.documentElement.style.setProperty('--ui-bg', uiBg.value || '#151515');
-});
+/* =========================
+   Постановка кости
+   ========================= */
+function placeAt(whichEnd, a, b, choice){
+  const e = (whichEnd === 'left') ? endLeft : endRight;
+  const endId = (whichEnd === 'left') ? 'L' : 'R';
+  if(inwardBlocked(endId, choice)) return;
 
-/* ===== старт/перезапуск ===== */
-function showOverlay(){ overlay.style.display = 'flex' }
-function hideOverlay(){ overlay.style.display = 'none' }
-
-startBtn.addEventListener('click', startGame);
-backBtn.addEventListener('click', restartGame);
-
-function startGame(){
-  hideOverlay();
-  // Разрешаем воспроизведение звука (первый клик)
-  try{ popSound.play().then(()=> popSound.pause()).catch(()=>{}); }catch(_){}
-  levelIndex = 0;
-  score = 0;
-  hudScore.textContent = '0';
-  running = true;
-  startLevel();
-}
-
-function restartGame(){
-  stopLevel();
-  // очистить сцену
-  document.querySelectorAll('.item').forEach(n=> n.remove());
-  showOverlay();
-}
-
-/* ===== текущий уровень ===== */
-function startLevel(){
-  if(levelIndex >= CFG.levels.length){
-    showFinish();
+  if (a === b){
+    const cp = crossPosForDouble(e, choice);
+    const r  = rectOf(cp.orient, cp.x, cp.y);
+    if (collidesWithExisting(r)) return;
+    chainZoom.appendChild(createTileEl(a,b,{orient:cp.orient,left:cp.x,top:cp.y}));
+    fitChain(); renderDirectionalZones();
     return;
   }
-  const lv = CFG.levels[levelIndex];
-  updateHudLevelTitle();
 
-  // таймер
-  let timeLeft = Math.max(5, Number(lv.timer || 30));
-  hudTimer.textContent = String(timeLeft).padStart(2,'0');
-  if(levelTimerHandle) clearInterval(levelTimerHandle);
-  levelTimerHandle = setInterval(()=>{
-    timeLeft--;
-    hudTimer.textContent = String(timeLeft).padStart(2,'0');
-    if(timeLeft <= 0){
-      clearInterval(levelTimerHandle);
-      clearInterval(spawnerHandle);
-      document.querySelectorAll('.item').forEach(n=>n.remove());
-      levelIndex++;
-      startLevel();
-    }
-  }, 1000);
-
-  // спавн объектов
-  if(spawnerHandle) clearInterval(spawnerHandle);
-  const pool = [
-    ...(lv.correct||[]).map(v=>({val:v, good:true})),
-    ...(lv.wrong||[]).map(v=>({val:v, good:false}))
-  ];
-  const SPEED = clamp(Number(CFG.speed ?? 5), 1, 10);
-  const baseDelay = 1200;
-  const delay = clamp(baseDelay / (SPEED/5), 280, 3000);
-
-  spawnerHandle = setInterval(()=>{
-    const obj = pool[Math.floor(Math.random()*pool.length)];
-    drop(obj);
-  }, delay);
+  const n = choice ? nextPosByChoice(e, choice) : nextPosSnake(e);
+  const r = rectOf(n.orient, n.x, n.y);
+  if (collidesWithExisting(r)) return;
+  chainZoom.appendChild(createTileEl(a,b,{orient:n.orient,left:n.x,top:n.y}));
+  applyPlaced(e,n); fitChain();
 }
 
-function stopLevel(){
-  running = false;
-  clearInterval(levelTimerHandle);
-  clearInterval(spawnerHandle);
+/* Дроп по стрелке */
+function tryPlace(target,data){
+  if(!data || !target.classList.contains('dz')) return false;
+  const isLeft = target.dataset.end==='L';
+  const choice = target.dataset.k;
+  const openVal = isLeft ? openLeft : openRight;
+
+  if(freeMode){
+    placeAt(isLeft?'left':'right', data.a, data.b, choice);
+    if(isLeft) openLeft=data.a; else openRight=data.b;
+    return true;
+  }
+  if(data.a===openVal){
+    if(isLeft){ placeAt('left', data.b, data.a, choice); openLeft=data.b; }
+    else      { placeAt('right',data.a, data.b, choice); openRight=data.b; }
+    return true;
+  }
+  if(data.b===openVal){
+    if(isLeft){ placeAt('left', data.a, data.b, choice); openLeft=data.a; }
+    else      { placeAt('right',data.b, data.a, choice); openRight=data.a; }
+    return true;
+  }
+  return false;
 }
 
-/* ===== подпись уровня в HUD ===== */
-function updateHudLevelTitle(){
-  const lang = (CFG.language || 'ru').toLowerCase();
-  const t = L10N[lang] || L10N.ru;
-  const lv = CFG.levels[levelIndex];
-  const title = t.levelLabel(levelIndex+1, lv?.target||'');
-  hudLevel.textContent = title;
-}
+/* =========================
+   Колода из ?data= (устойчиво)
+   ========================= */
+function buildDeckFromData(data){
+  let out=[]; const A=data?.listA||[], B=data?.listB||[];
 
-/* =========================================================================
-   ЛОГИКА ЭЛЕМЕНТОВ
-   ========================================================================= */
-function drop(obj){
-  const st = CFG.style || {};
-  const SPEED = clamp(Number(CFG.speed ?? 5), 1, 10);
-
-  const el = document.createElement('div');
-  el.className = `item shape-${st.shape || 'rounded'} ${st.shadow?'fx-shadow':''} ${st.fx3d?'fx-3d':''} ${st.glow?'fx-glow':''} ${st.borderOn && st.borderWidth>0 ? 'fx-border' : ''}`;
-  el.dataset.good = obj.good ? '1' : '0';
-  el.style.setProperty('--glow', st.glowColor || '#00f0ff');
-
-  const bg = document.createElement('div');
-  bg.className = 'bg';
-  const content = document.createElement('div');
-  content.className = 'content';
-  el.appendChild(bg); el.appendChild(content);
-
-  // фон-слой (цвет ИЛИ картинка; если картинка есть — она главнее, цвет можно подсунуть вторым слоем)
-  const bgImg = (st.bgImage||'').trim();
-  const bgCol = st.bgColor || 'transparent';
-  if(bgImg){
-    bg.style.background = `url(${bgImg}) center/contain no-repeat, ${bgCol}`;
-  }else{
-    bg.style.background = bgCol;
-  }
-  bg.style.opacity = clamp(Number(st.opacity ?? 1), 0, 1);
-  if(st.borderOn && st.borderWidth>0){
-    bg.style.borderColor = st.borderColor || '#fff';
-    bg.style.borderWidth = `${parseInt(st.borderWidth,10)}px`;
-  } else {
-    bg.style.borderWidth = '0px';
-  }
-
-  // контент (картинка или текст/LaTeX)
-  const isUrl = /^https?:\/\//i.test(obj.val);
-  const isMath = (CFG.language || '') === 'math';
-
-  if(isUrl){
-    const img = document.createElement('img');
-    img.src = obj.val;
-    content.appendChild(img);
-  }else if(isMath){
-    const span = document.createElement('span');
-    span.textContent = `\\(${obj.val}\\)`;
-    content.appendChild(span);
-    // typeset послe добавления в DOM
-  }else{
-    const span = document.createElement('span');
-    span.textContent = String(obj.val);
-    span.style.color = CFG.textColor || '#ffffff';
-    span.style.fontFamily = `${CFG.font || 'Rubik'}, system-ui, sans-serif`;
-    span.style.fontSize = `${parseInt(CFG.fontSize,10)||24}px`;
-    content.appendChild(span);
-  }
-
-  // Стартовая позиция
-  const gw = gameEl.clientWidth;
-  const startX = Math.max(16, Math.min(gw-220, rnd(0, gw-220)));
-  el.style.left = startX + 'px';
-  el.style.top  = '-160px';
-
-  // Вставить в сцену и квадратнуть для геометрических фигур (круг/ромб/звезда)
-  gameEl.appendChild(el);
-  fitGeometryBox(el);
-
-  // Автофит текста (если не влезает)
-  if(!isUrl && !isMath){
-    autoFitText(el, parseInt(CFG.fontSize,10)||24, 12);
-  }
-
-  // Если LaTeX — typeset, затем подправляем коробку
-  if(isMath && window.MathJax && MathJax.typesetPromise){
-    MathJax.typesetPromise([el]).then(()=> fitGeometryBox(el));
-  }
-
-  // Падение
-  const vel      = 1.2 + SPEED * 0.9;
-  const swayAmp  = rnd(8, 22);
-  const swayFreq = rnd(0.003, 0.008);
-  let y = -140;
-  let t = 0;
-  let alive = true;
-
-  function step(){
-    if(!alive) return;
-    y += vel; t += 1;
-    const dx = Math.sin(t*swayFreq) * swayAmp;
-    el.style.top = y + 'px';
-    el.style.transform = `translateX(${dx}px)`;
-    if(y > gameEl.clientHeight + 200){
-      alive = false; el.remove();
-      // штраф за пропуск правильного
-      if(el.dataset.good === '1'){
-        score = Math.max(0, score - 5);
-        hudScore.textContent = String(score);
+  const pairAll = (arr, tag='')=>{
+    for(let i=0;i<arr.length;i++){
+      for(let j=i;j<arr.length;j++){
+        out.push({a:arr[i], b:arr[j], uid:uid(tag+i+'_'+j)});
       }
-      return;
     }
-    requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-
-  // Клик
-  el.addEventListener('click', ()=>{
-    if(!alive) return;
-    if(el.dataset.good === '1'){
-      score++; hudScore.textContent = String(score);
-      playPop(el);
-      alive = false;
-      el.classList.add('caught');
-      setTimeout(()=> el.remove(), 380);
-    }else{
-      score = Math.max(0, score - 1); // штраф за ошибку
-      hudScore.textContent = String(score);
-      bg.style.filter = 'brightness(2) saturate(1.6) hue-rotate(-24deg)';
-      setTimeout(()=> bg.style.filter = 'none', 220);
-    }
-  }, {passive:true});
-}
-
-/* квадратим контейнер под геом.фигуры */
-function fitGeometryBox(el){
-  const shape = (CFG.style?.shape) || 'rounded';
-  const content = el.querySelector('.content');
-  const rect = content.getBoundingClientRect();
-  // Базово — под контент
-  el.style.width  = rect.width  + 'px';
-  el.style.height = rect.height + 'px';
-  // Геометрические — квадрат с отступом
-  if(shape === 'circle' || shape === 'diamond' || shape === 'star'){
-    const size = Math.max(rect.width, rect.height) + 30;
-    el.style.width  = size + 'px';
-    el.style.height = size + 'px';
-  }
-}
-
-/* Авто-уменьшение текста до влезания */
-function autoFitText(el, startPx, minPx){
-  const span = el.querySelector('.content span');
-  if(!span) return;
-  let fs = startPx;
-  const maxW = el.clientWidth  - 24;
-  const maxH = el.clientHeight - 24;
-
-  const ok = ()=> {
-    const r = span.getBoundingClientRect();
-    return (r.width <= maxW && r.height <= maxH);
   };
-  while(fs > minPx){
-    span.style.fontSize = fs + 'px';
-    if(ok()) break;
-    fs -= 1;
+
+  if (A.length && !B.length){
+    pairAll(A,'A');
+  } else if (A.length && B.length){
+    pairAll(A,'A'); pairAll(B,'B');
+    const n=Math.min(A.length,B.length);
+    for(let i=0;i<n;i++) out.push({a:A[i], b:B[i], uid:uid('AB'+i)});
   }
+
+  return out;
 }
 
-/* Звёздочки при попадании + звук */
-function playPop(el){
-  try{
-    popSound.currentTime = 0;
-    popSound.play().catch(()=>{});
-  }catch(_) {}
-  const r = el.getBoundingClientRect();
-  for(let i=0;i<14;i++){
-    const s = document.createElement('div');
-    s.className = 'sparkle';
-    s.style.left = (r.left + r.width/2) + 'px';
-    s.style.top  = (r.top  + r.height/2) + 'px';
-    const angle = Math.random() * Math.PI * 2;
-    const dist  = 40 + Math.random()*70;
-    s.style.setProperty('--dx', (Math.cos(angle)*dist) + 'px');
-    s.style.setProperty('--dy', (Math.sin(angle)*dist) + 'px');
-    s.style.animationDuration = (0.9 / (clamp(Number(CFG.speed ?? 5),1,10)/5)) + 's';
-    document.body.appendChild(s);
-    setTimeout(()=> s.remove(), 1000);
+/* =========================
+   Старт игры (устойчивый)
+   ========================= */
+function startGame(){
+  const data = getQueryData() || {};
+  freeMode = !!data.freeMode;
+
+  // 1) имена
+  playerNames=[]; const c=Math.max(1, Math.min(4, parseInt(playerCountEl.value,10)||2));
+  for(let i=0;i<c;i++){
+    const v=document.getElementById('pname'+i).value || ('Игрок '+(i+1));
+    playerNames.push(v);
   }
-}
 
-/* Финал */
-function showFinish(){
-  stopLevel();
-  const ov = document.createElement('div');
-  ov.className = 'overlay';
-  ov.innerHTML = `
-    <div class="panel">
-      <div class="title" style="color:var(--ui-primary)">Финиш! 🎉</div>
-      <div style="opacity:.9; margin-bottom:10px">Счёт: <b>${score}</b></div>
-      <button class="startBtn" id="againBtn" style="background:linear-gradient(90deg,var(--ui-primary),#ffde49)">Начать заново</button>
-    </div>
-  `;
-  document.body.appendChild(ov);
-  ov.querySelector('#againBtn').addEventListener('click', ()=>{
-    ov.remove();
-    restartGame();
-  });
-}
+  // 2) собрать колоду
+  deck = buildDeckFromData(data);
 
-/* =========================================================================
-   ИНИЦИАЛИЗАЦИЯ
-   ========================================================================= */
-(async function init(){
-  try{
-    // Подтянуть JSON уровней
-    const fromServer = await loadGameData();
-    // Слить в CFG (с приоритетом URL для базовых ключей)
-    CFG = {
-      ...CFG,
-      ...fromServer,
-      language: (val('language', fromServer.language) || 'ru'),
-      font:     val('font', fromServer.font || 'Rubik'),
-      fontSize: parseInt(val('fontSize', fromServer.fontSize || 24),10),
-      textColor: val('textColor', fromServer.textColor || '#ffffff'),
-      speed: parseInt(val('speed', fromServer.speed || 5),10),
-      style: {...CFG.style, ...(fromServer.style||{})}
-    };
+  // резерв, если данных мало
+  const FALLBACK = ["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море"];
 
-    // Рандом уровней?
-    if(fromServer.randomLevels){
-      CFG.randomLevels = true;
-      CFG.levels = Array.isArray(fromServer.levels) ? [...fromServer.levels] : [];
-      for(let i=CFG.levels.length-1; i>0; i--){
-        const j = Math.floor(Math.random()*(i+1));
-        [CFG.levels[i], CFG.levels[j]] = [CFG.levels[j], CFG.levels[i]];
-      }
+  const need = playerNames.length * 5 + 1; // по 5 на руку + старт на стол
+  const ensureFrom = (arr)=>{
+    for(let i=0;i<arr.length;i++)
+      for(let j=i;j<arr.length;j++)
+        deck.push({a:arr[i], b:arr[j], uid:uid('X'+i+'_'+j)});
+  };
+
+  if (deck.length < need && (data.listA||[]).length){
+    ensureFrom(data.listA);
+  }
+  if (deck.length < need){
+    ensureFrom(FALLBACK);
+  }
+  if (deck.length === 0){
+    alert("Недостаточно данных для колоды. Добавьте слова в редактор (listA) или удалите параметр ?data=, чтобы использовать запасной набор.");
+    return; // не скрываем меню
+  }
+
+  shuffle(deck);
+
+  // 3) сброс состояния
+  scores={}; passes={}; currentPlayer=0; hands={}; endMessage.style.display='none';
+  for(let k=0;k<playerNames.length;k++){ hands[k]=[]; scores[k]=0; passes[k]=0; }
+
+  // 4) раздача (по возможности)
+  for(let r=0;r<5;r++){
+    for(let j=0;j<playerNames.length;j++){
+      if(!deck.length) break;
+      hands[j].push(deck.shift());
+    }
+  }
+
+  // 5) стартовая кость
+  let start = deck.shift();
+  if (!start){
+    const h0 = hands[0]||[];
+    if (h0.length){
+      start = h0.shift();
+      hands[0] = h0;
     }else{
-      CFG.levels = Array.isArray(fromServer.levels) ? fromServer.levels : [];
+      start = {a:FALLBACK[0], b:FALLBACK[1], uid:uid('S')};
     }
-
-    // Применить тему
-    applyThemeFromFrameStyle();
-
-    // Локализация
-    applyL10n();
-
-    // Проставить текущие цвета в панель
-    uiPrimary.value = getComputedStyle(document.documentElement).getPropertyValue('--ui-primary').trim() || '#ffd700';
-    uiBg.value      = getComputedStyle(document.documentElement).getPropertyValue('--ui-bg').trim()      || '#151515';
-
-    // Если курсор задан
-    if(fromServer.cursor){
-      document.body.style.cursor = `url(${fromServer.cursor}), auto`;
-    }
-
-    // Готово
-    errorBox.textContent = '';
-
-  }catch(e){
-    errorBox.textContent = 'Ошибка загрузки: ' + (e.message || e);
-    console.error(e);
   }
-})();
+
+  // 6) поле
+  chainZoom.innerHTML='';
+  const sx=Math.floor((br().w-TILE_W)/2), sy=Math.floor((br().h-TILE_H)/2);
+  chainZoom.appendChild(createTileEl(start.a,start.b,{left:sx,top:sy}));
+  openLeft=start.a; openRight=start.b; endLeft=newEnd(sx,sy,-1); endRight=newEnd(sx,sy,1);
+  fitChain();
+
+  // 7) UI
+  renderPlayersBar(); renderHand(); updateControls(); updateSeats();
+  if(freeMode) document.getElementById('title').textContent='Domino · Cozy Edition · Свободная игра';
+  menuEl.style.display='none';
+}
+
+/* =========================
+   Кнопки и DnD
+   ========================= */
+drawBtn.addEventListener('click', function(){
+  if(deck.length===0) return;
+  const hand=hands[currentPlayer]||[];
+  if(!freeMode && hasPlayable(hand)) return; // нельзя брать, если есть ход (в классике)
+  hand.push(deck.splice(Math.floor(Math.random()*deck.length),1)[0]);
+  hands[currentPlayer]=hand;
+  renderHand(); updateControls();
+});
+skipBtn.addEventListener('click', function(){
+  passes[currentPlayer]=(passes[currentPlayer]||0)+1;
+  if(everyonePassed()){ endByPasses(); return; }
+  nextPlayer();
+});
+restartBtn.addEventListener('click', ()=>location.reload());
+startBtn.addEventListener('click', startGame);
+
+/* dragover — разрешаем перенос курсором по доске; дроп только на .dz */
+document.addEventListener('dragover', function(ev){
+  if(dragging) ev.preventDefault();
+});
+document.addEventListener('drop', function(ev){
+  const t=ev.target; if(!dragging) return;
+  if(t && t.classList && t.classList.contains('dz')){
+    ev.preventDefault();
+    const ok=tryPlace(t,dragging);
+    if(ok){
+      const arr=hands[dragging.owner]||[];
+      hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid);
+      award(dragging.owner,1); renderHand();
+      if(hands[dragging.owner].length===0){ endByWinner(dragging.owner); dragging=null; clearZones(); return; }
+      resetPasses(); nextPlayer();
+    }
+    dragging=null; clearZones(); fitChain();
+  }
+});
+
+/* колесо — горизонтальный скролл руки */
+trayEl.addEventListener('wheel',(e)=>{ trayEl.scrollLeft += e.deltaY; }, {passive:true});
 </script>
 </body>
 </html>
