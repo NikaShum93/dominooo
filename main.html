@@ -6,15 +6,16 @@
 <title>Domino · Cozy Edition</title>
 
 <!--
-  Полная финальная версия main.html
-  ✔ Без "шва" — стол 16:9 без transform:scale()
+  Полная финальная версия main.html (обновлённая)
+  ✔ Без «шва»: стол центрируется flex-раскладкой BODY (нет translate(-50%,-50%))
   ✔ Масштабируется ТОЛЬКО область цепочки (#chainZoom)
-  ✔ Кости тянутся, стрелки показываются только допустимые, к краям прижимаются
+  ✔ Предпросмотр: текст в половинках домино автоматически ДОРАСТАЕТ до максимума
+  ✔ Кости тянутся, стрелки только допустимые и прижимаются к краям
   ✔ Наложение запрещено (коллизии)
-  ✔ Шрифт на костях уменьшается, ничего не переносится и не обрезается
+  ✔ Шрифт на костях в поле и в руке уменьшается (без переносов и обрезаний)
   ✔ Вертикальные имена игроков (право/лево), авто-уменьшение шрифта
   ✔ Свободный режим поддержан
-  ✔ Запуск устойчивый: колода достраивается при недостатке данных
+  ✔ Меню: старт всегда кликается; имена всегда видны
 -->
 
 <style>
@@ -26,7 +27,7 @@
     --tile-shadow:rgba(0,0,0,.25);
     --seat-fs:14px;
 
-    /* «дерево» как встроенный вектор, чтобы не зависеть от внешних файлов */
+    /* «дерево» как встроенный вектор */
     --wood: url("data:image/svg+xml;utf8,\
     <svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'>\
       <defs>\
@@ -50,32 +51,32 @@
 
   *{box-sizing:border-box}
   html,body{height:100%}
- body{
-  margin:0;
-  font:500 16px "Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
-  color:#fdf4ff;
-  background:#3b281b;
-  overflow:hidden;
+  body{
+    margin:0;
+    font:500 16px "Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+    color:#fdf4ff;
+    background:#3b281b;
+    overflow:hidden;
 
-  /* Центровка без transform — чтобы не было «шва» */
-  display:flex; 
-  align-items:center; 
-  justify-content:center;
-}
+    /* Центровка сцены без transform, чтобы не было артефактов/«шва» */
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
 
-  /* ===== 16:9 стол БЕЗ scale() ===== */
+  /* ===== 16:9 стол БЕЗ translate() ===== */
   #stage{
-  /* Больше НИКАКИХ transform: translate(...)! */
-  position:relative;
+    position:relative;   /* больше никаких translate(-50%,-50%) */
+    width:960px; height:540px;   /* реальный размер ещё обновляет JS (fitStage) */
 
-  /* реальные размеры всё равно задаются из JS (fitStage), но держим дефолт */
-  width:960px; height:540px;
+    display:flex; flex-direction:column; align-items:center;
+    background-image:var(--wood); background-size:800px 800px;
+    box-shadow:inset 0 0 80px rgba(0,0,0,.45), inset 0 0 140px rgba(0,0,0,.35);
+    border-radius:12px;
 
-  display:flex; flex-direction:column; align-items:center;
-  background-image:var(--wood); background-size:800px 800px;
-  box-shadow:inset 0 0 80px rgba(0,0,0,.45), inset 0 0 140px rgba(0,0,0,.35);
-  border-radius:12px;
-}
+    /* лёгкая защита от случайных GPU-артефактов */
+    transform:translateZ(0);
+  }
 
   h1{
     margin:8px 0 6px;
@@ -91,7 +92,9 @@
     padding:30px; z-index:100000;
     background: linear-gradient(rgba(32,21,12,.92), rgba(32,21,12,.94)), var(--wood);
     background-size:cover; box-shadow:inset 0 0 80px rgba(0,0,0,.55); border-radius:12px;
+    pointer-events:auto; /* клики доходят до меню */
   }
+  #menu { pointer-events:auto; } /* дубль-защита */
   .menu label{ color:#f2d39a; font-weight:800; text-shadow:0 1px 0 #3b2715; }
   .menu input{
     padding:8px 12px; width:220px; border-radius:8px; border:2px solid #8c5c2f;
@@ -130,6 +133,7 @@
       </svg>") 30 round;
     box-shadow:0 8px 24px rgba(0,0,0,.45), inset 0 0 18px rgba(0,0,0,.35);
     overflow:hidden;
+    transform:translateZ(0);
   }
   .chain{position:relative; width:100%; height:100%}
   #chainZoom{
@@ -206,6 +210,7 @@
     border:2px solid #8c5c2f; background:#5a3b21; border-radius:12px;
     box-shadow:inset 0 0 18px rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.35);
     scroll-behavior:smooth;
+    transform:translateZ(0);
   }
   .tray > .tile{position:static}
   .tile.hand{
@@ -234,6 +239,7 @@
     align-items:center; justify-content:center;
     z-index:999999; background:rgba(0,0,0,.6);
     isolation:isolate; backface-visibility:hidden;
+    pointer-events:auto;
   }
   #tilePreview *{ pointer-events:none }
   #tilePreview .tile{
@@ -241,7 +247,7 @@
     box-shadow:0 18px 60px rgba(0,0,0,.55), inset 0 0 0 2px #e0d3bd
   }
   #tilePreview .tile .sep{ background:#d8c8aa }
-  #tilePreview .tile b{ font-size:36px; white-space:nowrap }
+  #tilePreview .tile b{ white-space:nowrap } /* размеры шрифта задаёт JS growTextToFit */
 </style>
 </head>
 <body>
@@ -249,10 +255,19 @@
   <h1 id="title">Domino · Cozy Edition</h1>
 
   <!-- Меню старта -->
-  <div id="menu" class="menu">
-    <label>Количество игроков: <input type="number" id="playerCount" min="1" max="4" value="2"></label>
-    <div id="nameInputs"></div>
-    <button id="startBtn">Начать игру</button>
+  <div id="menu" class="menu" style="pointer-events:auto">
+    <label>Количество игроков:
+      <input type="number" id="playerCount" min="1" max="4" value="2">
+    </label>
+
+    <!-- Дефолтные поля имён, даже если JS не успел отрисовать -->
+    <div id="nameInputs">
+      <input id="pname0" placeholder="Имя игрока 1">
+      <input id="pname1" placeholder="Имя игрока 2">
+    </div>
+
+    <button id="startBtn" type="button">Начать игру</button>
+
     <div style="opacity:.75; font-size:12px; max-width:520px; text-align:center">
       Данные приходят в <code>?data=</code> (JSON из редактора), напр.:
       <code>{"listA":["кот","пёс","луна"],"listB":[],"freeMode":false}</code>
@@ -300,7 +315,7 @@
 
 <script>
 /* =========================
-   16:9 без scale() (убрали «шов» навсегда)
+   16:9 подгон без «шва»
    ========================= */
 function fitStage(){
   const vw = window.innerWidth;
@@ -325,7 +340,7 @@ function br(){return {w:chainEl.clientWidth,h:chainEl.clientHeight};}
 function resetPasses(){Object.keys(passes).forEach(k=>passes[k]=0);}
 function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 
-/* уменьшение шрифта, без переносов и обрезания */
+/* уменьшение шрифта, без переносов и обрезания (для обычных костей) */
 function fitTextNoWrap(bEl, text, start=22, min=4){
   bEl.textContent = text;
   bEl.style.whiteSpace='nowrap';
@@ -335,6 +350,23 @@ function fitTextNoWrap(bEl, text, start=22, min=4){
   const box = bEl.parentElement;
   const fits = () => (bEl.scrollWidth <= (box.clientWidth - 2)) && (bEl.scrollHeight <= (box.clientHeight - 2));
   while (s > min && !fits()){ s -= 1; bEl.style.fontSize = s + 'px'; }
+}
+
+/* РАСТИМ шрифт до максимума (для предпросмотра) */
+function growTextToFit(bEl, start=24, max=180, step=2, pad=10){
+  bEl.style.whiteSpace = 'nowrap';
+  bEl.style.fontWeight = 900;
+  let s = start; bEl.style.fontSize = s + 'px';
+  const fits = () => (
+    bEl.scrollWidth  <= (bEl.parentElement.clientWidth  - pad) &&
+    bEl.scrollHeight <= (bEl.parentElement.clientHeight - pad)
+  );
+  while (s > 6 && !fits()){ s -= step; bEl.style.fontSize = s + 'px'; }
+  while (s < max){
+    bEl.style.fontSize = (s + step) + 'px';
+    if (!fits()){ bEl.style.fontSize = s + 'px'; break; }
+    s += step;
+  }
 }
 
 /* =========================
@@ -380,8 +412,8 @@ let openLeft=null, openRight=null; let endLeft=null, endRight=null; let dragging
 /* =========================
    Геометрия
    ========================= */
-const TILE_W=150, TILE_H=60, VERT_W=60, VERT_H=150;  // размеры костей
-const GAP=4, DZ=38;                                  // зазоры и размер стрелки
+const TILE_W=150, TILE_H=60, VERT_W=60, VERT_H=150;
+const GAP=4, DZ=38;
 
 /* =========================
    Поля меню для ввода имён
@@ -399,7 +431,7 @@ function renderNameInputs(){
 playerCountEl.addEventListener('input',renderNameInputs); renderNameInputs();
 
 /* =========================
-   Превью кости
+   Превью кости (теперь шрифт растёт до максимума)
    ========================= */
 function showPreview(a,b){
   previewInner.innerHTML='';
@@ -409,17 +441,13 @@ function showPreview(a,b){
   big.style.width='560px';
   big.style.height='220px';
   big.innerHTML='<div class="half"><b></b></div><div class="sep"></div><div class="half"><b></b></div>';
-
   const leftB  = big.querySelector('.half:first-child > b');
   const rightB = big.querySelector('.half:last-child > b');
-
-  // Заполняем текстом и растим шрифт до предела
   leftB.textContent  = a;
   rightB.textContent = b;
   growTextToFit(leftB,  24, 180, 2, 10);
   growTextToFit(rightB, 24, 180, 2, 10);
-
-  previewInner.appendChild(big);
+  previewInner.appendChild(big); 
   previewWrap.style.display='flex';
 }
 function hidePreview(){previewWrap.style.display='none';}
@@ -438,24 +466,6 @@ function createTileEl(a,b,opts={}){
   const halves=el.getElementsByClassName('half');
   fitTextNoWrap(halves[0].firstElementChild,a, role==='hand'?18:22,4);
   fitTextNoWrap(halves[1].firstElementChild,b, role==='hand'?18:22,4);
-  // Увеличиваем шрифт по максимуму в пределах half-клетки (без переносов/обрезаний)
-function growTextToFit(bEl, start=18, max=160, step=2, pad=8){
-  bEl.style.whiteSpace = 'nowrap';
-  bEl.style.fontWeight = 900;
-  let s = start;
-  const fits = () => (
-    bEl.scrollWidth  <= (bEl.parentElement.clientWidth  - pad) &&
-    bEl.scrollHeight <= (bEl.parentElement.clientHeight - pad)
-  );
-  // сначала уменьшить (если вдруг слишком большой пришёл)
-  while (s > 6 && !fits()){ s -= step; bEl.style.fontSize = s + 'px'; }
-  // затем максимально нарастить
-  while (s < max){
-    bEl.style.fontSize = (s + step) + 'px';
-    if (!fits()){ bEl.style.fontSize = s + 'px'; break; }
-    s += step;
-  }
-}
   el.addEventListener('click',()=>showPreview(a,b));
   if(draggable){
     el.setAttribute('draggable','true');
@@ -775,75 +785,65 @@ function tryPlace(target,data){
    Колода из ?data= (устойчиво)
    ========================= */
 function buildDeckFromData(data){
-  let out=[]; const A=data?.listA||[], B=data?.listB||[];
-
-  const pairAll = (arr, tag='')=>{
+  const out=[]; const A=(data && Array.isArray(data.listA))?data.listA:[]; const B=(data && Array.isArray(data.listB))?data.listB:[];
+  const pairAll=(arr,tag='')=>{
     for(let i=0;i<arr.length;i++){
       for(let j=i;j<arr.length;j++){
         out.push({a:arr[i], b:arr[j], uid:uid(tag+i+'_'+j)});
       }
     }
   };
-
-  if (A.length && !B.length){
-    pairAll(A,'A');
-  } else if (A.length && B.length){
+  if (A.length && !B.length){ pairAll(A,'A'); }
+  else if (A.length && B.length){
     pairAll(A,'A'); pairAll(B,'B');
     const n=Math.min(A.length,B.length);
     for(let i=0;i<n;i++) out.push({a:A[i], b:B[i], uid:uid('AB'+i)});
   }
-
   return out;
 }
 
 /* =========================
-   Старт игры (устойчивый)
+   Старт игры (устойчивый и ГАРАНТИРОВАННЫЙ)
    ========================= */
 function startGame(){
+  menuEl.style.pointerEvents='auto';
+  menuEl.style.zIndex='100000';
+
   const data = getQueryData() || {};
   freeMode = !!data.freeMode;
 
-  // 1) имена
-  playerNames=[]; const c=Math.max(1, Math.min(4, parseInt(playerCountEl.value,10)||2));
-  for(let i=0;i<c;i++){
-    const v=document.getElementById('pname'+i).value || ('Игрок '+(i+1));
+  // 1) Имена игроков (1..4)
+  playerNames.length = 0;
+  const c = Math.max(1, Math.min(4, parseInt(playerCountEl.value,10) || 2));
+  for (let i=0;i<c;i++){
+    const v = (document.getElementById('pname'+i)?.value || '').trim() || ('Игрок '+(i+1));
     playerNames.push(v);
   }
 
-  // 2) собрать колоду
+  // 2) Колода
   deck = buildDeckFromData(data);
-
-  // резерв, если данных мало
   const FALLBACK = ["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море"];
 
-  const need = playerNames.length * 5 + 1; // по 5 на руку + старт на стол
-  const ensureFrom = (arr)=>{
+  const need = playerNames.length * 5 + 1; // по 5 в руку + 1 стартовая
+  const ensureFrom = (arr, tag='X')=>{
     for(let i=0;i<arr.length;i++)
       for(let j=i;j<arr.length;j++)
-        deck.push({a:arr[i], b:arr[j], uid:uid('X'+i+'_'+j)});
+        deck.push({a:arr[i], b:arr[j], uid:uid(tag+i+'_'+j)});
   };
 
-  if (deck.length < need && (data.listA||[]).length){
-    ensureFrom(data.listA);
-  }
-  if (deck.length < need){
-    ensureFrom(FALLBACK);
-  }
-  if (deck.length === 0){
-    alert("Недостаточно данных для колоды. Добавьте слова в редактор (listA) или удалите параметр ?data=, чтобы использовать запасной набор.");
-    return; // не скрываем меню
-  }
-
+  if (deck.length < need && Array.isArray(data.listA) && data.listA.length) ensureFrom(data.listA,'A2');
+  if (deck.length < need) ensureFrom(FALLBACK,'F');
+  if (deck.length === 0){ ensureFrom(["раз","два","три"],'M'); }
   shuffle(deck);
 
   // 3) сброс состояния
   scores={}; passes={}; currentPlayer=0; hands={}; endMessage.style.display='none';
-  for(let k=0;k<playerNames.length;k++){ hands[k]=[]; scores[k]=0; passes[k]=0; }
+  for (let k=0;k<playerNames.length;k++){ hands[k]=[]; scores[k]=0; passes[k]=0; }
 
-  // 4) раздача (по возможности)
-  for(let r=0;r<5;r++){
-    for(let j=0;j<playerNames.length;j++){
-      if(!deck.length) break;
+  // 4) раздача по 5 (или сколько есть)
+  for (let r=0;r<5;r++){
+    for (let j=0;j<playerNames.length;j++){
+      if (!deck.length) break;
       hands[j].push(deck.shift());
     }
   }
@@ -852,24 +852,22 @@ function startGame(){
   let start = deck.shift();
   if (!start){
     const h0 = hands[0]||[];
-    if (h0.length){
-      start = h0.shift();
-      hands[0] = h0;
-    }else{
-      start = {a:FALLBACK[0], b:FALLBACK[1], uid:uid('S')};
-    }
+    start = h0.length ? h0.shift() : {a:"Старт", b:"Старт", uid:uid('S')};
+    hands[0] = h0;
   }
 
-  // 6) поле
+  // 6) отрисовка поля
   chainZoom.innerHTML='';
-  const sx=Math.floor((br().w-TILE_W)/2), sy=Math.floor((br().h-TILE_H)/2);
-  chainZoom.appendChild(createTileEl(start.a,start.b,{left:sx,top:sy}));
-  openLeft=start.a; openRight=start.b; endLeft=newEnd(sx,sy,-1); endRight=newEnd(sx,sy,1);
+  const sx = Math.floor((br().w - TILE_W)/2), sy = Math.floor((br().h - TILE_H)/2);
+  chainZoom.appendChild(createTileEl(start.a, start.b, {left:sx, top:sy}));
+  openLeft=start.a; openRight=start.b; endLeft={x:sx,y:sy,dir:-1}; endRight={x:sx,y:sy,dir:1};
   fitChain();
 
   // 7) UI
   renderPlayersBar(); renderHand(); updateControls(); updateSeats();
-  if(freeMode) document.getElementById('title').textContent='Domino · Cozy Edition · Свободная игра';
+  if (freeMode) document.getElementById('title').textContent='Domino · Cozy Edition · Свободная игра';
+
+  // 8) прячем меню
   menuEl.style.display='none';
 }
 
@@ -879,7 +877,7 @@ function startGame(){
 drawBtn.addEventListener('click', function(){
   if(deck.length===0) return;
   const hand=hands[currentPlayer]||[];
-  if(!freeMode && hasPlayable(hand)) return; // нельзя брать, если есть ход (в классике)
+  if(!freeMode && hasPlayable(hand)) return; // нельзя брать, если есть ход (классика)
   hand.push(deck.splice(Math.floor(Math.random()*deck.length),1)[0]);
   hands[currentPlayer]=hand;
   renderHand(); updateControls();
@@ -890,9 +888,10 @@ skipBtn.addEventListener('click', function(){
   nextPlayer();
 });
 restartBtn.addEventListener('click', ()=>location.reload());
-startBtn.addEventListener('click', startGame);
+startBtn.addEventListener('click', startGame);    // обработчик №1
+startBtn.onclick = startGame;                     // обработчик №2 (дубль-защита)
 
-/* dragover — разрешаем перенос курсором по доске; дроп только на .dz */
+/* dragover — разрешаем перенос по доске; дроп только на .dz */
 document.addEventListener('dragover', function(ev){
   if(dragging) ev.preventDefault();
 });
@@ -914,6 +913,68 @@ document.addEventListener('drop', function(ev){
 
 /* колесо — горизонтальный скролл руки */
 trayEl.addEventListener('wheel',(e)=>{ trayEl.scrollLeft += e.deltaY; }, {passive:true});
+
+/* =========================
+   ЖЁСТКИЙ ИНИТ
+   ========================= */
+(function hardInit(){
+  window.addEventListener('error', (e)=>{
+    console.error('JS Error:', e.error || e.message);
+  });
+
+  function safeRenderNames(){
+    try {
+      if (typeof renderNameInputs === 'function') renderNameInputs();
+      const c = parseInt(document.getElementById('playerCount')?.value || '2', 10) || 2;
+      for (let i=0; i<c; i++){
+        if (!document.getElementById('pname'+i)){
+          const inp = document.createElement('input');
+          inp.id = 'pname'+i;
+          inp.placeholder = 'Имя игрока ' + (i+1);
+          document.getElementById('nameInputs')?.appendChild(inp);
+        }
+      }
+    } catch {}
+  }
+
+  function bindMenu(){
+    const startBtn = document.getElementById('startBtn');
+    const playerCountEl = document.getElementById('playerCount');
+    if (!startBtn || !playerCountEl) return;
+
+    startBtn.onclick = startGame;
+    startBtn.addEventListener('click', startGame);
+
+    playerCountEl.addEventListener('input', () => {
+      if (typeof renderNameInputs === 'function') {
+        renderNameInputs();
+      } else {
+        const box = document.getElementById('nameInputs');
+        if (!box) return;
+        box.innerHTML = '';
+        const c = parseInt(playerCountEl.value || '2', 10) || 2;
+        for (let i=0; i<c; i++){
+          const inp = document.createElement('input');
+          inp.id = 'pname'+i;
+          inp.placeholder = 'Имя игрока ' + (i+1);
+          box.appendChild(inp);
+        }
+      }
+    }, {passive:true});
+  }
+
+  const menu = document.getElementById('menu');
+  if (menu){
+    menu.style.pointerEvents = 'auto';
+    menu.style.zIndex = '100000';
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => { fitStage(); safeRenderNames(); bindMenu(); });
+  } else {
+    fitStage(); safeRenderNames(); bindMenu();
+  }
+})();
 </script>
 </body>
 </html>
