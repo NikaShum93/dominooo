@@ -5,94 +5,80 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Domino · Cozy Edition — FULL</title>
 <style>
-  /* ===== THEME ===== */
   :root{
     --bg:#3b2a42; --panel:#4a3657; --accent:#e6a8ff; --accent2:#ffda8b;
     --tile:#fffaf5; --tile-edge:#e2c0ff; --tile-shadow:rgba(0,0,0,.25);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{
-    margin:0; background:var(--bg); color:#fdf4ff; font:500 16px "Inter", system-ui; overflow:hidden;
-  }
-
-  /* ===== 16:9 STAGE + AUTO SCALE ===== */
+  body{margin:0; background:var(--bg); color:#fdf4ff; font:500 16px "Inter", system-ui; overflow:hidden}
+  /* 16:9 сцена */
   #stage{
     position:absolute; left:50%; top:50%; width:960px; height:540px;
-    transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+    transform:translate(-50%,-50%) scale(1); transform-origin:center;
     display:flex; flex-direction:column; align-items:center; z-index:0;
   }
-
-  h1{margin:8px 0 6px; font-size:22px; color:var(--accent2); text-shadow:0 0 8px rgba(255,218,139,.7)}
-
-  /* ===== MENU (должно кликаться в iframe) ===== */
+  h1{margin:8px 0 6px; font-size:24px; color:var(--accent2); text-shadow:0 0 8px rgba(255,218,139,.7)}
+  /* Меню в iframe всегда кликабельно */
   .menu{
     position:absolute; inset:0; background:rgba(59,42,66,.96);
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
     z-index:100000; padding:30px; pointer-events:auto;
   }
-  .menu input{
-    padding:8px 12px; border-radius:8px; border:2px solid var(--accent);
-    background:#fffaf5; color:#2c1a32; width:220px; font-size:14px;
-  }
-  .menu button{
-    padding:10px 16px; border-radius:8px; border:none; background:var(--accent); color:#2c1a32;
-    cursor:pointer; font-weight:700; font-size:14px;
-  }
-  body.menu-open .topbar,
-  body.menu-open .board,
-  body.menu-open .hands{ pointer-events:none; } /* фон не перехватывает клики, пока меню открыто */
+  .menu input{padding:8px 12px; border-radius:8px; border:2px solid var(--accent); background:#fffaf5; color:#2c1a32; width:220px}
+  .menu button{padding:10px 16px; border-radius:8px; border:none; background:var(--accent); color:#2c1a32; cursor:pointer; font-weight:800}
+  body.menu-open .topbar, body.menu-open .board, body.menu-open .hands{pointer-events:none}
 
-  /* ===== TOP BAR ===== */
   .topbar{width:95%; display:flex; align-items:center; justify-content:space-between; gap:10px}
   .players{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
-  .player{padding:4px 8px; border-radius:14px; background:rgba(230,168,255,.15); font-size:12px}
-  .player.active{background:var(--accent2); color:#2c1a32; font-weight:800; box-shadow:0 0 10px var(--accent2)}
-  .score{margin-left:4px; font-weight:800; color:#2c1a32}
-  .controls{display:flex; gap:6px}
-  .btn{padding:6px 12px; border-radius:8px; border:none; background:var(--accent2); color:#2c1a32; cursor:pointer; font-weight:700; font-size:12px}
+  .player{padding:4px 10px; border-radius:14px; background:rgba(230,168,255,.15); font-size:12px}
+  .player.active{background:var(--accent2); color:#2c1a32; font-weight:900; box-shadow:0 0 10px var(--accent2)}
+  .score{margin-left:4px; font-weight:900; color:#2c1a32}
+  .controls{display:flex; gap:8px}
+  .btn{padding:8px 14px; border-radius:10px; border:none; background:var(--accent2); color:#2c1a32; cursor:pointer; font-weight:800; font-size:14px}
   .btn:disabled{opacity:.5; cursor:not-allowed}
 
-  /* ===== BOARD ===== */
   .board{
     position:relative; width:95%; height:65%; border:3px solid var(--accent2); margin:6px 0;
-    border-radius:14px; background:var(--panel); padding:4px; overflow:hidden; z-index:1;
+    border-radius:16px; background:var(--panel); padding:6px; overflow:hidden; z-index:1;
   }
   .chain{position:relative; width:100%; height:100%}
-  #chainZoom{position:absolute; left:0; top:0; width:100%; height:100%; transform-origin:0 0; transform:scale(1)}
+  #chainZoom{position:absolute; inset:0; transform-origin:0 0; transform:scale(1)}
 
-  /* ===== TILES ===== */
+  /* Костяшки */
   .tile{
-    width:150px; height:60px; background:var(--tile); border:2px solid var(--tile-edge); border-radius:10px;
-    display:grid; grid-template-columns:1fr 1fr; position:absolute; box-shadow:0 2px 6px var(--tile-shadow);
-    overflow:hidden; user-select:none; transition:transform .12s;
+    width:150px; height:60px;
+    background:var(--tile); border:2px solid var(--tile-edge); border-radius:12px;
+    display:grid; grid-template-columns:1fr 1fr; position:absolute;
+    box-shadow:0 2px 6px var(--tile-shadow); overflow:hidden; user-select:none; transition:transform .12s;
   }
-  .tile:hover{transform:scale(1.05)}
-  .tile b{font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#2c1a32}
-  .tile.hand{
-    position:relative; cursor:grab;
-    transform: scale(.5); transform-origin: left top; /* РУКИ ВСЕГДА В 2 РАЗА МЕНЬШЕ */
+  .tile:hover{transform:scale(1.04)}
+  .tile b{
+    display:block;
+    line-height:1.1; font-weight:800; color:#2c1a32;
+    white-space:nowrap; /* мы будем убирать это и уменьшать размер через JS до полного влезания */
   }
-  .sep{position:absolute; left:50%; top:0; bottom:0; width:0; background:var(--tile-edge)}
-  .half{display:flex; align-items:center; justify-content:center; padding:0 4px; text-align:center}
+  .tile .half{display:flex; align-items:center; justify-content:center; padding:0 6px; text-align:center; overflow:hidden}
+  .tile .sep{position:absolute; left:50%; top:0; bottom:0; width:0; background:var(--tile-edge)}
   .tile.vert{width:60px; height:150px; grid-template-columns:1fr; grid-template-rows:1fr 1fr}
   .tile.vert .sep{left:0; top:50%; width:100%; height:0}
+  /* Руки всегда в 2 раза меньше */
+  .tile.hand{position:relative; cursor:grab; transform:scale(.5); transform-origin:left top}
 
-  .drop-zone{position:absolute; width:70px; height:70px; border:2px dashed var(--accent2); border-radius:10px}
-  .drop-zone.active{background:rgba(255,218,139,.3); box-shadow:0 0 10px var(--accent2)}
+  /* 4-х направленные дроп-зоны у каждого конца */
+  .dz{position:absolute; width:54px; height:54px; border:2px dashed var(--accent2); border-radius:10px; opacity:.95}
+  .dz.active{background:rgba(255,218,139,.3); box-shadow:0 0 10px var(--accent2)}
+  .dz::after{content:attr(data-dir); font-size:12px; color:#2c1a32; font-weight:900; background:var(--accent2); padding:2px 6px; border-radius:8px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%)}
 
-  /* ===== HANDS ===== */
-  .hands{width:100%; display:flex; flex-direction:column; gap:6px; padding:6px 0; z-index:1}
-  .tray{width:95%; display:flex; gap:6px; flex-wrap:wrap; justify-content:center; padding:6px; border-top:2px dashed var(--accent2); background:rgba(230,168,255,.08); border-radius:10px}
+  .hands{width:100%; display:flex; flex-direction:column; gap:8px; padding:6px 0; z-index:1}
+  .tray{width:95%; display:flex; gap:8px; flex-wrap:wrap; justify-content:center; padding:8px; border-top:2px solid rgba(255,218,139,.35); background:rgba(230,168,255,.08); border-radius:12px}
   .tray > .tile{position:static}
 
-  /* ===== END MESSAGE ===== */
-  .end-message{font-size:16px; color:var(--accent2); margin:4px 0; display:none; text-align:center}
+  .end-message{font-size:18px; color:var(--accent2); margin:6px 0; display:none; text-align:center}
 
-  /* ===== PREVIEW ===== */
   #tilePreview{position:absolute; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:100001}
-  #tilePreview .tile{position:static; box-shadow:0 0 20px rgba(0,0,0,.6)}
-  #tilePreview .tile b{font-size:24px}
+  #tilePreview .tile{position:static; box-shadow:0 0 28px rgba(0,0,0,.6)}
+  #tilePreview .tile b{font-size:36px}
 </style>
 </head>
 <body class="menu-open">
@@ -103,8 +89,8 @@
     <label>Количество игроков: <input type="number" id="playerCount" min="2" max="4" value="2"></label>
     <div id="nameInputs"></div>
     <button id="startBtn">Начать игру</button>
-    <div style="opacity:.75; font-size:13px; max-width:520px; text-align:center">
-      Данные приходят в <code>?data=</code> (JSON от редактора). Пример: <code>{"listA":["CAT","DOG"],"listB":[],"freeMode":false}</code>
+    <div style="opacity:.75; font-size:12px; max-width:520px; text-align:center">
+      Игра читает <code>?data=</code> (JSON из редактора). Пример: <code>{"listA":["CAT","DOG"],"listB":[],"freeMode":false}</code>
     </div>
   </div>
 
@@ -130,22 +116,46 @@
 </div>
 
 <script>
-/* ===== 16:9 AUTO SCALE ===== */
+/* ===== 16:9 scale ===== */
 function fitStage(){
-  const W=960,H=540; const s=Math.min(window.innerWidth/W, window.innerHeight/H);
+  const s=Math.min(window.innerWidth/960, window.innerHeight/540);
   document.getElementById('stage').style.transform=`translate(-50%,-50%) scale(${s})`;
 }
 window.addEventListener('resize',fitStage); fitStage();
 
-/* ===== HELPERS ===== */
+/* ===== utils ===== */
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function uid(i){return 't'+i+'_'+Math.random().toString(36).slice(2,7);}
-function fontSizeFor(s){const n=(s||'').length; return n<=7?14:(n<=10?12:11);}
-function getQueryData(){const p=new URLSearchParams(window.location.search);const raw=p.get("data");if(!raw) return null;try{return JSON.parse(decodeURIComponent(raw));}catch(e){return null;}}
+function measureFits(el){ return el.scrollWidth<=el.clientWidth && el.scrollHeight<=el.clientHeight; }
+/* подгон размера шрифта до влезания */
+function fitText(container, text){
+  container.textContent = text;
+  let size=22; // старт
+  const min=8;
+  container.style.whiteSpace='nowrap';
+  while(size>min){
+    container.style.fontSize = size+'px';
+    if(measureFits(container)) break;
+    size--;
+  }
+  // если всё равно не влазит — разрешаем перенос, снова подбираем
+  if(!measureFits(container)){
+    container.style.whiteSpace='normal';
+    while(size>min){
+      container.style.fontSize = size+'px';
+      if(measureFits(container)) break;
+      size--;
+    }
+  }
+}
+function getQueryData(){
+  const raw=new URLSearchParams(location.search).get('data');
+  if(!raw) return null; try{return JSON.parse(decodeURIComponent(raw));}catch(e){return null;}
+}
 function br(){return {w:chainEl.clientWidth,h:chainEl.clientHeight};}
 function resetPasses(){Object.keys(passes).forEach(k=>passes[k]=0);}
 
-/* ===== DOM refs ===== */
+/* ===== DOM ===== */
 const menuEl=document.getElementById('menu');
 const nameInputsEl=document.getElementById('nameInputs');
 const playerCountEl=document.getElementById('playerCount');
@@ -162,49 +172,51 @@ const endMessage=document.getElementById('endMessage');
 const previewWrap=document.getElementById('tilePreview');
 const previewInner=document.getElementById('tilePreviewInner');
 
-/* ===== STATE ===== */
+/* ===== state ===== */
 let playerNames=[]; let hands={}; let deck=[]; let currentPlayer=0; let scores={}; let passes={};
-let openLeft=null, openRight=null; let endLeft=null, endRight=null; let dragging=null; let freeMode=false;
+let openLeft=null, openRight=null; // значения на концах
+let endLeft=null, endRight=null;   // координаты/направления
+let dragging=null; let freeMode=false;
 
-/* ===== GEOMETRY ===== */
+/* ===== geometry ===== */
 const TILE_W=150, TILE_H=60, VERT_W=60, VERT_H=150, GAP=6;
-const ZW=70, ZH=70;
+const DZ=54; // размер одной направленной зоны
 
-/* ===== INPUT UI ===== */
+/* ===== names inputs ===== */
 function renderNameInputs(){
   nameInputsEl.innerHTML='';
   const c=parseInt(playerCountEl.value,10)||2;
   for(let i=0;i<c;i++){
-    const inp=document.createElement('input');
-    inp.placeholder='Имя игрока '+(i+1);
-    inp.id='pname'+i;
-    inp.style.padding='8px 12px'; inp.style.borderRadius='8px'; inp.style.border='2px solid var(--accent)'; inp.style.background='#fffaf5'; inp.style.color='#2c1a32'; inp.style.width='220px';
-    nameInputsEl.appendChild(inp);
+    const inp=document.createElement('input'); inp.placeholder='Имя игрока '+(i+1); inp.id='pname'+i; nameInputsEl.appendChild(inp);
   }
 }
 playerCountEl.addEventListener('input',renderNameInputs); renderNameInputs();
 
-/* ===== PREVIEW ===== */
+/* ===== preview ===== */
 function showPreview(a,b,orient){
   previewInner.innerHTML='';
   const big=document.createElement('div'); big.className='tile '+(orient==='v'?'vert ':'');
-  big.style.position='static'; big.style.width=orient==='h'?'400px':'150px'; big.style.height=orient==='h'?'150px':'400px';
-  big.innerHTML='<div class="half"><b>'+a+'</b></div><div class="sep"></div><div class="half"><b>'+b+'</b></div>';
-  const bs=big.getElementsByTagName('b'); for(let i=0;i<bs.length;i++){bs[i].style.fontSize='28px';}
+  big.style.position='static'; big.style.width=orient==='h'?'520px':'200px'; big.style.height=orient==='h'?'200px':'520px';
+  big.innerHTML='<div class="half"><b></b></div><div class="sep"></div><div class="half"><b></b></div>';
+  const bs=big.getElementsByTagName('b');
+  fitText(bs[0], a); fitText(bs[1], b);
   previewInner.appendChild(big); previewWrap.style.display='flex';
 }
 function hidePreview(){previewWrap.style.display='none';}
 previewWrap.addEventListener('click',hidePreview);
 window.addEventListener('keydown',e=>{if(e.key==='Escape') hidePreview();});
 
-/* ===== TILE FACTORY ===== */
+/* ===== tile factory (авто-подгон шрифта) ===== */
 function createTileEl(a,b,opts={}){
   const role=opts.role||'chain'; const owner=Number.isInteger(opts.owner)?opts.owner:null; const id=opts.uid||null; const draggable=!!opts.draggable; const orient=opts.orient||'h';
   const el=document.createElement('div'); el.className='tile '+(orient==='v'?'vert ':'')+role;
   el.dataset.a=a; el.dataset.b=b; el.dataset.orient=orient; if(id) el.dataset.uid=id; if(owner!==null) el.dataset.owner=String(owner);
   el.style.left=(opts.left||0)+'px'; el.style.top=(opts.top||0)+'px';
-  el.innerHTML='<div class="half"><b>'+a+'</b></div><div class="sep"></div><div class="half"><b>'+b+'</b></div>';
-  const bs=el.getElementsByTagName('b'); for(let i=0;i<bs.length;i++){bs[i].style.fontSize=fontSizeFor(bs[i].textContent)+'px';}
+  el.innerHTML='<div class="half"><b></b></div><div class="sep"></div><div class="half"><b></b></div>';
+  const halves=el.getElementsByClassName('half');
+  fitText(halves[0].firstElementChild, a);
+  fitText(halves[1].firstElementChild, b);
+
   el.addEventListener('click',()=>showPreview(a,b,orient));
   if(draggable){
     el.setAttribute('draggable','true');
@@ -214,7 +226,7 @@ function createTileEl(a,b,opts={}){
   return el;
 }
 
-/* ===== HANDS ===== */
+/* ===== hands ===== */
 function renderHands(){
   handsEl.innerHTML='';
   for(let i=0;i<playerNames.length;i++){
@@ -247,77 +259,98 @@ function updateControls(){
   drawBtn.disabled = (!freeMode && playable) || deck.length===0;
 }
 
-/* ===== LAYOUT «SNAKE» + DROP ZONES ===== */
+/* ===== «змейка»: лево↑ / право↓ + 4 стороны выбора ===== */
 function newEnd(x,y,dir){ return {x:x,y:y,dir:dir}; }
 function canPlaceHoriz(end){ const W=br().w; const nx=end.x + end.dir*(TILE_W+GAP); return nx>=0 && (nx+TILE_W)<=W; }
 
-/* Левый край уходит ВВЕРХ, правый край — ВНИЗ */
-function cornerPos(end){
-  if (end.dir === 1){
-    const cx = end.x + (TILE_W - VERT_W);
-    const cy = end.y + TILE_H + GAP;
-    return { x: cx, y: cy, orient: 'v' };  // вниз
-  } else {
-    const cx = end.x;
-    const cy = end.y - (VERT_H + GAP);
-    return { x: cx, y: cy, orient: 'v' };  // вверх
+/* seam — точка стыка конца (x,y) */
+function seam(end){ return end.dir===1 ? {x:end.x+TILE_W, y:end.y} : {x:end.x, y:end.y}; }
+
+/* позиции для 4 направлений около seam: up/right/down/left */
+function zones4(end){
+  const s=seam(end);
+  return {
+    up   : { left: Math.round(s.x - DZ/2), top: s.y - DZ - GAP, dir:'↑', k:'up' },
+    right: { left: s.x + GAP,             top: Math.round(s.y + (TILE_H-DZ)/2), dir:'→', k:'right' },
+    down : { left: Math.round(s.x - DZ/2), top: s.y + TILE_H + GAP, dir:'↓', k:'down' },
+    left : { left: s.x - DZ - GAP,        top: Math.round(s.y + (TILE_H-DZ)/2), dir:'←', k:'left' }
+  };
+}
+
+/* рендерим по 4 зоны у каждого конца; отключаем те, что выходят за поле */
+function ensureDropZones(){
+  // сначала очистим старые
+  [...chainZoom.querySelectorAll('.dz')].forEach(n=>n.remove());
+  const ends=[{e:endLeft,id:'L',open:openLeft},{e:endRight,id:'R',open:openRight}];
+  for(const side of ends){
+    if(!side.e) continue;
+    const pack=zones4(side.e);
+    for(const key of Object.keys(pack)){
+      const pos=pack[key];
+      // видимость внутри поля
+      if(pos.left<0 || pos.top<0 || pos.left+DZ>br().w || pos.top+DZ>br().h) continue;
+      const z=document.createElement('div');
+      z.className='dz'; z.style.left=pos.left+'px'; z.style.top=pos.top+'px';
+      z.id = `dz-${side.id}-${key}`; z.dataset.dir=pos.dir; z.dataset.end=side.id; z.dataset.k=key;
+      chainZoom.appendChild(z);
+    }
   }
 }
-function nextPos(end){
+
+/* при «змейке по умолчанию» — если игрок не выберет и место кончилось */
+function cornerPos(end){
+  if (end.dir === 1){ // вправо → вниз
+    const cx = end.x + (TILE_W - VERT_W);
+    const cy = end.y + TILE_H + GAP;
+    return { x: cx, y: cy, orient: 'v', nextDir: -1, seamAt:'bottom' };
+  } else {            // влево → вверх
+    const cx = end.x;
+    const cy = end.y - (VERT_H + GAP);
+    return { x: cx, y: cy, orient: 'v', nextDir: -1, seamAt:'top' };
+  }
+}
+function nextPosSnake(end){
   if(canPlaceHoriz(end)){
-    return {x: end.dir===1 ? end.x + TILE_W + GAP : end.x - TILE_W - GAP, y:end.y, orient:'h'};
+    return {x: end.dir===1 ? end.x + TILE_W + GAP : end.x - TILE_W - GAP, y:end.y, orient:'h', nextDir:end.dir};
   }
   return cornerPos(end);
 }
+
+/* Новое: расчёт позиции для выбранного игроком направления */
+function nextPosByChoice(end, choice){ // choice: up/right/down/left
+  const s=seam(end);
+  if(choice==='right')  return {x: s.x + GAP,           y: end.y, orient:'h', nextDir: 1};
+  if(choice==='left')   return {x: s.x - GAP - TILE_W,  y: end.y, orient:'h', nextDir:-1};
+  if(choice==='down')   return {x: (end.dir===1? s.x - (VERT_W) : s.x), y: end.y + TILE_H + GAP, orient:'v', nextDir: -end.dir, seamAt:'bottom'};
+  if(choice==='up')     return {x: (end.dir===1? s.x - (VERT_W) : s.x), y: end.y - (VERT_H + GAP), orient:'v', nextDir: -end.dir, seamAt:'top'};
+  return nextPosSnake(end);
+}
+
+/* применяем поставленную позицию */
 function applyPlaced(end,n){
-  if(n.orient==='h'){ end.x=n.x; end.y=n.y; return; }
-  if (end.dir === 1){
-    // шли вправо → повернули вниз → шов внизу вертикали
-    end.x = n.x;
-    end.y = n.y + (VERT_H - TILE_H);
-  } else {
-    // шли влево → повернули вверх → шов вверху вертикали
-    end.x = n.x;
-    end.y = n.y;
-  }
-  end.dir=-end.dir;
+  if(n.orient==='h'){ end.x=n.x; end.y=n.y; end.dir=n.nextDir; return; }
+  if(n.seamAt==='bottom'){ end.x=n.x; end.y=n.y + (VERT_H - TILE_H); }
+  else { end.x=n.x; end.y=n.y; }
+  end.dir = n.nextDir;
 }
-function zonePos(end){
-  if(canPlaceHoriz(end)){
-    return end.dir===1
-      ? { left:end.x + TILE_W + GAP, top:end.y + Math.round((TILE_H-ZH)/2) }
-      : { left:end.x - GAP - ZW,     top:end.y + Math.round((TILE_H-ZH)/2) };
-  }
-  const seamX = end.dir===1 ? (end.x + TILE_W) : end.x;
-  if (end.dir === 1){
-    return { left: Math.round(seamX - ZW/2), top: end.y + TILE_H + GAP }; // вниз
-  } else {
-    return { left: Math.round(seamX - ZW/2), top: end.y - GAP - ZH };     // вверх
-  }
-}
-function ensureDropZones(){
-  let zl=document.getElementById('drop-left'); let zr=document.getElementById('drop-right');
-  if(!zl){ zl=document.createElement('div'); zl.id='drop-left'; zl.className='drop-zone'; chainZoom.appendChild(zl); }
-  if(!zr){ zr=document.createElement('div'); zr.id='drop-right'; zr.className='drop-zone'; chainZoom.appendChild(zr); }
-  const pl=zonePos(endLeft), pr=zonePos(endRight);
-  zl.style.left=pl.left+'px'; zl.style.top=pl.top+'px'; zr.style.left=pr.left+'px'; zr.style.top=pr.top+'px';
-}
+
+/* подсветка активных зон */
 function highlightDropZones(on){
-  const zl=document.getElementById('drop-left'); const zr=document.getElementById('drop-right'); if(!zl||!zr) return;
-  if(on && dragging){
-    if(freeMode || dragging.a===openLeft || dragging.b===openLeft) zl.classList.add('active'); else zl.classList.remove('active');
-    if(freeMode || dragging.a===openRight|| dragging.b===openRight) zr.classList.add('active'); else zr.classList.remove('active');
-  } else { zl.classList.remove('active'); zr.classList.remove('active'); }
+  const zones=[...chainZoom.querySelectorAll('.dz')];
+  if(!on || !dragging){ zones.forEach(z=>z.classList.remove('active')); return; }
+  zones.forEach(z=>{
+    const isLeft = z.dataset.end==='L';
+    const openVal = isLeft ? openLeft : openRight;
+    const match = freeMode || dragging.a===openVal || dragging.b===openVal;
+    if(match) z.classList.add('active'); else z.classList.remove('active');
+  });
 }
 window.addEventListener('resize',()=>{ if(endLeft && endRight) ensureDropZones(); });
 
-/* ===== FIT CHAIN (уменьшается ТОЛЬКО поле) ===== */
+/* ===== fitChain (масштабируется только поле) ===== */
 function fitChain(){
   const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')];
-  if(!tiles.length){
-    chainZoom.style.transform='scale(1)';
-    return;
-  }
+  if(!tiles.length){ chainZoom.style.transform='scale(1)'; return; }
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
   tiles.forEach(t=>{
     const x=parseInt(t.style.left||'0',10),
@@ -327,18 +360,15 @@ function fitChain(){
     minX=Math.min(minX,x); minY=Math.min(minY,y);
     maxX=Math.max(maxX,x+w); maxY=Math.max(maxY,y+h);
   });
-  const chainW=maxX-minX, chainH=maxY-minY;
-  const boardW=br().w, boardH=br().h;
-  const pad=10;
-  const sx=(boardW-pad)/chainW, sy=(boardH-pad)/chainH;
-  const s=Math.min(1, sx, sy);
+  const chainW=maxX-minX, chainH=maxY-minY, pad=10;
+  const s=Math.min(1, (br().w-pad)/chainW, (br().h-pad)/chainH);
   chainZoom.style.transform=`scale(${s})`;
 }
 
-/* ===== GAME LOGIC ===== */
+/* ===== rules ===== */
 function hasPlayable(hand){
   if (freeMode) return true;
-  for(let i=0;i<hand.length;i++){ const t=hand[i]; if(t.a===openLeft || t.b===openLeft || t.a===openRight || t.b===openRight) return true; }
+  for(const t of hand){ if(t.a===openLeft || t.b===openLeft || t.a===openRight || t.b===openRight) return true; }
   return false;
 }
 function award(i,pts){ if(typeof pts!=='number') pts=1; scores[i]=(scores[i]||0)+pts; const el=document.getElementById('score-'+i); if(el) el.textContent=String(scores[i]); }
@@ -347,53 +377,66 @@ function everyonePassed(){ for(let i=0;i<playerNames.length;i++){ if(!passes[i])
 function endByWinner(i){ endMessage.style.display='block'; endMessage.textContent='Игра окончена! Победитель: '+playerNames[i]+' (сбросил все костяшки)'; }
 function endByPasses(){ let best=-Infinity, wi=0; for(let i=0;i<playerNames.length;i++){ const s=scores[i]||0; if(s>best){best=s; wi=i;} } endMessage.style.display='block'; endMessage.textContent='Игра окончена! Все пропустили. Победитель по очкам: '+playerNames[wi]+' ('+(scores[wi]||0)+')'; }
 
-/* ===== PLACE TILE ===== */
-function placeAt(whichEnd, a,b){
-  const e=(whichEnd==='left')?endLeft:endRight; const n=nextPos(e);
+/* ===== placing ===== */
+function placeAt(whichEnd, a,b, choice){ // choice может быть up/right/down/left или undefined (тогда «змейка»)
+  const e=(whichEnd==='left')?endLeft:endRight;
+  const n = choice ? nextPosByChoice(e, choice) : nextPosSnake(e);
   const el=createTileEl(a,b,{orient:n.orient,left:n.x,top:n.y}); chainZoom.appendChild(el);
-  applyPlaced(e,n); ensureDropZones(); fitChain();
+  applyPlaced(e,n); fitChain(); ensureDropZones();
 }
-function tryPlace(zone,data){
+function tryPlace(target,data){
   if(!data) return false;
-  if(freeMode){
-    if(zone.id==='drop-left'){ placeAt('left',data.a,data.b); openLeft=data.a; return true; }
-    if(zone.id==='drop-right'){ placeAt('right',data.a,data.b); openRight=data.b; return true; }
+  // формат id: dz-L-up / dz-R-right
+  if(target.classList.contains('dz')){
+    const endId = target.dataset.end; const choice = target.dataset.k;
+    const isLeft = endId==='L';
+    const openVal = isLeft ? openLeft : openRight;
+
+    if(freeMode){
+      placeAt(isLeft?'left':'right', data.a, data.b, choice);
+      if(isLeft){ openLeft=data.a; } else { openRight=data.b; }
+      return true;
+    }
+
+    // классика с автоповоротом по значению
+    if(data.a===openVal){
+      if(isLeft){ placeAt('left', data.b, data.a, choice); openLeft=data.b; }
+      else      { placeAt('right',data.a, data.b, choice); openRight=data.b; }
+      return true;
+    }
+    if(data.b===openVal){
+      if(isLeft){ placeAt('left', data.a, data.b, choice); openLeft=data.a; }
+      else      { placeAt('right',data.b, data.a, choice); openRight=data.a; }
+      return true;
+    }
     return false;
-  }
-  if(zone.id==='drop-left'){
-    if(data.a===openLeft){ placeAt('left',data.b,data.a); openLeft=data.b; return true; }
-    if(data.b===openLeft){ placeAt('left',data.a,data.b); openLeft=data.a; return true; }
-  }
-  if(zone.id==='drop-right'){
-    if(data.a===openRight){ placeAt('right',data.a,data.b); openRight=data.b; return true; }
-    if(data.b===openRight){ placeAt('right',data.b,data.a); openRight=data.a; return true; }
   }
   return false;
 }
 
-/* ===== BUILD DECK FROM ?data= ===== */
+/* ===== deck from data ===== */
 function buildDeckFromData(data){
   let out=[]; const A=data.listA||[], B=data.listB||[];
   if(A.length && !B.length){
-    for(let i=0;i<A.length;i++){ for(let j=i;j<A.length;j++){ out.push({a:A[i], b:A[j], uid:uid(i+"_"+j)}); } }
+    for(let i=0;i<A.length;i++) for(let j=i;j<A.length;j++) out.push({a:A[i], b:A[j], uid:uid(i+"_"+j)});
   } else if(A.length && B.length){
-    for(let i=0;i<A.length;i++){ for(let j=i;j<A.length;j++){ out.push({a:A[i], b:A[j], uid:uid("A"+i+"_"+j)}); } }
-    for(let i=0;i<B.length;i++){ for(let j=i;j<B.length;j++){ out.push({a:B[i], b:B[j], uid:uid("B"+i+"_"+j)}); } }
-    const n=Math.min(A.length,B.length); for(let i=0;i<n;i++){ out.push({a:A[i], b:B[i], uid:uid("AB"+i)}); }
+    for(let i=0;i<A.length;i++) for(let j=i;j<A.length;j++) out.push({a:A[i], b:A[j], uid:uid("A"+i+"_"+j)});
+    for(let i=0;i<B.length;i++) for(let j=i;j<B.length;j++) out.push({a:B[i], b:B[j], uid:uid("B"+i+"_"+j)});
+    const n=Math.min(A.length,B.length); for(let i=0;i<n;i++) out.push({a:A[i], b:B[i], uid:uid("AB"+i)});
   }
   return shuffle(out);
 }
 
-/* ===== START GAME ===== */
+/* ===== start ===== */
 function startGame(){
   const data=getQueryData();
   if(!data){
-    alert("Нет данных от редактора (?data=...). Для теста загружу мини-набор.");
-    const WORDS=["CAT","DOG","SUN","MOON","STAR"]; deck=[]; for(let i=0;i<WORDS.length;i++){ for(let j=i;j<WORDS.length;j++){ deck.push({a:WORDS[i], b:WORDS[j], uid:uid(i+'_'+j)}); } } freeMode=false;
+    alert("Нет данных ?data=... Использую мини-набор для теста.");
+    const W=["CAT","DOG","SUN","MOON","STAR"]; deck=[]; for(let i=0;i<W.length;i++)for(let j=i;j<W.length;j++)deck.push({a:W[i],b:W[j],uid:uid(i+'_'+j)}); freeMode=false;
   } else {
     deck=buildDeckFromData(data);
     freeMode=!!data.freeMode;
-    if(freeMode) document.getElementById("title").textContent+=" · Свободная игра";
+    if(freeMode) document.getElementById('title').textContent+=' · Свободная игра';
   }
 
   playerNames=[]; const c=parseInt(playerCountEl.value,10)||2;
@@ -401,33 +444,40 @@ function startGame(){
 
   scores={}; passes={}; currentPlayer=0; hands={}; endMessage.style.display='none';
   for(let k=0;k<playerNames.length;k++){ hands[k]=[]; scores[k]=0; passes[k]=0; }
+  for(let r=0;r<5;r++) for(let j=0;j<playerNames.length;j++) if(deck.length) hands[j].push(deck.shift());
 
-  for(let r=0;r<5;r++){ for(let j=0;j<playerNames.length;j++){ if(deck.length) hands[j].push(deck.shift()); } }
-
-  chainZoom.innerHTML=''; const W=br().w, H=br().h; const sx=Math.floor((W-TILE_W)/2), sy=Math.floor((H-TILE_H)/2);
+  chainZoom.innerHTML='';
+  const sx=Math.floor((br().w-TILE_W)/2), sy=Math.floor((br().h-TILE_H)/2);
   const start=deck.shift(); const startEl=createTileEl(start.a,start.b,{left:sx,top:sy}); chainZoom.appendChild(startEl);
-  openLeft=start.a; openRight=start.b; endLeft=newEnd(sx,sy,-1); endRight=newEnd(sx,sy,1); ensureDropZones(); fitChain();
+  openLeft=start.a; openRight=start.b; endLeft=newEnd(sx,sy,-1); endRight=newEnd(sx,sy,1);
+  fitChain(); ensureDropZones();
 
   renderPlayersBar(); renderHands(); updateControls();
-  menuEl.style.display='none'; document.body.classList.remove('menu-open'); /* меню закрыто — фон снова кликабелен */
+  menuEl.style.display='none'; document.body.classList.remove('menu-open');
 }
 
-/* ===== CONTROLS ===== */
+/* ===== controls ===== */
 drawBtn.addEventListener('click', function(){
   if(deck.length===0) return; const hand=hands[currentPlayer]||[]; if(!freeMode && hasPlayable(hand)) return;
-  const idx=Math.floor(Math.random()*deck.length); const t=deck.splice(idx,1)[0]; hand.push(t); hands[currentPlayer]=hand; renderHands(); updateControls();
+  const idx=Math.floor(Math.random()*deck.length); hand.push(deck.splice(idx,1)[0]); hands[currentPlayer]=hand; renderHands(); updateControls();
 });
 skipBtn.addEventListener('click', function(){ passes[currentPlayer]=(passes[currentPlayer]||0)+1; if(everyonePassed()){ endByPasses(); return; } nextPlayer(); });
 restartBtn.addEventListener('click', ()=>location.reload());
 startBtn.addEventListener('click', startGame);
 
 /* ===== DnD ===== */
-document.addEventListener('dragover', function(ev){ const t=ev.target; if(t && t.classList && t.classList.contains('drop-zone')){ ev.preventDefault(); t.classList.add('active'); }});
-document.addEventListener('dragleave', function(ev){ const t=ev.target; if(t && t.classList && t.classList.contains('drop-zone')) t.classList.remove('active'); });
+document.addEventListener('dragover', function(ev){
+  const t=ev.target; if(t && t.classList && t.classList.contains('dz')){ ev.preventDefault(); t.classList.add('active'); }
+});
+document.addEventListener('dragleave', function(ev){
+  const t=ev.target; if(t && t.classList && t.classList.contains('dz')) t.classList.remove('active');
+});
 document.addEventListener('drop', function(ev){
   const t=ev.target; if(!dragging) return;
-  if(t && t.classList && t.classList.contains('drop-zone')){
-    ev.preventDefault(); const ok=tryPlace(t,dragging); t.classList.remove('active'); highlightDropZones(false);
+  if(t && t.classList && t.classList.contains('dz')){
+    ev.preventDefault();
+    const ok=tryPlace(t,dragging);
+    t.classList.remove('active'); highlightDropZones(false);
     if(ok){
       const arr=hands[dragging.owner]||[]; hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid);
       award(dragging.owner,1); renderHands();
@@ -438,7 +488,7 @@ document.addEventListener('drop', function(ev){
   }
 });
 
-/* ===== INIT ===== */
+/* ===== init ===== */
 (function init(){ renderNameInputs(); })();
 </script>
 </body>
