@@ -25,7 +25,7 @@
 
   h1{margin:8px 0 6px; font-size:22px; color:var(--accent2); text-shadow:0 0 8px rgba(255,218,139,.7)}
 
-  /* ===== MENU (must be clickable in iframe) ===== */
+  /* ===== MENU (должно кликаться в iframe) ===== */
   .menu{
     position:absolute; inset:0; background:rgba(59,42,66,.96);
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
@@ -69,7 +69,10 @@
   }
   .tile:hover{transform:scale(1.05)}
   .tile b{font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#2c1a32}
-  .tile.hand{position:relative; cursor:grab}
+  .tile.hand{
+    position:relative; cursor:grab;
+    transform: scale(.5); transform-origin: left top; /* РУКИ ВСЕГДА В 2 РАЗА МЕНЬШЕ */
+  }
   .sep{position:absolute; left:50%; top:0; bottom:0; width:0; background:var(--tile-edge)}
   .half{display:flex; align-items:center; justify-content:center; padding:0 4px; text-align:center}
   .tile.vert{width:60px; height:150px; grid-template-columns:1fr; grid-template-rows:1fr 1fr}
@@ -101,7 +104,7 @@
     <div id="nameInputs"></div>
     <button id="startBtn">Начать игру</button>
     <div style="opacity:.75; font-size:13px; max-width:520px; text-align:center">
-      Игра читает данные из параметра <code>?data=...</code> (JSON от редактора). Пример: <code>{"listA":["CAT","DOG"],"listB":[],"freeMode":false}</code>
+      Данные приходят в <code>?data=</code> (JSON от редактора). Пример: <code>{"listA":["CAT","DOG"],"listB":[],"freeMode":false}</code>
     </div>
   </div>
 
@@ -247,15 +250,50 @@ function updateControls(){
 /* ===== LAYOUT «SNAKE» + DROP ZONES ===== */
 function newEnd(x,y,dir){ return {x:x,y:y,dir:dir}; }
 function canPlaceHoriz(end){ const W=br().w; const nx=end.x + end.dir*(TILE_W+GAP); return nx>=0 && (nx+TILE_W)<=W; }
-function cornerPos(end){ const cx=end.x + (end.dir===1 ? TILE_W - VERT_W : 0); const cy=end.y + TILE_H + GAP; return {x:cx, y:cy, orient:'v'}; }
-function nextPos(end){ if(canPlaceHoriz(end)){ return {x:end.dir===1 ? end.x + TILE_W + GAP : end.x - TILE_W - GAP, y:end.y, orient:'h'}; } return cornerPos(end); }
-function applyPlaced(end,n){ if(n.orient==='h'){ end.x=n.x; end.y=n.y; return; } end.x=n.x; end.y=n.y + (VERT_H - TILE_H); end.dir=-end.dir; }
+
+/* Левый край уходит ВВЕРХ, правый край — ВНИЗ */
+function cornerPos(end){
+  if (end.dir === 1){
+    const cx = end.x + (TILE_W - VERT_W);
+    const cy = end.y + TILE_H + GAP;
+    return { x: cx, y: cy, orient: 'v' };  // вниз
+  } else {
+    const cx = end.x;
+    const cy = end.y - (VERT_H + GAP);
+    return { x: cx, y: cy, orient: 'v' };  // вверх
+  }
+}
+function nextPos(end){
+  if(canPlaceHoriz(end)){
+    return {x: end.dir===1 ? end.x + TILE_W + GAP : end.x - TILE_W - GAP, y:end.y, orient:'h'};
+  }
+  return cornerPos(end);
+}
+function applyPlaced(end,n){
+  if(n.orient==='h'){ end.x=n.x; end.y=n.y; return; }
+  if (end.dir === 1){
+    // шли вправо → повернули вниз → шов внизу вертикали
+    end.x = n.x;
+    end.y = n.y + (VERT_H - TILE_H);
+  } else {
+    // шли влево → повернули вверх → шов вверху вертикали
+    end.x = n.x;
+    end.y = n.y;
+  }
+  end.dir=-end.dir;
+}
 function zonePos(end){
   if(canPlaceHoriz(end)){
-    return end.dir===1 ? { left:end.x + TILE_W + GAP, top:end.y + Math.round((TILE_H-ZH)/2) }
-                       : { left:end.x - GAP - ZW,      top:end.y + Math.round((TILE_H-ZH)/2) };
+    return end.dir===1
+      ? { left:end.x + TILE_W + GAP, top:end.y + Math.round((TILE_H-ZH)/2) }
+      : { left:end.x - GAP - ZW,     top:end.y + Math.round((TILE_H-ZH)/2) };
   }
-  const seamX = end.dir===1 ? (end.x + TILE_W) : end.x; return { left: Math.round(seamX - ZW/2), top: end.y + TILE_H + GAP };
+  const seamX = end.dir===1 ? (end.x + TILE_W) : end.x;
+  if (end.dir === 1){
+    return { left: Math.round(seamX - ZW/2), top: end.y + TILE_H + GAP }; // вниз
+  } else {
+    return { left: Math.round(seamX - ZW/2), top: end.y - GAP - ZH };     // вверх
+  }
 }
 function ensureDropZones(){
   let zl=document.getElementById('drop-left'); let zr=document.getElementById('drop-right');
@@ -273,17 +311,27 @@ function highlightDropZones(on){
 }
 window.addEventListener('resize',()=>{ if(endLeft && endRight) ensureDropZones(); });
 
-/* ===== FIT CHAIN (автомасштаб при переполнении) ===== */
+/* ===== FIT CHAIN (уменьшается ТОЛЬКО поле) ===== */
 function fitChain(){
-  const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')]; if(!tiles.length){ chainZoom.style.transform='scale(1)'; return; }
+  const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')];
+  if(!tiles.length){
+    chainZoom.style.transform='scale(1)';
+    return;
+  }
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
   tiles.forEach(t=>{
-    const x=parseInt(t.style.left||'0',10), y=parseInt(t.style.top||'0',10),
-          w=t.classList.contains('vert')?VERT_W:TILE_W, h=t.classList.contains('vert')?VERT_H:TILE_H;
-    minX=Math.min(minX,x); minY=Math.min(minY,y); maxX=Math.max(maxX,x+w); maxY=Math.max(maxY,y+h);
+    const x=parseInt(t.style.left||'0',10),
+          y=parseInt(t.style.top||'0',10),
+          w=t.classList.contains('vert')?VERT_W:TILE_W,
+          h=t.classList.contains('vert')?VERT_H:TILE_H;
+    minX=Math.min(minX,x); minY=Math.min(minY,y);
+    maxX=Math.max(maxX,x+w); maxY=Math.max(maxY,y+h);
   });
-  const chainW=maxX-minX, chainH=maxY-minY, boardW=br().w, boardH=br().h, pad=8;
-  const sx=(boardW-pad)/chainW, sy=(boardH-pad)/chainH; const s=Math.min(1, sx, sy);
+  const chainW=maxX-minX, chainH=maxY-minY;
+  const boardW=br().w, boardH=br().h;
+  const pad=10;
+  const sx=(boardW-pad)/chainW, sy=(boardH-pad)/chainH;
+  const s=Math.min(1, sx, sy);
   chainZoom.style.transform=`scale(${s})`;
 }
 
@@ -307,7 +355,7 @@ function placeAt(whichEnd, a,b){
 }
 function tryPlace(zone,data){
   if(!data) return false;
-  if(freeMode){ // свободный режим не проверяет совпадения
+  if(freeMode){
     if(zone.id==='drop-left'){ placeAt('left',data.a,data.b); openLeft=data.a; return true; }
     if(zone.id==='drop-right'){ placeAt('right',data.a,data.b); openRight=data.b; return true; }
     return false;
@@ -391,7 +439,7 @@ document.addEventListener('drop', function(ev){
 });
 
 /* ===== INIT ===== */
-(function init(){ renderNameInputs(); /* меню открыто, чтобы было кликабельно в iframe */ })();
+(function init(){ renderNameInputs(); })();
 </script>
 </body>
 </html>
