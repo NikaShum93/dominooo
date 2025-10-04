@@ -11,77 +11,96 @@
   }
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{margin:0; background:var(--bg); color:#fdf4ff; font:500 16px "Inter", system-ui; overflow:hidden}
+  body{margin:0; background:#3b281b; color:#fdf4ff; font:500 16px "Inter", system-ui; overflow:hidden}
 
-  /* ===== 16:9 SCENE (рамки фикс, масштаб только визуальный) ===== */
+  /* ===== 16:9 сцена. Масштабируется визуально, рамки не прыгают ===== */
   #stage{
     position:absolute; left:50%; top:50%; width:960px; height:540px;
-    transform:translate(-50%,-50%) scale(1); transform-origin:center; z-index:0;
+    transform:translate(-50%,-50%) scale(1); transform-origin:center;
     display:flex; flex-direction:column; align-items:center;
+    /* процедурная древесина */
+    background-image:var(--wood);
+    background-size:800px 800px;
+    box-shadow:inset 0 0 80px rgba(0,0,0,.45), inset 0 0 140px rgba(0,0,0,.35);
+    border-radius:12px;
   }
-  h1{margin:8px 0 6px; font-size:24px; color:var(--accent2); text-shadow:0 0 8px rgba(255,218,139,.7)}
+  h1{margin:8px 0 6px; font-size:24px; color:#f2d39a; font-weight:900;
+     text-shadow:0 1px 0 #402b16,0 0 18px rgba(0,0,0,.45),0 0 2px rgba(0,0,0,.6)}
 
-  /* ===== MENU (кликабельно в iframe) ===== */
+  /* ===== Меню ===== */
   .menu{
     position:absolute; inset:0; background:rgba(59,42,66,.96);
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
-    z-index:100000; padding:30px; pointer-events:auto;
+    z-index:100000; padding:30px;
   }
   .menu input{padding:8px 12px; border-radius:8px; border:2px solid var(--accent); background:#fffaf5; color:#2c1a32; width:220px}
   .menu button{padding:10px 16px; border-radius:10px; border:none; background:var(--accent); color:#2c1a32; font-weight:800; cursor:pointer}
-  body.menu-open .topbar, body.menu-open .board, body.menu-open .hands{pointer-events:none}
 
-  /* ===== TOP BAR ===== */
+  /* ===== Верхняя панель ===== */
   .topbar{width:95%; display:flex; align-items:center; justify-content:space-between; gap:10px}
   .players{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
   .player{padding:6px 12px; border-radius:14px; background:rgba(230,168,255,.15); font-size:12px}
-  .player.active{background:var(--accent2); color:#2c1a32; font-weight:900; box-shadow:0 0 10px var(--accent2)}
+  .player.active{background:#f2c56a; color:#2b1a10; font-weight:900; box-shadow:0 0 14px #f2c56a, inset 0 0 10px rgba(255,255,255,.35)}
   .score{margin-left:4px; font-weight:900; color:#2c1a32}
   .controls{display:flex; gap:8px}
-  .btn{padding:8px 14px; border-radius:10px; border:none; background:var(--accent2); color:#2c1a32; font-weight:800; cursor:pointer}
-  .btn:disabled{opacity:.5; cursor:not-allowed}
+  .btn{padding:8px 14px; border-radius:10px; border:2px solid #7a5525; background:linear-gradient(#f1c97a,#e7b85f); color:#2c1a32; font-weight:800; cursor:pointer; box-shadow:0 2px 0 #6b4a1d, inset 0 1px 0 rgba(255,255,255,.35)}
+  .btn:disabled{opacity:.6; cursor:not-allowed}
 
-  /* ===== BOARD ===== */
+  /* ===== Доска ===== */
   .board{
-    position:relative; width:95%; height:68%; border:3px solid var(--accent2); margin:6px 0;
-    border-radius:16px; background:var(--panel); padding:6px; overflow:hidden; z-index:1;
+    position:relative; width:95%; height:68%; margin:6px 0;
+    background: radial-gradient(120% 100% at 50% 50%, #3c2a3e 0, #2e2130 70%) padding-box;
+    border:10px solid transparent; border-radius:18px;
+    border-image:url("data:image/svg+xml;utf8,\
+      <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'>\
+        <rect width='20' height='20' fill='%2354321e'/>\
+        <rect x='1' y='1' width='18' height='18' fill='none' stroke='%238c5c2f' stroke-width='1.5'/>\
+      </svg>") 30 round;
+    box-shadow:0 8px 24px rgba(0,0,0,.45), inset 0 0 18px rgba(0,0,0,.35);
+    overflow:hidden;
   }
   .chain{position:relative; width:100%; height:100%}
-  /* уменьшается ТОЛЬКО этот слой */
+  /* Масштабируется только это */
   #chainZoom{position:absolute; inset:0; transform-origin:0 0; transform:scale(1)}
 
-  /* ===== TILES ===== */
+  /* ===== Костяшки ===== */
   .tile{
-    width:150px; height:60px; background:var(--tile); border:2px solid var(--tile-edge); border-radius:12px;
-    display:grid; grid-template-columns:1fr 1fr; position:absolute; box-shadow:0 2px 6px var(--tile-shadow);
+    width:150px; height:60px;
+    background:
+      radial-gradient(120% 120% at 20% 20%, rgba(0,0,0,.08), transparent 60%),
+      linear-gradient(#fffdf8,#fff6e7);
+    border:2px solid #e7dbc9; border-radius:12px;
+    display:grid; grid-template-columns:1fr 1fr; position:absolute;
+    box-shadow:0 2px 6px rgba(0,0,0,.35), inset 0 0 0 2px #e0d3bd, inset 0 -10px 20px rgba(0,0,0,.06);
     overflow:hidden; user-select:none; transition:transform .12s;
   }
   .tile:hover{transform:scale(1.04)}
   .tile .half{display:flex; align-items:center; justify-content:center; padding:0 6px; text-align:center; overflow:hidden}
-  .tile b{display:block; line-height:1.1; font-weight:800; color:#2c1a32}
-  .tile .sep{position:absolute; left:50%; top:0; bottom:0; width:2px; background:var(--tile-edge)}
+  .tile b{display:block; line-height:1.1; font-weight:900; color:#1c1712; word-break:break-word}
+  .tile .sep{position:absolute; left:50%; top:0; bottom:0; width:2px; background:#d8c8aa}
   .tile.vert{width:60px; height:150px; grid-template-columns:1fr; grid-template-rows:1fr 1fr}
   .tile.vert .sep{left:0; top:50%; width:100%; height:2px}
 
-  /* ===== HAND (одно поле, горизонтальные мини-тайлы ×0.5) ===== */
+  /* ===== Одно поле руки (текущий игрок) ===== */
   .hands{width:100%; display:flex; flex-direction:column; gap:6px; padding:8px 0}
-  .hand-header{width:95%; margin:0 auto; text-align:center; font-weight:900; opacity:.95}
+  .hand-header{width:95%; margin:0 auto; text-align:center; font-weight:900; color:#e9d2a2; text-shadow:0 1px 0 #3b2715}
   .tray{
-    width:95%; margin:0 auto;
-    height:56px; display:flex; gap:8px; flex-wrap:nowrap; align-items:center; justify-content:flex-start;
+    width:95%; margin:0 auto; height:56px;
+    display:flex; gap:8px; flex-wrap:nowrap; align-items:center; justify-content:flex-start;
     overflow-x:auto; overflow-y:hidden; padding:8px 10px;
-    border:2px solid rgba(255,218,139,.35); background:rgba(230,168,255,.08); border-radius:12px;
+    border:2px solid #8c5c2f; background:#5a3b21; border-radius:12px;
+    box-shadow:inset 0 0 18px rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.35);
     scroll-behavior:smooth;
   }
   .tray > .tile{position:static}
-  .tile.hand{position:relative; cursor:grab; transform:scale(.5); transform-origin:left center}
+  .tile.hand{transform:scale(.5); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
 
-  /* ===== Direction zones (только при перетаскивании и только валидные) ===== */
-  .dz{position:absolute; width:42px; height:42px; border:2px dashed var(--accent2); border-radius:10px; display:none}
-  .dz.active{display:block; background:rgba(255,218,139,.25); box-shadow:0 0 10px var(--accent2)}
-  .dz::after{content:attr(data-dir); font-size:11px; color:#2c1a32; font-weight:900; background:var(--accent2); padding:2px 6px; border-radius:8px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%)}
+  /* ===== Зоны направлений (появляются только при перетаскивании) ===== */
+  .dz{position:absolute; width:38px; height:38px; border:2px dashed #b68a3e; border-radius:10px; display:none; background:rgba(255,215,120,.08); box-shadow:inset 0 0 10px rgba(0,0,0,.25)}
+  .dz.active{display:block; background:rgba(255,215,120,.28); box-shadow:0 0 16px rgba(255,215,120,.7), inset 0 0 10px rgba(255,255,255,.2)}
+  .dz::after{content:attr(data-dir); font-size:11px; color:#2c1a32; font-weight:900; background:#f2c56a; padding:2px 6px; border-radius:8px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%)}
 
-  /* ===== SEATS AROUND BOARD (current bottom, clockwise) ===== */
+  /* ===== Бейджи мест вокруг стола ===== */
   #seats { pointer-events:none; position:absolute; inset:0; }
   .seat{
     position:absolute; background:rgba(0,0,0,.25); border:1px solid rgba(255,218,139,.45);
@@ -98,13 +117,17 @@
   .seat-left span{ transform:rotate(90deg); }
   .seat.hidden{ display:none; }
 
-  /* ===== END MESSAGE & PREVIEW ===== */
+  /* ===== Сообщение и предпросмотр ===== */
   .end-message{font-size:18px; color:#ffda8b; margin:6px 0; display:none; text-align:center}
-  #tilePreview{position:absolute; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:100001}
-  #tilePreview .tile{position:static; box-shadow:0 0 28px rgba(0,0,0,.6)}
+
+  /* Важное: изоляция предпросмотра, чтобы НЕ было «бежевой полосы» */
+  #tilePreview{position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:100001; background:rgba(0,0,0,.6); isolation:isolate}
+  #tilePreview *{pointer-events:none}
+  #tilePreview .tile{position:static; width:560px; height:220px; box-shadow:0 18px 60px rgba(0,0,0,.55), inset 0 0 0 2px #e0d3bd}
+  #tilePreview .tile .sep{background:#d8c8aa}
   #tilePreview .tile b{font-size:36px}
 
-  /* === WOOD THEME overlay (процедурное дерево, офлайн) === */
+  /* ===== Процедурная древесина (SVG data-uri) ===== */
   :root{
     --wood: url("data:image/svg+xml;utf8,\
     <svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'>\
@@ -126,52 +149,9 @@
       </g>\
     </svg>");
   }
-  body{ background:#3b281b; }
-  #stage{
-    background-image:var(--wood); background-size:800px 800px;
-    box-shadow:inset 0 0 80px rgba(0,0,0,.45), inset 0 0 140px rgba(0,0,0,.35);
-    border-radius:12px;
-  }
-  h1{
-    font-weight:900; letter-spacing:.5px; color:#f2d39a;
-    text-shadow:0 1px 0 #402b16,0 0 18px rgba(0,0,0,.45),0 0 2px rgba(0,0,0,.6);
-  }
-  .btn{
-    background:linear-gradient(#f1c97a,#e7b85f); border:2px solid #7a5525;
-    box-shadow:0 2px 0 #6b4a1d, inset 0 1px 0 rgba(255,255,255,.35); border-radius:10px;
-  }
-  .btn:active{ transform:translateY(1px); box-shadow:0 1px 0 #6b4a1d, inset 0 1px 0 rgba(0,0,0,.1); }
-  .board{
-    background: radial-gradient(120% 100% at 50% 50%, #3c2a3e 0, #2e2130 70%) padding-box;
-    border:10px solid transparent; border-radius:18px;
-    border-image:url("data:image/svg+xml;utf8,\
-      <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'>\
-        <rect width='20' height='20' fill='%2354321e'/>\
-        <rect x='1' y='1' width='18' height='18' fill='none' stroke='%238c5c2f' stroke-width='1.5'/>\
-      </svg>") 30 round;
-    box-shadow:0 8px 24px rgba(0,0,0,.45), inset 0 0 18px rgba(0,0,0,.35);
-  }
-  .players .player{
-    background:rgba(255,218,139,.18); border:1px solid #8a6a32;
-    box-shadow:inset 0 0 8px rgba(255,218,139,.2), 0 2px 0 rgba(0,0,0,.2);
-  }
-  .players .player.active{
-    background:#f2c56a; color:#2b1a10; box-shadow:0 0 14px #f2c56a, inset 0 0 10px rgba(255,255,255,.35);
-  }
-  .hands{ padding-top:6px; }
-  .hand-header{ color:#e9d2a2; text-shadow:0 1px 0 #3b2715; }
-  .tray{ background:#5a3b21; border-color:#8c5c2f; box-shadow:inset 0 0 18px rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.35); }
-  .tile{
-    background:
-      radial-gradient(120% 120% at 20% 20%, rgba(0,0,0,.08), transparent 60%),
-      linear-gradient(#fffdf8,#fff6e7);
-    border-color:#e7dbc9;
-    box-shadow:0 2px 6px rgba(0,0,0,.35), inset 0 0 0 2px #e0d3bd, inset 0 -10px 20px rgba(0,0,0,.06);
-  }
-  .tile .sep{ background:#d8c8aa; }
 </style>
 </head>
-<body class="menu-open">
+<body>
 <div id="stage">
   <h1 id="title">Domino · Cozy Edition</h1>
 
@@ -180,7 +160,7 @@
     <div id="nameInputs"></div>
     <button id="startBtn">Начать игру</button>
     <div style="opacity:.75; font-size:12px; max-width:520px; text-align:center">
-      Данные приходят в <code>?data=</code> (JSON из редактора). Пример: <code>{"listA":["CAT","DOG"],"listB":[],"freeMode":false}</code>
+      Данные приходят в <code>?data=</code> (JSON из редактора): <code>{"listA":["CAT","DOG"],"listB":[],"freeMode":false}</code>
     </div>
   </div>
 
@@ -195,11 +175,7 @@
   <div class="turn" id="turnInfo"></div>
 
   <div class="board">
-    <div class="chain" id="chain">
-      <div id="chainZoom"></div>
-    </div>
-
-    <!-- Бейджи мест вокруг стола -->
+    <div class="chain" id="chain"><div id="chainZoom"></div></div>
     <div id="seats">
       <div class="seat seat-bottom"><span></span></div>
       <div class="seat seat-right"><span></span></div>
@@ -208,7 +184,6 @@
     </div>
   </div>
 
-  <!-- Одно поле руки (текущий игрок) -->
   <div class="hands">
     <div id="handHeader" class="hand-header"></div>
     <div id="tray" class="tray"></div>
@@ -219,29 +194,30 @@
 </div>
 
 <script>
-/* ===== AUTOSCALE 16:9 (визуально; рамки фикс) ===== */
+/* ===== Подгон сцены 16:9 ===== */
 function fitStage(){
   const s=Math.min(window.innerWidth/960, window.innerHeight/540);
   document.getElementById('stage').style.transform=`translate(-50%,-50%) scale(${s})`;
 }
 window.addEventListener('resize',fitStage); fitStage();
 
-/* ===== UTILS ===== */
+/* ===== Утилиты ===== */
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function uid(i){return 't'+i+'_'+Math.random().toString(36).slice(2,7);}
 function getQueryData(){const raw=new URLSearchParams(location.search).get('data'); if(!raw) return null; try{return JSON.parse(decodeURIComponent(raw));}catch(e){return null;}}
 function br(){return {w:chainEl.clientWidth,h:chainEl.clientHeight};}
 function resetPasses(){Object.keys(passes).forEach(k=>passes[k]=0);}
 
-/* Текст: подгон размера — ничего не обрезать */
+/* Текст — уменьшать, но не обрезать */
 function fits(el){return el.scrollWidth<=el.clientWidth && el.scrollHeight<=el.clientHeight;}
 function fitText(container, text, start=22, min=9){
   container.textContent=text; container.style.whiteSpace='nowrap'; let s=start;
   while(s>min){container.style.fontSize=s+'px'; if(fits(container)) break; s--;}
-  if(!fits(container)){container.style.whiteSpace='normal'; while(s>min){container.style.fontSize=s+'px'; if(fits(container)) break; s--;}}
+  container.style.whiteSpace='normal';
+  while(!fits(container) && s>min){ s--; container.style.fontSize=s+'px'; }
 }
 
-/* ===== DOM REFS ===== */
+/* ===== DOM ===== */
 const menuEl=document.getElementById('menu');
 const nameInputsEl=document.getElementById('nameInputs');
 const playerCountEl=document.getElementById('playerCount');
@@ -259,7 +235,6 @@ const endMessage=document.getElementById('endMessage');
 const previewWrap=document.getElementById('tilePreview');
 const previewInner=document.getElementById('tilePreviewInner');
 
-/* seats refs */
 const seats = {
   bottom: document.querySelector('.seat-bottom span'),
   right:  document.querySelector('.seat-right span'),
@@ -273,15 +248,17 @@ const seatBoxes = {
   left:   document.querySelector('.seat-left'),
 };
 
-/* ===== STATE ===== */
+/* ===== Состояние ===== */
 let playerNames=[]; let hands={}; let deck=[]; let currentPlayer=0; let scores={}; let passes={};
 let openLeft=null, openRight=null; let endLeft=null, endRight=null; let dragging=null; let freeMode=false;
 
-/* ===== GEOMETRY ===== */
-const TILE_W=150, TILE_H=60, VERT_W=60, VERT_H=150, GAP=6;
-const DZ=42;
+/* ===== Геометрия ===== */
+const TILE_W=150, TILE_H=60, VERT_W=60, VERT_H=150;
+/* компактнее расстояние между костями */
+const GAP=4;            /* было 6, сделал аккуратнее */
+const DZ=38;
 
-/* ===== INPUT UI ===== */
+/* ===== Имя/кол-во игроков ===== */
 function renderNameInputs(){
   nameInputsEl.innerHTML='';
   const c=parseInt(playerCountEl.value,10)||2;
@@ -291,11 +268,11 @@ function renderNameInputs(){
 }
 playerCountEl.addEventListener('input',renderNameInputs); renderNameInputs();
 
-/* ===== PREVIEW (горизонтальный) ===== */
+/* ===== Предпросмотр (горизонтальный) ===== */
 function showPreview(a,b){
   previewInner.innerHTML='';
   const big=document.createElement('div'); big.className='tile';
-  big.style.position='static'; big.style.width='560px'; big.style.height='220px';
+  big.style.position='static';
   big.innerHTML='<div class="half"><b></b></div><div class="sep"></div><div class="half"><b></b></div>';
   const halves=big.getElementsByClassName('half');
   fitText(halves[0].firstElementChild,a,36,12);
@@ -306,7 +283,7 @@ function hidePreview(){previewWrap.style.display='none';}
 previewWrap.addEventListener('click',hidePreview);
 window.addEventListener('keydown',e=>{if(e.key==='Escape') hidePreview();});
 
-/* ===== TILE FACTORY ===== */
+/* ===== Фабрика костяшек ===== */
 function createTileEl(a,b,opts={}){
   const role=opts.role||'chain'; const owner=Number.isInteger(opts.owner)?opts.owner:null; const id=opts.uid||null; const draggable=!!opts.draggable; const orient=opts.orient||'h';
   const el=document.createElement('div'); el.className='tile '+(orient==='v'?'vert ':'')+role;
@@ -333,7 +310,7 @@ function createTileEl(a,b,opts={}){
   return el;
 }
 
-/* ===== HAND (одно поле) ===== */
+/* ===== Рука (одно поле) ===== */
 function renderHand(){
   handHeader.textContent = `${playerNames[currentPlayer]}: (${hands[currentPlayer]?hands[currentPlayer].length:0} костяшек)`;
   trayEl.innerHTML='';
@@ -361,7 +338,7 @@ function updateControls(){
   drawBtn.disabled = (!freeMode && playable) || deck.length===0;
 }
 
-/* ===== SEATS AROUND BOARD ===== */
+/* ===== SEATS ===== */
 function updateSeats(){
   if(!playerNames.length) return;
   const n = playerNames.length;
@@ -380,7 +357,7 @@ function updateSeats(){
   });
 }
 
-/* ===== SNAKE & CHOICE ===== */
+/* ===== Змейка и выбор направления ===== */
 function newEnd(x,y,dir){ return {x:x,y:y,dir:dir}; }
 function canPlaceHoriz(end){ const W=br().w; const nx=end.x + end.dir*(TILE_W+GAP); return nx>=0 && (nx+TILE_W)<=W; }
 function seam(end){ return end.dir===1 ? {x:end.x+TILE_W,y:end.y} : {x:end.x,y:end.y}; }
@@ -409,7 +386,7 @@ function nextPosByChoice(end, choice){
   return nextPosSnake(end);
 }
 
-/* ДУБЛЬ ПОПЕРЁК (перпендикулярно, конец не двигаем) */
+/* ===== Поперечный дубль (перпендикулярно, конец не двигаем) ===== */
 function crossPosForDouble(end, choice){
   const s = end.dir === 1 ? {x:end.x + TILE_W, y:end.y} : {x:end.x, y:end.y};
   if (choice === 'left' || choice === 'right' || (!choice && canPlaceHoriz(end))){
@@ -418,6 +395,25 @@ function crossPosForDouble(end, choice){
   const seamY = (choice === 'down') ? (end.y + TILE_H) : end.y;
   return { x: Math.round(s.x - TILE_W/2), y: Math.round(seamY - TILE_H/2), orient:'h', cross:true };
 }
+
+/* ===== Проверка пересечения (запрещаем класть поверх) ===== */
+function rectOf(orient,x,y){ return {x,y,w:(orient==='v'?VERT_W:TILE_W), h:(orient==='v'?VERT_H:TILE_H)}; }
+function intersects(r1,r2){ return !(r2.x>=r1.x+r1.w || r2.x+r2.w<=r1.x || r2.y>=r1.y+r1.h || r2.y+r2.h<=r1.y); }
+function collidesWithExisting(r, ignoreLast=false){
+  const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')];
+  const n=tiles.length;
+  for(let i=0;i<n;i++){
+    if(ignoreLast && i===n-1) continue;
+    const t=tiles[i];
+    const w=t.classList.contains('vert')?VERT_W:TILE_W;
+    const h=t.classList.contains('vert')?VERT_H:TILE_H;
+    const r2={x:parseInt(t.style.left||0,10),y:parseInt(t.style.top||0,10),w,h};
+    if(intersects(r2,r)) return true;
+  }
+  return false;
+}
+
+/* Применяем постановку (сдвиг конца) */
 function applyPlaced(end,n){
   if(n.orient==='h'){ end.x=n.x; end.y=n.y; end.dir=n.nextDir; return; }
   if(n.seamAt==='bottom'){ end.x=n.x; end.y=n.y + (VERT_H - TILE_H); }
@@ -425,7 +421,7 @@ function applyPlaced(end,n){
   end.dir=n.nextDir;
 }
 
-/* Зоны направления — только при перетаскивании и только валидные */
+/* Направленные зоны — только валидные и в поле */
 function zones4(end){
   const s=seam(end);
   return {
@@ -437,8 +433,7 @@ function zones4(end){
 }
 function clearZones(){ [...chainZoom.querySelectorAll('.dz')].forEach(n=>n.remove()); }
 function renderDirectionalZones(){
-  clearZones();
-  if(!dragging) return;
+  clearZones(); if(!dragging) return;
   const ends=[{e:endLeft,id:'L',open:openLeft},{e:endRight,id:'R',open:openRight}];
   for(const side of ends){
     if(!side.e) continue;
@@ -466,12 +461,12 @@ function fitChain(){
           w=t.classList.contains('vert')?VERT_W:TILE_W, h=t.classList.contains('vert')?VERT_H:TILE_H;
     minX=Math.min(minX,x); minY=Math.min(minY,y); maxX=Math.max(maxX,x+w); maxY=Math.max(maxY,y+h);
   }
-  const chainW=maxX-minX, chainH=maxY-minY, pad=10;
+  const chainW=maxX-minX, chainH=maxY-minY, pad=12;
   const s=Math.min(1, (br().w-pad)/chainW, (br().h-pad)/chainH);
   chainZoom.style.transform=`scale(${s})`;
 }
 
-/* ===== RULES ===== */
+/* ===== Правила ===== */
 function hasPlayable(hand){
   if (freeMode) return true;
   for(const t of hand){ if(t.a===openLeft || t.b===openLeft || t.a===openRight || t.b===openRight) return true; }
@@ -483,23 +478,31 @@ function everyonePassed(){ for(let i=0;i<playerNames.length;i++){ if(!passes[i])
 function endByWinner(i){ endMessage.style.display='block'; endMessage.textContent='Игра окончена! Победитель: '+playerNames[i]+' (сбросил все костяшки)'; }
 function endByPasses(){ let best=-Infinity, wi=0; for(let i=0;i<playerNames.length;i++){ const s=scores[i]||0; if(s>best){best=s; wi=i;} } endMessage.style.display='block'; endMessage.textContent='Игра окончена! Все пропустили. Победитель по очкам: '+playerNames[wi]+' ('+(scores[wi]||0)+')'; }
 
-/* ===== PLACE ===== */
+/* ===== Постановка (с анти-оверлапом) ===== */
 function placeAt(whichEnd, a, b, choice){
   const e = (whichEnd === 'left') ? endLeft : endRight;
+
+  // выбрать позицию
   const n = choice ? nextPosByChoice(e, choice) : nextPosSnake(e);
 
-  // Дубль — поперёк, конец не двигаем
+  // дубль — поперёк, конец не двигаем
   if (a === b){
     const cp = crossPosForDouble(e, choice);
-    const el = createTileEl(a,b,{orient:cp.orient,left:cp.x,top:cp.y});
-    chainZoom.appendChild(el);
+    const r = rectOf(cp.orient, cp.x, cp.y);
+    if(collidesWithExisting(r)) return;            // не кладём поверх
+    chainZoom.appendChild(createTileEl(a,b,{orient:cp.orient,left:cp.x,top:cp.y}));
     fitChain(); renderDirectionalZones();
     return;
   }
 
-  const el=createTileEl(a,b,{orient:n.orient,left:n.x,top:n.y}); chainZoom.appendChild(el);
+  // обычная кость
+  const r = rectOf(n.orient, n.x, n.y);
+  if(collidesWithExisting(r)) return;              // не кладём поверх
+  chainZoom.appendChild(createTileEl(a,b,{orient:n.orient,left:n.x,top:n.y}));
   applyPlaced(e,n); fitChain();
 }
+
+/* Попытка поставить в зону */
 function tryPlace(target,data){
   if(!data || !target.classList.contains('dz')) return false;
   const isLeft = target.dataset.end==='L';
@@ -524,7 +527,7 @@ function tryPlace(target,data){
   return false;
 }
 
-/* ===== DECK FROM DATA ===== */
+/* ===== Колода из ?data= ===== */
 function buildDeckFromData(data){
   let out=[]; const A=data.listA||[], B=data.listB||[];
   if(A.length && !B.length){
@@ -537,7 +540,7 @@ function buildDeckFromData(data){
   return shuffle(out);
 }
 
-/* ===== START GAME ===== */
+/* ===== Старт ===== */
 function startGame(){
   const data=getQueryData();
   if(!data){
@@ -562,10 +565,10 @@ function startGame(){
   fitChain();
 
   renderPlayersBar(); renderHand(); updateControls(); updateSeats();
-  menuEl.style.display='none'; document.body.classList.remove('menu-open');
+  menuEl.style.display='none';
 }
 
-/* ===== CONTROLS ===== */
+/* ===== Кнопки ===== */
 drawBtn.addEventListener('click', function(){
   if(deck.length===0) return; const hand=hands[currentPlayer]||[]; if(!freeMode && hasPlayable(hand)) return;
   hand.push(deck.splice(Math.floor(Math.random()*deck.length),1)[0]); hands[currentPlayer]=hand; renderHand(); updateControls();
@@ -593,10 +596,10 @@ document.addEventListener('drop', function(ev){
   }
 });
 
-/* UX: прокрутка лотка колесом */
+/* Прокрутка лотка колесом */
 trayEl.addEventListener('wheel',(e)=>{ trayEl.scrollLeft += e.deltaY; }, {passive:true});
 
-/* ===== NAMES UI ===== */
+/* Имена в меню при изменении числа игроков */
 function buildNamesUI(){
   nameInputsEl.innerHTML='';
   const c=parseInt(playerCountEl.value,10)||2;
