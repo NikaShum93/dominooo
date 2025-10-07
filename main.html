@@ -89,6 +89,7 @@
 
   #tilePreview{position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:999999; background:rgba(0,0,0,.6)}
   #tilePreview .tile{position:static; width:680px; height:260px; box-shadow:0 18px 60px rgba(0,0,0,.55), inset 0 0 0 2px #e0d3bd}
+
 </style>
 </head>
 <body>
@@ -136,7 +137,7 @@ function fitStage(){ const vw=innerWidth,vh=innerHeight; const w=Math.min(vw,Mat
 addEventListener('resize',fitStage); fitStage();
 
 /* ===== utils ===== */
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]=a[j],a[i]];}return a;}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a.j]=[a[j],a.i];}return a;}
 function uid(i){return't'+i+'_'+Math.random().toString(36).slice(2,7);}
 function getQueryData(){const raw=new URLSearchParams(location.search).get('data'); if(!raw) return null; try{return JSON.parse(decodeURIComponent(raw));}catch(e){return null;}}
 function br(){return{w:chainEl.clientWidth,h:chainEl.clientHeight};}
@@ -232,6 +233,7 @@ function createTileEl(a,b,opts={}){
 
 /* ===== hand ===== */
 function renderHand(){ handHeader.textContent=`${playerNames[currentPlayer]}: (${(hands[currentPlayer]?.length||0)} костяшек)`; trayEl.innerHTML=''; for(const t of (hands[currentPlayer]||[])) trayEl.appendChild(createTileEl(t.a,t.b,{role:'hand',owner:currentPlayer,uid:t.uid,draggable:true,orient:'h'})); updateSeats(); }
+
 /* ===== hud ===== */
 function renderPlayersBar(){ playersBarEl.innerHTML=''; for(let i=0;i<playerNames.length;i++){const el=document.createElement('div'); el.className='player'+(i===currentPlayer?' active':''); el.innerHTML=`${playerNames[i]} <span class="score" id="score-${i}">${scores[i]||0}</span>`; playersBarEl.appendChild(el);} }
 function updateControls(){ [...playersBarEl.getElementsByClassName('player')].forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer)); turnInfo.textContent=`Ход: ${playerNames[currentPlayer]}`; const playable=hasPlayable(hands[currentPlayer]||[]); drawBtn.disabled=(!freeMode&&playable)||deck.length===0; }
@@ -242,6 +244,48 @@ const fitSeatTextHorizontal=(box,txt)=>{const s=box.querySelector('span'); s.tex
 const fitSeatTextVertical=(box,txt)=>{const s=box.querySelector('span'); s.textContent=txt; box.style.fontSize='var(--seat-fs,14px)'; const ok=()=>s.scrollHeight<=box.clientHeight&&s.scrollWidth<=box.clientWidth; let fs=parseInt(getComputedStyle(box).fontSize)||14; s.style.whiteSpace='nowrap'; while(!ok()&&fs>9){fs--; box.style.fontSize=fs+'px';} };
 function setDensity(){ const n=playerNames.length; document.documentElement.style.setProperty('--seat-fs', (n>=4?11:n===3?12:14)+'px'); }
 function updateSeats(){ if(!playerNames.length) return; setDensity(); const n=playerNames.length; const order=[currentPlayer,(currentPlayer+1)%n,(currentPlayer+2)%n,(currentPlayer+3)%n]; const map=[{box:seatBoxes.bottom,i:order[0],fit:fitSeatTextHorizontal},{box:seatBoxes.right,i:order[1],fit:fitSeatTextVertical},{box:seatBoxes.top,i:order[2],fit:fitSeatTextHorizontal},{box:seatBoxes.left,i:order[3],fit:fitSeatTextVertical}]; map.forEach((row,idx)=>{ if(idx<n){const i=row.i, name=String(playerNames[i]).trim().replace(/\s+/g,' '), cnt=(hands[i]?hands[i].length:0); row.box.classList.remove('hidden'); row.fit(row.box,`${name} (${cnt})`);} else{row.box.classList.add('hidden'); row.box.querySelector('span').textContent='';}}); }
+
+/* ===== layout helpers ===== */
+// FIX: Rewritten from scratch for clarity and correctness
+function getNextPos(end, choice) {
+    let x, y, orient, nextDir;
+
+    if (end.orient === 'h') {
+        const seamX = end.dir === 1 ? end.x + TILE_W : end.x;
+        const alignY = end.y;
+        switch (choice) {
+            case 'right':
+                x = seamX + GAP; y = alignY; orient = 'h'; nextDir = 1; break;
+            case 'left':
+                x = seamX - TILE_W - GAP; y = alignY; orient = 'h'; nextDir = -1; break;
+            case 'down':
+                x = (end.dir === 1 ? seamX - VERT_W : seamX); y = alignY + TILE_H + GAP; orient = 'v'; nextDir = 1; break;
+            case 'up':
+                x = (end.dir === 1 ? seamX - VERT_W : seamX); y = alignY - VERT_H - GAP; orient = 'v'; nextDir = -1; break;
+        }
+    } else { // 'v'
+        const seamY = end.dir === 1 ? end.y + VERT_H : end.y;
+        const alignX = end.x;
+         switch (choice) {
+            case 'up':
+                x = alignX; y = seamY - VERT_H - GAP; orient = 'v'; nextDir = -1; break;
+            case 'down':
+                x = alignX; y = seamY + GAP; orient = 'v'; nextDir = 1; break;
+            case 'right':
+                x = alignX + VERT_W + GAP; y = (end.dir === 1 ? seamY - TILE_H : seamY); orient = 'h'; nextDir = 1; break;
+            case 'left':
+                x = alignX - TILE_W - GAP; y = (end.dir === 1 ? seamY - TILE_H : seamY); orient = 'h'; nextDir = -1; break;
+        }
+    }
+    return { x, y, orient, nextDir };
+}
+
+function applyPlaced(end, pos) {
+    end.x = pos.x;
+    end.y = pos.y;
+    end.orient = pos.orient;
+    end.dir = pos.nextDir;
+}
 
 /* ===== collisions ===== */
 function rectOf(o,x,y){return{x,y,w:o==='v'?VERT_W:TILE_W,h:o==='v'?VERT_H:TILE_H}}
@@ -257,31 +301,6 @@ function collidesWithExisting(r, ignoreEl) {
     return false;
 }
 
-/* ===== layout helpers ===== */
-function getNextPos(end, choice) {
-    let x, y, orient, nextDir;
-    if (end.orient === 'h') {
-        const seamX = end.dir === 1 ? end.x + TILE_W : end.x;
-        const alignY = end.y;
-        switch (choice) {
-            case 'right': x = seamX + GAP; y = alignY; orient = 'h'; nextDir = 1; break;
-            case 'left':  x = seamX - TILE_W - GAP; y = alignY; orient = 'h'; nextDir = -1; break;
-            case 'down':  x = seamX - VERT_W; y = alignY + TILE_H + GAP; orient = 'v'; nextDir = 1; break;
-            case 'up':    x = seamX - VERT_W; y = alignY - VERT_H - GAP; orient = 'v'; nextDir = -1; break;
-        }
-    } else {
-        const seamY = end.dir === 1 ? end.y + VERT_H : end.y;
-        const alignX = end.x;
-        switch (choice) {
-            case 'up':    x = alignX; y = seamY - VERT_H - GAP; orient = 'v'; nextDir = -1; break;
-            case 'down':  x = alignX; y = seamY + GAP; orient = 'v'; nextDir = 1; break;
-            case 'right': x = alignX + VERT_W + GAP; y = seamY - TILE_H; orient = 'h'; nextDir = 1; break;
-            case 'left':  x = alignX - TILE_W - GAP; y = seamY - TILE_H; orient = 'h'; nextDir = -1; break;
-        }
-    }
-    return { x, y, orient, nextDir };
-}
-function applyPlaced(end, pos) { end.x = pos.x; end.y = pos.y; end.orient = pos.orient; end.dir = pos.nextDir; }
 
 /* ===== zones ===== */
 function getSeam(end) {
@@ -298,18 +317,23 @@ function renderDirectionalZones(){
   for(const side of ends){
     if(!side.e || !side.e.el) continue;
     if(!freeMode && !(dragging.a===side.open||dragging.b===side.open)) continue;
+    
     const seam = getSeam(side.e);
     const zones = {
-        up: { left: seam.x - DZ/2, top: seam.y - DZ - GAP, dir: '↑', k: 'up' },
-        right:{ left: seam.x + GAP, top: seam.y - DZ/2, dir: '→', k: 'right'},
-        down:{ left: seam.x - DZ/2, top: seam.y + GAP, dir: '↓', k: 'down'},
-        left:{ left: seam.x - DZ - GAP, top: seam.y - DZ/2, dir: '←', k: 'left'}
+        up: { left: seam.x - DZ / 2, top: seam.y - DZ - GAP, dir: '↑', k: 'up' },
+        right: { left: seam.x + GAP, top: seam.y - DZ / 2, dir: '→', k: 'right' },
+        down: { left: seam.x - DZ / 2, top: seam.y + GAP, dir: '↓', k: 'down' },
+        left: { left: seam.x - DZ - GAP, top: seam.y - DZ / 2, dir: '←', k: 'left' }
     };
+    
     for(const k of Object.keys(zones)){
       const pos = getNextPos(side.e, k);
       if (!pos.orient) continue;
+
       const r = rectOf(pos.orient, pos.x, pos.y);
-      if(collidesWithExisting(r, side.e.el)) continue; // 🚫 нельзя поверх костяшки
+      
+      if(collidesWithExisting(r, side.e.el)) continue;
+      
       const zoneInfo = zones[k];
       const z=document.createElement('div'); z.className='dz active';
       z.style.left=zoneInfo.left+'px'; z.style.top=zoneInfo.top+'px';
@@ -318,8 +342,12 @@ function renderDirectionalZones(){
     }
   }
 }
+addEventListener('resize',()=>{if(dragging) renderDirectionalZones();});
 
-/* ===== rules & gameplay ===== */
+/* ===== fit chain ===== */
+function fitChain(){ const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')]; if(!tiles.length){chainZoom.style.transform='scale(1)'; return;} let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity; for(const t of tiles){const x=parseInt(t.style.left||0),y=parseInt(t.style.top||0),w=t.classList.contains('vert')?VERT_W:TILE_W,h=t.classList.contains('vert')?VERT_H:TILE_H; minX=Math.min(minX,x); minY=Math.min(minY,y); maxX=Math.max(maxX,x+w); maxY=Math.max(maxY,y+h);} const pad=20; const s=Math.min(1,(br().w-pad)/(maxX-minX),(br().h-pad)/(maxY-minY)); scale=s; panX = (br().w - (maxX - minX) * s) / 2 - minX * s; panY = (br().h - (maxY - minY) * s) / 2 - minY * s; updateTransform(); }
+
+/* ===== rules ===== */
 function hasPlayable(hand){ if(freeMode) return true; for(const t of hand){ if(t.a===openLeft||t.b===openLeft||t.a===openRight||t.b===openRight) return true; } return false; }
 function award(i,pts=1){scores[i]=(scores[i]||0)+pts; const el=document.getElementById('score-'+i); if(el) el.textContent=String(scores[i]);}
 function nextPlayer(){currentPlayer=(currentPlayer+1)%playerNames.length; renderHand(); renderPlayersBar(); updateControls(); updateSeats();}
@@ -327,63 +355,126 @@ function everyonePassed(){for(let i=0;i<playerNames.length;i++){if(!passes[i]) r
 function endByWinner(i){endMessage.style.display='block'; endMessage.textContent='Игра окончена! Победитель: '+playerNames[i]}
 function endByPasses(){let best=-Infinity,wi=0; for(let i=0;i<playerNames.length;i++){const s=scores[i]||0; if(s>best){best=s; wi=i}} endMessage.style.display='block'; endMessage.textContent='Игра окончена! Победитель по очкам: '+playerNames[wi]+' ('+(scores[wi]||0)+')'}
 
+/* ===== place ===== */
 function placeAt(whichEnd, tileData, choice){
   const end = (whichEnd==='left') ? endLeft : endRight;
   const pos = getNextPos(end, choice);
+
   if(!pos.orient || collidesWithExisting(rectOf(pos.orient,pos.x,pos.y), end.el)) return false;
+
   const newTile = createTileEl(tileData.a, tileData.b, {orient:pos.orient,left:pos.x,top:pos.y});
   chainZoom.appendChild(newTile);
+  
   applyPlaced(end, pos);
   end.el = newTile;
   return true;
 }
+
 function tryPlace(target, data) {
     if (!data || !target.classList.contains('dz')) return false;
+
     const isLeft = target.dataset.end === 'L';
     const choice = target.dataset.k;
     const openVal = isLeft ? openLeft : openRight;
-    let matchVal,newVal;
-    if (data.a===openVal){matchVal=data.a; newVal=data.b;}
-    else if(data.b===openVal){matchVal=data.b; newVal=data.a;}
-    else if(freeMode){matchVal=isLeft?data.b:data.a; newVal=isLeft?data.a:data.b;}
-    else return false;
-    let p1,p2;
-    if(isLeft){p1=newVal;p2=matchVal; if(choice==='down'||choice==='right')[p1,p2]=[p2,p1];}
-    else{p1=matchVal;p2=newVal; if(choice==='up'||choice==='left')[p1,p2]=[p2,p1];}
-    if(placeAt(isLeft?'left':'right',{a:p1,b:p2},choice)){ if(isLeft)openLeft=newVal; else openRight=newVal; return true;}
+    
+    let matchVal, newVal;
+    if (data.a === openVal) {
+        matchVal = data.a; newVal = data.b;
+    } else if (data.b === openVal) {
+        matchVal = data.b; newVal = data.a;
+    } else if (freeMode) {
+        matchVal = isLeft ? data.b : data.a;
+        newVal = isLeft ? data.a : data.b;
+    } else {
+        return false;
+    }
+
+    let p1, p2; // половинки новой костяшки
+    if (isLeft) {
+        p1 = newVal; p2 = matchVal;
+        if (choice === 'down' || choice === 'right') [p1, p2] = [p2, p1];
+    } else {
+        p1 = matchVal; p2 = newVal;
+        if (choice === 'up' || choice === 'left') [p1, p2] = [p2, p1];
+    }
+    
+    // Считаем прямоугольник новой костяшки
+    const pos = getNextPos(isLeft ? endLeft : endRight, choice);
+    const r = rectOf(pos.orient, pos.x, pos.y);
+
+    // Если пересекается с существующей — не кладём
+    if (collidesWithExisting(r, (isLeft ? endLeft : endRight).el)) {
+        return false;
+    }
+
+    if (placeAt(isLeft ? 'left' : 'right', { a: p1, b: p2 }, choice)) {
+        if (isLeft) openLeft = newVal; else openRight = newVal;
+        return true;
+    }
     return false;
 }
 
-/* ===== deck & start ===== */
+
+/* ===== deck ===== */
 function buildDeckFromData(d){const out=[]; const A=(d&&Array.isArray(d.listA))?d.listA:[], B=(d&&Array.isArray(d.listB))?d.listB:[]; const pair=(arr,tag)=>{for(let i=0;i<arr.length;i++) for(let j=i;j<arr.length;j++) out.push({a:arr[i],b:arr[j],uid:uid(tag+i+'_'+j)})}; if(A.length&&!B.length) pair(A,'A'); else if(A.length&&B.length){pair(A,'A'); pair(B,'B'); const n=Math.min(A.length,B.length); for(let i=0;i<n;i++) out.push({a:A[i],b:B[i],uid:uid('AB'+i)})} return out;}
+
+/* ===== start ===== */
 function startGame(){
   const data=getQueryData()||{}; freeMode=!!data.freeMode;
-  playerNames.length=0; const c=Math.max(1,Math.min(4,parseInt(playerCountEl.value)||2));
-  for(let i=0;i<c;i++){playerNames.push((document.getElementById('pname'+i)?.value||'').trim()||('Игрок '+(i+1)));}
-  deck=buildDeckFromData(data);
-  if(deck.length===0) deck=[{a:"раз",b:"раз",uid:uid('M')}];
+  playerNames.length=0; const c=Math.max(1,Math.min(4,parseInt(playerCountEl.value)||2)); for(let i=0;i<c;i++){playerNames.push((document.getElementById('pname'+i)?.value||'').trim()||('Игрока '+(i+1)));}
+  deck=buildDeckFromData(data); const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"]; const need=playerNames.length*5+1; 
+  const ensure=(arr,tag)=>{for(let i=0;i<arr.length;i++) for(let j=i;j<arr.length;j++) deck.push({a:arr[i],b:arr[j],uid:uid(tag+i+'_'+j)})}; 
+  if(deck.length<need&&Array.isArray(data.listA)&&data.listA.length) ensure(data.listA,'A2'); if(deck.length<need) ensure(F,'F'); if(deck.length===0) ensure(["раз","два","три"],'M');
   shuffle(deck);
-  scores={}; passes={}; currentPlayer=0; hands={}; endMessage.style.display='none';
-  for(let k=0;k<playerNames.length;k++){hands[k]=[]; scores[k]=0; passes[k]=0;}
+  
+  const allWords = [...new Set(deck.flatMap(t => [t.a, t.b, "Старт"]))];
+  let minFontSize = 30;
+  const tempHalf = document.createElement('div');
+  tempHalf.style.width = `${TILE_W / 2 - 24}px`;
+  tempHalf.style.position = 'fixed'; tempHalf.style.left = '-9999px';
+  const tempB = document.createElement('b');
+  tempB.style.fontFamily = 'Inter, system-ui, sans-serif';
+  tempB.style.fontWeight = '900';
+  tempB.style.whiteSpace = 'nowrap';
+  tempHalf.appendChild(tempB);
+  document.body.appendChild(tempHalf);
+  
+  if (allWords.length > 0) {
+    for (const word of allWords) {
+      tempB.textContent = word; let s = 30; tempB.style.fontSize = s + 'px';
+      while (s > 10 && tempB.scrollWidth >= tempHalf.clientWidth) { s--; tempB.style.fontSize = s + 'px'; }
+      minFontSize = Math.min(minFontSize, s);
+    }
+    uniformTileFontSize = minFontSize;
+  }
+  document.body.removeChild(tempHalf);
+
+  scores={}; passes={}; currentPlayer=0; hands={}; endMessage.style.display='none'; for(let k=0;k<playerNames.length;k++){hands[k]=[]; scores[k]=0; passes[k]=0;}
   for(let r=0;r<5;r++){ for(let j=0;j<playerNames.length;j++){ if(!deck.length) break; hands[j].push(deck.shift()); } }
-  let start=deck.shift(); if(!start){start={a:"Старт",b:"Старт",uid:uid('S')};}
+  let start=deck.shift(); if(!start){const h=hands[0]||[]; start=h.length?h.shift():{a:"Старт",b:"Старт",uid:uid('S')}; hands[0]=h;}
   chainZoom.innerHTML=''; const sx=Math.floor((br().w-TILE_W)/2), sy=Math.floor((br().h-TILE_H)/2);
   const startTile = createTileEl(start.a,start.b,{left:sx,top:sy});
   chainZoom.appendChild(startTile);
   openLeft=start.a; openRight=start.b;
-  endLeft={x:sx,y:sy,dir:-1, orient:'h', el:startTile};
-  endRight={x:sx,y:sy,dir:1, orient:'h', el:startTile};
-  renderPlayersBar(); renderHand(); updateControls(); updateSeats(); menuEl.style.display='none';
+  endLeft={x:sx,y:sy,dir:-1, orient:'h', el: startTile};
+  endRight={x:sx,y:sy,dir:1, orient:'h', el: startTile};
+  fitChain();
+  renderPlayersBar(); renderHand(); updateControls(); updateSeats(); if(freeMode) document.getElementById('title').textContent='Domino · Cozy Edition · Свободная игра'; menuEl.style.display='none';
 }
 
 /* ===== buttons & dnd ===== */
 drawBtn.addEventListener('click',()=>{ if(!deck.length) return; const hand=hands[currentPlayer]||[]; if(!freeMode&&hasPlayable(hand)) return; hand.push(deck.splice(Math.floor(Math.random()*deck.length),1)[0]); hands[currentPlayer]=hand; renderHand(); updateControls(); });
 skipBtn.addEventListener('click',()=>{ passes[currentPlayer]=(passes[currentPlayer]||0)+1; if(everyonePassed()){endByPasses(); return;} nextPlayer(); });
 restartBtn.addEventListener('click',()=>location.reload());
-startBtn.addEventListener('click',startGame);
+startBtn.addEventListener('click',startGame); startBtn.onclick=startGame;
 
 addEventListener('dragover',e=>{ if(dragging) e.preventDefault(); });
 addEventListener('drop',e=>{ const t=e.target; if(!dragging) return; if(t&&t.classList&&t.classList.contains('dz')){ e.preventDefault(); const ok=tryPlace(t,dragging); if(ok){ const arr=hands[dragging.owner]||[]; hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid); award(dragging.owner,1); renderHand(); if(hands[dragging.owner].length===0){ endByWinner(dragging.owner); dragging=null; clearZones(); return; } passes[currentPlayer]=0; nextPlayer(); } dragging=null; clearZones(); }});
+trayEl.addEventListener('wheel',e=>{ trayEl.scrollLeft+=e.deltaY },{passive:true});
+
+/* safety init */
+(function(){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',()=>{fitStage();renderNameInputs();}); } else {fitStage();renderNameInputs();} })();
 </script>
 </body>
 </html>
+
