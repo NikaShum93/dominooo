@@ -53,7 +53,7 @@
   }
   .board.grabbing{ cursor: grabbing; }
   .chain{position:relative; width:100%; height:100%}
-  #chainZoom{position:absolute; inset:0; transform-origin:0 0; will-change: transform;}
+  #chainZoom{position:absolute; inset:0; transform-origin:0 0;}
 
   #seats{pointer-events:none; position:absolute; inset:0}
   .seat{position:absolute; background:rgba(0,0,0,.25); border:1px solid rgba(255,218,139,.45); color:#f5e6bf; font-weight:800; padding:6px 10px; border-radius:12px; font-size:var(--seat-fs,14px)}
@@ -63,37 +63,31 @@
   .seat-right{right:8px} .seat-left{left:8px} .seat.hidden{display:none}
 
   .tile{
-    width:170px; height:70px;
+    width:200px; height:70px;
     background:radial-gradient(120% 120% at 20% 20%, rgba(0,0,0,.08), transparent 60%), linear-gradient(#fffdf8,#fff6e7);
     border:2px solid #e7dbc9; border-radius:12px; display:grid; grid-template-columns:1fr 1fr;
     position:absolute; box-shadow:0 2px 6px rgba(0,0,0,.35), inset 0 0 0 2px #e0d3bd, inset 0 -10px 20px rgba(0,0,0,.06);
     overflow:hidden; user-select:none; transition:transform .12s; -webkit-user-drag:element;
   }
   .tile:hover{transform:scale(1.04)}
-  .tile .half{display:flex; align-items:center; justify-content:center; padding:0 6px; overflow:hidden; min-width:0}
+  .tile .half{display:flex; align-items:center; justify-content:center; padding:0 8px; overflow:hidden; min-width:0;}
+  .tile .half:first-child { border-right: 2px solid #d8c8aa; }
+  .tile.vert .half:first-child { border-right: none; border-bottom: 2px solid #d8c8aa; }
+  
   .tile b{display:block; line-height:1.05; font-weight:900; color:#1c1712; white-space:nowrap; max-width:100%}
-  .tile .sep{position:absolute; left:50%; top:0; bottom:0; width:2px; background:#d8c8aa}
-  .tile.vert{width:70px; height:170px; grid-template-columns:1fr; grid-template-rows:1fr 1fr}
-  .tile.vert .sep{left:0; top:50%; width:100%; height:2px}
+  .tile.vert{width:70px; height:200px; grid-template-columns:1fr; grid-template-rows:1fr 1fr}
 
   .hands{width:100%; display:flex; flex-direction:column; gap:6px; padding:8px 0}
   .hand-header{width:95%; margin:0 auto; text-align:center; font-weight:900; color:#e9d2a2}
   .tray{width:95%; margin:0 auto; height:60px; display:flex; gap:8px; flex-wrap:nowrap; align-items:center; overflow-x:auto; padding:8px 10px; border:2px solid #8c5c2f; background:#5a3b21; border-radius:12px}
-  .tray > .tile{position:static} .tile.hand{transform:scale(.55); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+  .tray > .tile{position:static} .tile.hand{transform:scale(.50); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
   .tile.hand *{pointer-events:none}
 
   .dz{position:absolute; width:38px; height:38px; border:2px dashed #b68a3e; border-radius:10px; display:none; background:rgba(255,215,120,.08)}
   .dz.active{display:block; background:rgba(255,215,120,.28); box-shadow:0 0 16px rgba(255,215,120,.7)}
   .dz::after{content:attr(data-dir); font-size:11px; color:#2c1a32; font-weight:900; background:#f2c56a; padding:2px 6px; border-radius:8px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%)}
 
-  /* === ПРЕВЬЮ: убираем артефакты/полосу === */
-  #tilePreview{
-    position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:999999;
-    background:rgba(0,0,0,.6);
-    transform: translate3d(0,0,0);          /* свой слой */
-    backface-visibility: hidden;            /* без «швов» */
-    contain: paint;                          /* отсечь влияние фона */
-  }
+  #tilePreview{position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:999999; background:rgba(0,0,0,.6)}
   #tilePreview .tile{position:static; width:680px; height:260px; box-shadow:0 18px 60px rgba(0,0,0,.55), inset 0 0 0 2px #e0d3bd}
 </style>
 </head>
@@ -142,15 +136,35 @@ function fitStage(){ const vw=innerWidth,vh=innerHeight; const w=Math.min(vw,Mat
 addEventListener('resize',fitStage); fitStage();
 
 /* ===== utils ===== */
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]=a[j],a[i]];}return a;}
 function uid(i){return't'+i+'_'+Math.random().toString(36).slice(2,7);}
 function getQueryData(){const raw=new URLSearchParams(location.search).get('data'); if(!raw) return null; try{return JSON.parse(decodeURIComponent(raw));}catch(e){return null;}}
 function br(){return{w:chainEl.clientWidth,h:chainEl.clientHeight};}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 
 /* ===== text fitters ===== */
-function fitTextNoWrap(bEl,text,start=30,min=12){ bEl.textContent=text; bEl.style.whiteSpace='nowrap'; bEl.style.fontWeight=900; let s=start; bEl.style.fontSize=s+'px'; const box=bEl.parentElement; const ok=()=>bEl.scrollWidth<=box.clientWidth-2&&bEl.scrollHeight<=box.clientHeight-2; while(s>min&&!ok()){s--; bEl.style.fontSize=s+'px';} }
-function growTextToFit(bEl,start=36,max=220,step=2,pad=12){ bEl.style.whiteSpace='nowrap'; bEl.style.fontWeight=900; let s=start; bEl.style.fontSize=s+'px'; const ok=()=>bEl.scrollWidth<=bEl.parentElement.clientWidth-pad&&bEl.scrollHeight<=bEl.parentElement.clientHeight-pad; while(s>6&&!ok()){s-=step; bEl.style.fontSize=s+'px';} while(s<max){ bEl.style.fontSize=(s+step)+'px'; if(!ok()){bEl.style.fontSize=s+'px'; break;} s+=step; } }
+function fitAndApplyUniformSize(elA, elB, textA, textB, start=36, max=220, pad=12) {
+    elA.textContent = textA;
+    elB.textContent = textB;
+    elA.style.whiteSpace = elB.style.whiteSpace = 'nowrap';
+    elA.style.fontWeight = elB.style.fontWeight = '900';
+    let s = start;
+    const checkFit = () => {
+        elA.style.fontSize = s + 'px';
+        elB.style.fontSize = s + 'px';
+        return elA.scrollWidth <= elA.parentElement.clientWidth - pad && elB.scrollWidth <= elB.parentElement.clientWidth - pad;
+    };
+    while (s > 6 && !checkFit()) { s--; }
+    while (s < max) {
+        s++;
+        if (!checkFit()) {
+            s--;
+            elA.style.fontSize = s + 'px';
+            elB.style.fontSize = s + 'px';
+            break;
+        }
+    }
+}
 
 /* ===== DOM refs ===== */
 const menuEl=document.getElementById('menu'), nameInputsEl=document.getElementById('nameInputs'), playerCountEl=document.getElementById('playerCount'), startBtn=document.getElementById('startBtn');
@@ -164,18 +178,14 @@ const seatBoxes={bottom:document.querySelector('.seat-bottom'),right:document.qu
 /* ===== state ===== */
 let playerNames=[], hands={}, deck=[], currentPlayer=0, scores={}, passes={};
 let openLeft=null, openRight=null, endLeft=null, endRight=null, dragging=null, freeMode=false;
+let uniformTileFontSize = 22;
 
 /* ===== geometry ===== */
-const TILE_W=170, TILE_H=70, VERT_W=70, VERT_H=170, GAP=4, DZ=38;
+const TILE_W=200, TILE_H=70, VERT_W=70, VERT_H=200, GAP=4, DZ=38;
 
 /* ===== Pan & Zoom ===== */
 let scale = 1, panX = 0, panY = 0, isPanning = false, startPanX = 0, startPanY = 0;
-function updateTransform() {
-  // ОКРУГЛЯЕМ, чтобы не было субпиксельных «швов»
-  const tx = Math.round(panX);
-  const ty = Math.round(panY);
-  chainZoom.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
-}
+function updateTransform() { chainZoom.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`; }
 boardEl.addEventListener('mousedown', e => { if (e.button !== 0 || e.target.closest('.dz, .tile')) return; e.preventDefault(); isPanning = true; startPanX = e.clientX - panX; startPanY = e.clientY - panY; boardEl.classList.add('grabbing'); });
 window.addEventListener('mousemove', e => { if (!isPanning) return; e.preventDefault(); panX = e.clientX - startPanX; panY = e.clientY - startPanY; updateTransform(); });
 window.addEventListener('mouseup', () => { if (isPanning) { isPanning = false; boardEl.classList.remove('grabbing'); } });
@@ -189,12 +199,11 @@ playerCountEl.addEventListener('input',renderNameInputs); renderNameInputs();
 function showPreview(a,b){
   previewInner.innerHTML='';
   const big=document.createElement('div'); big.className='tile'; big.style.position='static'; big.style.width='680px'; big.style.height='260px';
-  big.innerHTML='<div class="half"><b></b></div><div class="sep"></div><div class="half"><b></b></div>';
+  big.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
   previewInner.appendChild(big);
   previewWrap.style.display='flex';
   const l=big.querySelector('.half:first-child b'), r=big.querySelector('.half:last-child b');
-  l.textContent=a; r.textContent=b;
-  growTextToFit(l,36,220,2,12); growTextToFit(r,36,220,2,12);
+  fitAndApplyUniformSize(l, r, a, b, 100, 220, 20);
 }
 function hidePreview(){previewWrap.style.display='none';}
 addEventListener('keydown',e=>{if(e.key==='Escape') hidePreview();});
@@ -204,10 +213,14 @@ previewWrap.addEventListener('click',hidePreview);
 function createTileEl(a,b,opts={}){
   const role=opts.role||'chain'; const owner=Number.isInteger(opts.owner)?opts.owner:null; const id=opts.uid||null; const orient=opts.orient||'h'; const draggable=!!opts.draggable;
   const el=document.createElement('div'); el.className='tile '+(orient==='v'?'vert ':'')+role; el.dataset.a=a; el.dataset.b=b; if(id) el.dataset.uid=id; if(owner!==null) el.dataset.owner=owner;
-  el.style.left=(opts.left||0)+'px'; el.style.top=(opts.top||0)+'px'; el.innerHTML='<div class="half"><b></b></div><div class="sep"></div><div class="half"><b></b></div>';
+  el.style.left=(opts.left||0)+'px'; el.style.top=(opts.top||0)+'px';
+  el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
   const h=el.getElementsByClassName('half');
-  fitTextNoWrap(h[0].firstElementChild, a, role==='hand'?22:30);
-  fitTextNoWrap(h[1].firstElementChild, b, role==='hand'?22:30);
+  const size = (role === 'hand') ? Math.max(12, Math.floor(uniformTileFontSize * 0.8)) : uniformTileFontSize;
+  h[0].firstElementChild.textContent = a;
+  h[1].firstElementChild.textContent = b;
+  h[0].firstElementChild.style.fontSize = size + 'px';
+  h[1].firstElementChild.style.fontSize = size + 'px';
 
   el.addEventListener('click',()=>showPreview(a,b));
   if(draggable){ el.draggable=true;
@@ -219,7 +232,6 @@ function createTileEl(a,b,opts={}){
 
 /* ===== hand ===== */
 function renderHand(){ handHeader.textContent=`${playerNames[currentPlayer]}: (${(hands[currentPlayer]?.length||0)} костяшек)`; trayEl.innerHTML=''; for(const t of (hands[currentPlayer]||[])) trayEl.appendChild(createTileEl(t.a,t.b,{role:'hand',owner:currentPlayer,uid:t.uid,draggable:true,orient:'h'})); updateSeats(); }
-
 /* ===== hud ===== */
 function renderPlayersBar(){ playersBarEl.innerHTML=''; for(let i=0;i<playerNames.length;i++){const el=document.createElement('div'); el.className='player'+(i===currentPlayer?' active':''); el.innerHTML=`${playerNames[i]} <span class="score" id="score-${i}">${scores[i]||0}</span>`; playersBarEl.appendChild(el);} }
 function updateControls(){ [...playersBarEl.getElementsByClassName('player')].forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer)); turnInfo.textContent=`Ход: ${playerNames[currentPlayer]}`; const playable=hasPlayable(hands[currentPlayer]||[]); drawBtn.disabled=(!freeMode&&playable)||deck.length===0; }
@@ -231,93 +243,83 @@ const fitSeatTextVertical=(box,txt)=>{const s=box.querySelector('span'); s.textC
 function setDensity(){ const n=playerNames.length; document.documentElement.style.setProperty('--seat-fs', (n>=4?11:n===3?12:14)+'px'); }
 function updateSeats(){ if(!playerNames.length) return; setDensity(); const n=playerNames.length; const order=[currentPlayer,(currentPlayer+1)%n,(currentPlayer+2)%n,(currentPlayer+3)%n]; const map=[{box:seatBoxes.bottom,i:order[0],fit:fitSeatTextHorizontal},{box:seatBoxes.right,i:order[1],fit:fitSeatTextVertical},{box:seatBoxes.top,i:order[2],fit:fitSeatTextHorizontal},{box:seatBoxes.left,i:order[3],fit:fitSeatTextVertical}]; map.forEach((row,idx)=>{ if(idx<n){const i=row.i, name=String(playerNames[i]).trim().replace(/\s+/g,' '), cnt=(hands[i]?hands[i].length:0); row.box.classList.remove('hidden'); row.fit(row.box,`${name} (${cnt})`);} else{row.box.classList.add('hidden'); row.box.querySelector('span').textContent='';}}); }
 
-/* ===== layout helpers ===== */
-function seam(end) {
-    if (end.orient === 'h') {
-        return end.dir === 1 ? { x: end.x + TILE_W, y: end.y + TILE_H / 2 } : { x: end.x, y: end.y + TILE_H / 2 };
-    } else { // 'v'
-        return end.dir === 1 ? { x: end.x + VERT_W / 2, y: end.y + VERT_H } : { x: end.x + VERT_W / 2, y: end.y };
-    }
-}
-function nextPosByChoice(end, choice) {
-    const s = seam(end);
-    if (choice === 'right') return { x: s.x + GAP, y: s.y - TILE_H / 2, orient: 'h', nextDir: 1 };
-    if (choice === 'left')  return { x: s.x - GAP - TILE_W, y: s.y - TILE_H / 2, orient: 'h', nextDir: -1 };
-    if (choice === 'down')  return { x: s.x - VERT_W / 2, y: s.y + GAP, orient: 'v', nextDir: 1 };
-    if (choice === 'up')    return { x: s.x - VERT_W / 2, y: s.y - GAP - VERT_H, orient: 'v', nextDir: -1 };
-    return {};
-}
-function crossPosForDouble(end, choice) {
-    const s = seam(end);
-    if (choice === 'left' || choice === 'right') return { x: s.x - VERT_W / 2, y: s.y - VERT_H / 2, orient: 'v' };
-    return { x: s.x - TILE_W / 2, y: s.y - TILE_H / 2, orient: 'h' };
-}
-function applyPlaced(end, n) {
-    end.x = n.x; end.y = n.y; end.orient = n.orient; end.dir = n.nextDir;
-}
-
 /* ===== collisions ===== */
 function rectOf(o,x,y){return{x,y,w:o==='v'?VERT_W:TILE_W,h:o==='v'?VERT_H:TILE_H}}
 function intersects(r1,r2){return !(r2.x>=r1.x+r1.w||r2.x+r2.w<=r1.x||r2.y>=r1.y+r1.h||r2.y+r2.h<=r1.y)}
-function collidesWithExisting(r){for(const t of [...chainZoom.querySelectorAll('.tile:not(.hand)')]){const w=t.classList.contains('vert')?VERT_W:TILE_W,h=t.classList.contains('vert')?VERT_H:TILE_H; const r2={x:parseInt(t.style.left||0),y:parseInt(t.style.top||0),w,h}; if(intersects(r,r2)) return true;} return false;}
+function collidesWithExisting(r, ignoreEl) {
+    for (const t of [...chainZoom.querySelectorAll('.tile:not(.hand)')]) {
+        if (t === ignoreEl) continue;
+        const w = t.classList.contains('vert') ? VERT_W : TILE_W;
+        const h = t.classList.contains('vert') ? VERT_H : TILE_H;
+        const r2 = { x: parseInt(t.style.left || 0), y: parseInt(t.style.top || 0), w, h };
+        if (intersects(r, r2)) return true;
+    }
+    return false;
+}
+
+/* ===== layout helpers ===== */
+function getNextPos(end, choice) {
+    let x, y, orient, nextDir;
+    if (end.orient === 'h') {
+        const seamX = end.dir === 1 ? end.x + TILE_W : end.x;
+        const alignY = end.y;
+        switch (choice) {
+            case 'right': x = seamX + GAP; y = alignY; orient = 'h'; nextDir = 1; break;
+            case 'left':  x = seamX - TILE_W - GAP; y = alignY; orient = 'h'; nextDir = -1; break;
+            case 'down':  x = seamX - VERT_W; y = alignY + TILE_H + GAP; orient = 'v'; nextDir = 1; break;
+            case 'up':    x = seamX - VERT_W; y = alignY - VERT_H - GAP; orient = 'v'; nextDir = -1; break;
+        }
+    } else {
+        const seamY = end.dir === 1 ? end.y + VERT_H : end.y;
+        const alignX = end.x;
+        switch (choice) {
+            case 'up':    x = alignX; y = seamY - VERT_H - GAP; orient = 'v'; nextDir = -1; break;
+            case 'down':  x = alignX; y = seamY + GAP; orient = 'v'; nextDir = 1; break;
+            case 'right': x = alignX + VERT_W + GAP; y = seamY - TILE_H; orient = 'h'; nextDir = 1; break;
+            case 'left':  x = alignX - TILE_W - GAP; y = seamY - TILE_H; orient = 'h'; nextDir = -1; break;
+        }
+    }
+    return { x, y, orient, nextDir };
+}
+function applyPlaced(end, pos) { end.x = pos.x; end.y = pos.y; end.orient = pos.orient; end.dir = pos.nextDir; }
 
 /* ===== zones ===== */
-function zones4(end) {
-    const s = seam(end);
-    return {
-        up:    { left: s.x - DZ / 2, top: s.y - DZ - GAP, dir: '↑', k: 'up' },
-        right: { left: s.x + GAP,    top: s.y - DZ / 2, dir: '→', k: 'right' },
-        down:  { left: s.x - DZ / 2, top: s.y + GAP,    dir: '↓', k: 'down' },
-        left:  { left: s.x - DZ - GAP, top: s.y - DZ / 2, dir: '←', k: 'left' }
-    };
+function getSeam(end) {
+    if (end.orient === 'h') {
+        return end.dir === 1 ? { x: end.x + TILE_W, y: end.y + TILE_H / 2 } : { x: end.x, y: end.y + TILE_H / 2 };
+    } else {
+        return end.dir === 1 ? { x: end.x + VERT_W / 2, y: end.y + VERT_H } : { x: end.x + VERT_W / 2, y: end.y };
+    }
 }
 function clearZones(){[...chainZoom.querySelectorAll('.dz')].forEach(n=>n.remove())}
 function renderDirectionalZones(){
   clearZones(); if(!dragging) return;
   const ends=[{e:endLeft,id:'L',open:openLeft},{e:endRight,id:'R',open:openRight}];
   for(const side of ends){
-    if(!side.e) continue;
+    if(!side.e || !side.e.el) continue;
     if(!freeMode && !(dragging.a===side.open||dragging.b===side.open)) continue;
-
-    const pack=zones4(side.e);
-    for(const k of Object.keys(pack)){
-      // ВАЖНО: больше не блокируем «внутренние» стороны — разрешаем любой из 4 направлений,
-      // но всё равно отсекаем коллизии ниже.
-      let r;
-      if(dragging.a===dragging.b){
-        const cp=crossPosForDouble(side.e,k); r=rectOf(cp.orient,cp.x,cp.y);
-      } else {
-        const np=nextPosByChoice(side.e,k);   r=rectOf(np.orient,np.x,np.y);
-      }
-      if(collidesWithExisting(r)) continue;
-
-      const pos=pack[k]; const z=document.createElement('div'); z.className='dz active';
-      z.style.left=pos.left+'px'; z.style.top=pos.top+'px'; z.dataset.dir=pos.dir; z.dataset.end=side.id; z.dataset.k=k;
+    const seam = getSeam(side.e);
+    const zones = {
+        up: { left: seam.x - DZ/2, top: seam.y - DZ - GAP, dir: '↑', k: 'up' },
+        right:{ left: seam.x + GAP, top: seam.y - DZ/2, dir: '→', k: 'right'},
+        down:{ left: seam.x - DZ/2, top: seam.y + GAP, dir: '↓', k: 'down'},
+        left:{ left: seam.x - DZ - GAP, top: seam.y - DZ/2, dir: '←', k: 'left'}
+    };
+    for(const k of Object.keys(zones)){
+      const pos = getNextPos(side.e, k);
+      if (!pos.orient) continue;
+      const r = rectOf(pos.orient, pos.x, pos.y);
+      if(collidesWithExisting(r, side.e.el)) continue; // 🚫 нельзя поверх костяшки
+      const zoneInfo = zones[k];
+      const z=document.createElement('div'); z.className='dz active';
+      z.style.left=zoneInfo.left+'px'; z.style.top=zoneInfo.top+'px';
+      z.dataset.dir=zoneInfo.dir; z.dataset.end=side.id; z.dataset.k=k;
       chainZoom.appendChild(z);
     }
   }
 }
-addEventListener('resize',()=>{if(dragging) renderDirectionalZones();});
 
-/* ===== fit chain ===== */
-function fitChain(){
-  const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')];
-  if(!tiles.length){ chainZoom.style.transform='translate(0px,0px) scale(1)'; return; }
-  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
-  for(const t of tiles){
-    const x=parseInt(t.style.left||0),y=parseInt(t.style.top||0),
-          w=t.classList.contains('vert')?VERT_W:TILE_W,
-          h=t.classList.contains('vert')?VERT_H:TILE_H;
-    minX=Math.min(minX,x); minY=Math.min(minY,y); maxX=Math.max(maxX,x+w); maxY=Math.max(maxY,y+h);
-  }
-  const pad=12; const s=Math.min(1,(br().w-pad)/(maxX-minX),(br().h-pad)/(maxY-minY));
-  scale=s;
-  panX = Math.round((br().w - (maxX - minX) * s) / 2 - minX * s);
-  panY = Math.round((br().h - (maxY - minY) * s) / 2 - minY * s);
-  updateTransform();
-}
-
-/* ===== rules ===== */
+/* ===== rules & gameplay ===== */
 function hasPlayable(hand){ if(freeMode) return true; for(const t of hand){ if(t.a===openLeft||t.b===openLeft||t.a===openRight||t.b===openRight) return true; } return false; }
 function award(i,pts=1){scores[i]=(scores[i]||0)+pts; const el=document.getElementById('score-'+i); if(el) el.textContent=String(scores[i]);}
 function nextPlayer(){currentPlayer=(currentPlayer+1)%playerNames.length; renderHand(); renderPlayersBar(); updateControls(); updateSeats();}
@@ -325,83 +327,63 @@ function everyonePassed(){for(let i=0;i<playerNames.length;i++){if(!passes[i]) r
 function endByWinner(i){endMessage.style.display='block'; endMessage.textContent='Игра окончена! Победитель: '+playerNames[i]}
 function endByPasses(){let best=-Infinity,wi=0; for(let i=0;i<playerNames.length;i++){const s=scores[i]||0; if(s>best){best=s; wi=i}} endMessage.style.display='block'; endMessage.textContent='Игра окончена! Победитель по очкам: '+playerNames[wi]+' ('+(scores[wi]||0)+')'}
 
-/* ===== place ===== */
-function placeAt(whichEnd, tileA, tileB, choice){
-  const e = (whichEnd==='left') ? endLeft : endRight;
-  let n;
-  if(tileA === tileB){ n = crossPosForDouble(e, choice); }
-  else { n = nextPosByChoice(e, choice); }
-
-  if(!n.orient || collidesWithExisting(rectOf(n.orient,n.x,n.y))) return false;
-
-  const newTile = createTileEl(tileA, tileB, {orient:n.orient,left:n.x,top:n.y});
+function placeAt(whichEnd, tileData, choice){
+  const end = (whichEnd==='left') ? endLeft : endRight;
+  const pos = getNextPos(end, choice);
+  if(!pos.orient || collidesWithExisting(rectOf(pos.orient,pos.x,pos.y), end.el)) return false;
+  const newTile = createTileEl(tileData.a, tileData.b, {orient:pos.orient,left:pos.x,top:pos.y});
   chainZoom.appendChild(newTile);
-  applyPlaced(e,n);
+  applyPlaced(end, pos);
+  end.el = newTile;
   return true;
 }
-
-function tryPlace(target,data){
-  if(!data||!target.classList.contains('dz')) return false;
-  const isLeft = target.dataset.end==='L', choice=target.dataset.k;
-  const openVal = isLeft ? openLeft : openRight;
-
-  let tileA, tileB, newOpenVal;
-
-  if (data.a === openVal) {
-    newOpenVal = data.b;
-    tileA = isLeft ? newOpenVal : data.a;
-    tileB = isLeft ? data.a     : newOpenVal;
-  } else if (data.b === openVal) {
-    newOpenVal = data.a;
-    tileA = isLeft ? newOpenVal : data.b;
-    tileB = isLeft ? data.b     : newOpenVal;
-  } else if (freeMode) {
-    newOpenVal = data.b; tileA=data.a; tileB=data.b;
-  } else {
+function tryPlace(target, data) {
+    if (!data || !target.classList.contains('dz')) return false;
+    const isLeft = target.dataset.end === 'L';
+    const choice = target.dataset.k;
+    const openVal = isLeft ? openLeft : openRight;
+    let matchVal,newVal;
+    if (data.a===openVal){matchVal=data.a; newVal=data.b;}
+    else if(data.b===openVal){matchVal=data.b; newVal=data.a;}
+    else if(freeMode){matchVal=isLeft?data.b:data.a; newVal=isLeft?data.a:data.b;}
+    else return false;
+    let p1,p2;
+    if(isLeft){p1=newVal;p2=matchVal; if(choice==='down'||choice==='right')[p1,p2]=[p2,p1];}
+    else{p1=matchVal;p2=newVal; if(choice==='up'||choice==='left')[p1,p2]=[p2,p1];}
+    if(placeAt(isLeft?'left':'right',{a:p1,b:p2},choice)){ if(isLeft)openLeft=newVal; else openRight=newVal; return true;}
     return false;
-  }
-
-  if (placeAt(isLeft ? 'left' : 'right', tileA, tileB, choice)) {
-    if (isLeft) openLeft = newOpenVal; else openRight = newOpenVal;
-    return true;
-  }
-  return false;
 }
 
-/* ===== deck ===== */
+/* ===== deck & start ===== */
 function buildDeckFromData(d){const out=[]; const A=(d&&Array.isArray(d.listA))?d.listA:[], B=(d&&Array.isArray(d.listB))?d.listB:[]; const pair=(arr,tag)=>{for(let i=0;i<arr.length;i++) for(let j=i;j<arr.length;j++) out.push({a:arr[i],b:arr[j],uid:uid(tag+i+'_'+j)})}; if(A.length&&!B.length) pair(A,'A'); else if(A.length&&B.length){pair(A,'A'); pair(B,'B'); const n=Math.min(A.length,B.length); for(let i=0;i<n;i++) out.push({a:A[i],b:B[i],uid:uid('AB'+i)})} return out;}
-
-/* ===== start ===== */
 function startGame(){
   const data=getQueryData()||{}; freeMode=!!data.freeMode;
-  playerNames.length=0; const c=Math.max(1,Math.min(4,parseInt(playerCountEl.value)||2)); for(let i=0;i<c;i++){playerNames.push((document.getElementById('pname'+i)?.value||'').trim()||('Игрок '+(i+1)));}
-  deck=buildDeckFromData(data); const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море"]; const need=playerNames.length*5+1; const ensure=(arr,tag)=>{for(let i=0;i<arr.length;i++) for(let j=i;j<arr.length;j++) deck.push({a:arr[i],b:arr[j],uid:uid(tag+i+'_'+j)})}; if(deck.length<need&&Array.isArray(data.listA)&&data.listA.length) ensure(data.listA,'A2'); if(deck.length<need) ensure(F,'F'); if(deck.length===0) ensure(["раз","два","три"],'M');
+  playerNames.length=0; const c=Math.max(1,Math.min(4,parseInt(playerCountEl.value)||2));
+  for(let i=0;i<c;i++){playerNames.push((document.getElementById('pname'+i)?.value||'').trim()||('Игрок '+(i+1)));}
+  deck=buildDeckFromData(data);
+  if(deck.length===0) deck=[{a:"раз",b:"раз",uid:uid('M')}];
   shuffle(deck);
-
-  scores={}; passes={}; currentPlayer=0; hands={}; endMessage.style.display='none'; for(let k=0;k<playerNames.length;k++){hands[k]=[]; scores[k]=0; passes[k]=0;}
+  scores={}; passes={}; currentPlayer=0; hands={}; endMessage.style.display='none';
+  for(let k=0;k<playerNames.length;k++){hands[k]=[]; scores[k]=0; passes[k]=0;}
   for(let r=0;r<5;r++){ for(let j=0;j<playerNames.length;j++){ if(!deck.length) break; hands[j].push(deck.shift()); } }
-  let start=deck.shift(); if(!start){const h=hands[0]||[]; start=h.length?h.shift():{a:"Старт",b:"Старт",uid:uid('S')}; hands[0]=h;}
+  let start=deck.shift(); if(!start){start={a:"Старт",b:"Старт",uid:uid('S')};}
   chainZoom.innerHTML=''; const sx=Math.floor((br().w-TILE_W)/2), sy=Math.floor((br().h-TILE_H)/2);
   const startTile = createTileEl(start.a,start.b,{left:sx,top:sy});
   chainZoom.appendChild(startTile);
   openLeft=start.a; openRight=start.b;
-  endLeft={x:sx,y:sy,dir:-1, orient:'h'}; endRight={x:sx,y:sy,dir:1, orient:'h'};
-  fitChain();
-  renderPlayersBar(); renderHand(); updateControls(); updateSeats(); if(freeMode) document.getElementById('title').textContent='Domino · Cozy Edition · Свободная игра'; menuEl.style.display='none';
+  endLeft={x:sx,y:sy,dir:-1, orient:'h', el:startTile};
+  endRight={x:sx,y:sy,dir:1, orient:'h', el:startTile};
+  renderPlayersBar(); renderHand(); updateControls(); updateSeats(); menuEl.style.display='none';
 }
 
 /* ===== buttons & dnd ===== */
 drawBtn.addEventListener('click',()=>{ if(!deck.length) return; const hand=hands[currentPlayer]||[]; if(!freeMode&&hasPlayable(hand)) return; hand.push(deck.splice(Math.floor(Math.random()*deck.length),1)[0]); hands[currentPlayer]=hand; renderHand(); updateControls(); });
 skipBtn.addEventListener('click',()=>{ passes[currentPlayer]=(passes[currentPlayer]||0)+1; if(everyonePassed()){endByPasses(); return;} nextPlayer(); });
 restartBtn.addEventListener('click',()=>location.reload());
-startBtn.addEventListener('click',startGame); startBtn.onclick=startGame;
+startBtn.addEventListener('click',startGame);
 
 addEventListener('dragover',e=>{ if(dragging) e.preventDefault(); });
 addEventListener('drop',e=>{ const t=e.target; if(!dragging) return; if(t&&t.classList&&t.classList.contains('dz')){ e.preventDefault(); const ok=tryPlace(t,dragging); if(ok){ const arr=hands[dragging.owner]||[]; hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid); award(dragging.owner,1); renderHand(); if(hands[dragging.owner].length===0){ endByWinner(dragging.owner); dragging=null; clearZones(); return; } passes[currentPlayer]=0; nextPlayer(); } dragging=null; clearZones(); }});
-trayEl.addEventListener('wheel',e=>{ trayEl.scrollLeft+=e.deltaY },{passive:true});
-
-/* safety init */
-(function(){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',()=>{fitStage();renderNameInputs();}); } else {fitStage();renderNameInputs();} })();
 </script>
 </body>
 </html>
