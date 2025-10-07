@@ -89,6 +89,23 @@
 
   #tilePreview{position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:999999; background:rgba(0,0,0,.6)}
   #tilePreview .tile{position:static; width:680px; height:260px; box-shadow:0 18px 60px rgba(0,0,0,.55), inset 0 0 0 2px #e0d3bd}
+.final-overlay {
+  position:absolute; inset:0;
+  background:rgba(0,0,0,0.7);
+  display:flex; align-items:center; justify-content:center;
+  z-index:100000;
+}
+.final-message {
+  font-size:48px; font-weight:900;
+  color:#ffe97f;
+  text-shadow:0 0 20px #ff0000, 0 0 40px #ff9900, 0 0 60px #fff;
+  animation:pop 1s ease-out;
+}
+@keyframes pop {
+  0% { transform:scale(0.2); opacity:0; }
+  60% { transform:scale(1.2); opacity:1; }
+  100% { transform:scale(1); }
+}
 
 </style>
 </head>
@@ -127,6 +144,9 @@
     <div id="tray" class="tray"></div>
   </div>
   <div id="endMessage" class="end-message"></div>
+  <div id="finalOverlay" class="final-overlay" style="display:none;">
+  <div class="final-message">🎉 Победитель: <span id="winnerName"></span> 🎉</div>
+</div>
 </div>
 
 <div id="tilePreview"><div id="tilePreviewInner"></div></div>
@@ -319,12 +339,15 @@ function renderDirectionalZones(){
     if(!freeMode && !(dragging.a===side.open||dragging.b===side.open)) continue;
     
     const seam = getSeam(side.e);
-    const zones = {
-        up: { left: seam.x - DZ / 2, top: seam.y - DZ - GAP, dir: '↑', k: 'up' },
-        right: { left: seam.x + GAP, top: seam.y - DZ / 2, dir: '→', k: 'right' },
-        down: { left: seam.x - DZ / 2, top: seam.y + GAP, dir: '↓', k: 'down' },
-        left: { left: seam.x - DZ - GAP, top: seam.y - DZ / 2, dir: '←', k: 'left' }
-    };
+    const OFFSET = 20; // отступ стрелочек от костяшки
+
+const zones = {
+    up:    { left: seam.x - DZ / 2, top: seam.y - DZ - GAP - OFFSET, dir: '↑', k: 'up' },
+    right: { left: seam.x + GAP + OFFSET, top: seam.y - DZ / 2, dir: '→', k: 'right' },
+    down:  { left: seam.x - DZ / 2, top: seam.y + GAP + OFFSET, dir: '↓', k: 'down' },
+    left:  { left: seam.x - DZ - GAP - OFFSET, top: seam.y - DZ / 2, dir: '←', k: 'left' }
+};
+
     
     for(const k of Object.keys(zones)){
       const pos = getNextPos(side.e, k);
@@ -352,8 +375,82 @@ function hasPlayable(hand){ if(freeMode) return true; for(const t of hand){ if(t
 function award(i,pts=1){scores[i]=(scores[i]||0)+pts; const el=document.getElementById('score-'+i); if(el) el.textContent=String(scores[i]);}
 function nextPlayer(){currentPlayer=(currentPlayer+1)%playerNames.length; renderHand(); renderPlayersBar(); updateControls(); updateSeats();}
 function everyonePassed(){for(let i=0;i<playerNames.length;i++){if(!passes[i]) return false} return true}
-function endByWinner(i){endMessage.style.display='block'; endMessage.textContent='Игра окончена! Победитель: '+playerNames[i]}
-function endByPasses(){let best=-Infinity,wi=0; for(let i=0;i<playerNames.length;i++){const s=scores[i]||0; if(s>best){best=s; wi=i}} endMessage.style.display='block'; endMessage.textContent='Игра окончена! Победитель по очкам: '+playerNames[wi]+' ('+(scores[wi]||0)+')'}
+function endByWinner(i) {
+  const name = playerNames[i];
+  document.getElementById("winnerName").textContent = name;
+  document.getElementById("finalOverlay").style.display = "flex";
+
+  // Звук победы
+  const winSound = new Audio("win.mp3");
+  winSound.play();
+
+  // Фейерверк
+  if (window.confetti) {
+    const duration = 3 * 1000;
+    const end = Date.now() + duration;
+
+    (function frame() {
+      confetti({
+        particleCount: 4,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 }
+      });
+      confetti({
+        particleCount: 4,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 }
+      });
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    }());
+  }
+}
+
+function endByPasses() {
+  let best = -Infinity, wi = 0;
+  for (let i = 0; i < playerNames.length; i++) {
+    const s = scores[i] || 0;
+    if (s > best) {
+      best = s;
+      wi = i;
+    }
+  }
+
+  const name = playerNames[wi];
+  document.getElementById("winnerName").textContent = name + " (по очкам)";
+  document.getElementById("finalOverlay").style.display = "flex";
+
+  // Звук победы
+  const winSound = new Audio("win.mp3");
+  winSound.play();
+
+  // Фейерверк
+  if (window.confetti) {
+    const duration = 3 * 1000;
+    const end = Date.now() + duration;
+
+    (function frame() {
+      confetti({
+        particleCount: 4,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 }
+      });
+      confetti({
+        particleCount: 4,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 }
+      });
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    }());
+  }
+}
 
 /* ===== place ===== */
 function placeAt(whichEnd, tileData, choice){
@@ -475,6 +572,8 @@ trayEl.addEventListener('wheel',e=>{ trayEl.scrollLeft+=e.deltaY },{passive:true
 /* safety init */
 (function(){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',()=>{fitStage();renderNameInputs();}); } else {fitStage();renderNameInputs();} })();
 </script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
 </body>
 </html>
 
