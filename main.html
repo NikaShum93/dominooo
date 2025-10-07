@@ -332,7 +332,7 @@ function renderDirectionalZones(){
 
       const r = rectOf(pos.orient, pos.x, pos.y);
       
-      if(collidesWithExisting(r, side.e.el)) continue;
+      if (collidesWithExisting(r)) continue;
       
       const zoneInfo = zones[k];
       const z=document.createElement('div'); z.className='dz active';
@@ -360,7 +360,7 @@ function placeAt(whichEnd, tileData, choice){
   const end = (whichEnd==='left') ? endLeft : endRight;
   const pos = getNextPos(end, choice);
 
-  if(!pos.orient || collidesWithExisting(rectOf(pos.orient,pos.x,pos.y), end.el)) return false;
+  if(!pos.orient || collidesWithExisting(rectOf(pos.orient,pos.x,pos.y))) return false;
 
   const newTile = createTileEl(tileData.a, tileData.b, {orient:pos.orient,left:pos.x,top:pos.y});
   chainZoom.appendChild(newTile);
@@ -403,9 +403,9 @@ function tryPlace(target, data) {
     const r = rectOf(pos.orient, pos.x, pos.y);
 
     // Если пересекается с существующей — не кладём
-    if (collidesWithExisting(r, (isLeft ? endLeft : endRight).el)) {
-        return false;
-    }
+   if (collidesWithExisting(r)) {
+    return false;
+}
 
     if (placeAt(isLeft ? 'left' : 'right', { a: p1, b: p2 }, choice)) {
         if (isLeft) openLeft = newVal; else openRight = newVal;
