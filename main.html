@@ -200,7 +200,8 @@ const seatBoxes={bottom:document.querySelector('.seat-bottom'),right:document.qu
 let playerNames=[], hands={}, deck=[], currentPlayer=0, scores={}, passes={};
 let openLeft=null, openRight=null, endLeft=null, endRight=null, dragging=null, freeMode=false;
 let uniformTileFontSize = 22;
-
+let pairSet = new Set();      // допустимые пары для строжайшей проверки
+let strictPairs = false;      // режим “две колонки, не свободный”
 /* ===== geometry ===== */
 const TILE_W=200, TILE_H=70, VERT_W=70, VERT_H=200, GAP=4, DZ=38;
 
@@ -336,8 +337,18 @@ function renderDirectionalZones(){
   const ends=[{e:endLeft,id:'L',open:openLeft},{e:endRight,id:'R',open:openRight}];
   for(const side of ends){
     if(!side.e || !side.e.el) continue;
-    if(!freeMode && !(dragging.a===side.open||dragging.b===side.open)) continue;
-    
+   if (!freeMode) {
+  if (strictPairs) {
+    if (!(pairSet.has(`${side.open}|${dragging.a}`) || pairSet.has(`${side.open}|${dragging.b}`))) {
+      continue;
+    }
+  } else {
+    if (!(dragging.a===side.open || dragging.b===side.open)) {
+      continue;
+    }
+  }
+}
+   
     const seam = getSeam(side.e);
     const OFFSET = 20; // отступ стрелочек от костяшки
 
@@ -371,7 +382,24 @@ addEventListener('resize',()=>{if(dragging) renderDirectionalZones();});
 function fitChain(){ const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')]; if(!tiles.length){chainZoom.style.transform='scale(1)'; return;} let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity; for(const t of tiles){const x=parseInt(t.style.left||0),y=parseInt(t.style.top||0),w=t.classList.contains('vert')?VERT_W:TILE_W,h=t.classList.contains('vert')?VERT_H:TILE_H; minX=Math.min(minX,x); minY=Math.min(minY,y); maxX=Math.max(maxX,x+w); maxY=Math.max(maxY,y+h);} const pad=20; const s=Math.min(1,(br().w-pad)/(maxX-minX),(br().h-pad)/(maxY-minY)); scale=s; panX = (br().w - (maxX - minX) * s) / 2 - minX * s; panY = (br().h - (maxY - minY) * s) / 2 - minY * s; updateTransform(); }
 
 /* ===== rules ===== */
-function hasPlayable(hand){ if(freeMode) return true; for(const t of hand){ if(t.a===openLeft||t.b===openLeft||t.a===openRight||t.b===openRight) return true; } return false; }
+function hasPlayable(hand){
+  if (freeMode) return true;
+  if (strictPairs) {
+    for (const t of hand) {
+      if (pairSet.has(`${openLeft}|${t.a}`) || pairSet.has(`${openLeft}|${t.b}`)
+       || pairSet.has(`${openRight}|${t.a}`) || pairSet.has(`${openRight}|${t.b}`)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  // классическое равенство значений
+  for (const t of hand){
+    if (t.a===openLeft||t.b===openLeft||t.a===openRight||t.b===openRight) return true;
+  }
+  return false;
+}
+
 function award(i,pts=1){scores[i]=(scores[i]||0)+pts; const el=document.getElementById('score-'+i); if(el) el.textContent=String(scores[i]);}
 function nextPlayer(){currentPlayer=(currentPlayer+1)%playerNames.length; renderHand(); renderPlayersBar(); updateControls(); updateSeats();}
 function everyonePassed(){for(let i=0;i<playerNames.length;i++){if(!passes[i]) return false} return true}
@@ -468,53 +496,88 @@ function placeAt(whichEnd, tileData, choice){
 }
 
 function tryPlace(target, data) {
-    if (!data || !target.classList.contains('dz')) return false;
+  if (!data || !target.classList || !target.classList.contains('dz')) return false;
 
-    const isLeft = target.dataset.end === 'L';
-    const choice = target.dataset.k;
-    const openVal = isLeft ? openLeft : openRight;
-    
-    let matchVal, newVal;
-    if (data.a === openVal) {
-        matchVal = data.a; newVal = data.b;
-    } else if (data.b === openVal) {
-        matchVal = data.b; newVal = data.a;
-    } else if (freeMode) {
-        matchVal = isLeft ? data.b : data.a;
-        newVal = isLeft ? data.a : data.b;
+  const isLeft = target.dataset.end === 'L';
+  const choice = target.dataset.k;
+  const endObj = isLeft ? endLeft : endRight;
+  const openVal = isLeft ? openLeft : openRight;
+
+  // Куда и как ляжет новая костяшка
+  const pos = getNextPos(endObj, choice);
+  if (!pos.orient) return false;
+
+  // Проверка на наезд на существующие
+  const r = rectOf(pos.orient, pos.x, pos.y);
+  if (collidesWithExisting(r)) return false;
+
+  // Какая сторона новой костяшки касается шва (seam)?
+  // Для горизонтальной: если кладём "вправо" — шов слева у новой (p1 касается), если "влево" — справа (p2 касается).
+  // Для вертикальной: если "вниз" — сверху (p1 касается), если "вверх" — снизу (p2 касается).
+  const touchIsP1 =
+    (pos.orient === 'h' && choice === 'right') ||
+    (pos.orient === 'v' && choice === 'down');
+
+  // Сформируем варианты присвоения половинок к визуальным p1/p2
+  // Если "касается p1", пробуем сначала (a->p1, b->p2), потом (b->p1, a->p2).
+  // Если "касается p2", наоборот.
+  const assignments = touchIsP1
+    ? [[data.a, data.b], [data.b, data.a]]
+    : [[data.b, data.a], [data.a, data.b]];
+
+  let p1, p2, newOpen, ok = false;
+
+  for (const [candP1, candP2] of assignments) {
+    if (freeMode) {
+      // В свободном режиме — любые пары, главное вынос наружу вторую половинку
+      p1 = candP1; p2 = candP2; newOpen = candP2; ok = true; break;
+    } else if (strictPairs) {
+      // Строгие пары: (openVal | касающаяся половинка) должно быть в pairSet
+      if (pairSet.has(`${openVal}|${candP1}`)) {
+        p1 = candP1; p2 = candP2; newOpen = candP2; ok = true; break;
+      }
     } else {
-        return false;
+      // Классическое равенство значений
+      if (openVal === candP1) {
+        p1 = candP1; p2 = candP2; newOpen = candP2; ok = true; break;
+      }
     }
+  }
 
-    let p1, p2; // половинки новой костяшки
-    if (isLeft) {
-        p1 = newVal; p2 = matchVal;
-        if (choice === 'down' || choice === 'right') [p1, p2] = [p2, p1];
-    } else {
-        p1 = matchVal; p2 = newVal;
-        if (choice === 'up' || choice === 'left') [p1, p2] = [p2, p1];
-    }
-    
-    // Считаем прямоугольник новой костяшки
-    const pos = getNextPos(isLeft ? endLeft : endRight, choice);
-    const r = rectOf(pos.orient, pos.x, pos.y);
+  if (!ok) return false;
 
-    // Если пересекается с существующей — не кладём
-   if (collidesWithExisting(r)) {
-    return false;
-}
-
-    if (placeAt(isLeft ? 'left' : 'right', { a: p1, b: p2 }, choice)) {
-        if (isLeft) openLeft = newVal; else openRight = newVal;
-        return true;
-    }
-    return false;
+  if (placeAt(isLeft ? 'left' : 'right', { a: p1, b: p2 }, choice)) {
+    if (isLeft) openLeft = newOpen; else openRight = newOpen;
+    return true;
+  }
+  return false;
 }
 
 
 /* ===== deck ===== */
-function buildDeckFromData(d){const out=[]; const A=(d&&Array.isArray(d.listA))?d.listA:[], B=(d&&Array.isArray(d.listB))?d.listB:[]; const pair=(arr,tag)=>{for(let i=0;i<arr.length;i++) for(let j=i;j<arr.length;j++) out.push({a:arr[i],b:arr[j],uid:uid(tag+i+'_'+j)})}; if(A.length&&!B.length) pair(A,'A'); else if(A.length&&B.length){pair(A,'A'); pair(B,'B'); const n=Math.min(A.length,B.length); for(let i=0;i<n;i++) out.push({a:A[i],b:B[i],uid:uid('AB'+i)})} return out;}
-
+function buildDeckFromData(d){
+  const out=[];
+  const A=(d&&Array.isArray(d.listA))?d.listA:[], 
+        B=(d&&Array.isArray(d.listB))?d.listB:[];
+  // Если есть оба списка — генерим ТОЛЬКО пары A[i]—B[i] и B[i]—A[i]
+  if (A.length && B.length) {
+    const n = Math.min(A.length, B.length);
+    for (let i=0;i<n;i++){
+      out.push({a:A[i], b:B[i], uid:uid('AB'+i)});
+      out.push({a:B[i], b:A[i], uid:uid('BA'+i)});
+    }
+    return out;
+  }
+  // Иначе — классическое домино из одного списка
+  const pair = (arr, tag) => {
+    for (let i=0;i<arr.length;i++)
+      for (let j=i;j<arr.length;j++)
+        out.push({a:arr[i], b:arr[j], uid:uid(tag+i+'_'+j)});
+  };
+  if (A.length) pair(A,'A');
+  else if (B.length) pair(B,'B');
+  return out;
+}
 /* ===== start ===== */
 function startGame(){
   const data=getQueryData()||{}; freeMode=!!data.freeMode;
