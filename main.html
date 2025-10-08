@@ -556,28 +556,62 @@ function tryPlace(target, data) {
 
 /* ===== deck ===== */
 function buildDeckFromData(d){
-  const out=[];
-  const A=(d&&Array.isArray(d.listA))?d.listA:[], 
-        B=(d&&Array.isArray(d.listB))?d.listB:[];
-  // Если есть оба списка — генерим ТОЛЬКО пары A[i]—B[i] и B[i]—A[i]
+  const out = [];
+  const norm = s => String(s ?? '').trim();
+  const dedupe = arr => {
+    const m = new Map();
+    for (const raw of arr) {
+      const s = norm(raw);
+      if (!s) continue;
+      const key = s.toLowerCase();
+      if (!m.has(key)) m.set(key, s); // сохраняем оригинальное написание
+    }
+    return [...m.values()];
+  };
+
+  const Araw = Array.isArray(d?.listA) ? d.listA : [];
+  const Braw = Array.isArray(d?.listB) ? d.listB : [];
+  const A = dedupe(Araw);
+  const B = dedupe(Braw);
+  const free = !!d?.freeMode;
+
+  const uidp = (tag,i,j) => uid(`${tag}_${i}_${j}`);
+
+  // 1) Есть оба списка
   if (A.length && B.length) {
-    const n = Math.min(A.length, B.length);
-    for (let i=0;i<n;i++){
-      out.push({a:A[i], b:B[i], uid:uid('AB'+i)});
-      out.push({a:B[i], b:A[i], uid:uid('BA'+i)});
+    // BA: слева B, справа A
+    // В несвободном режиме исключаем «правильные» пары одного индекса
+    const L = Math.min(A.length, B.length);
+    for (let i = 0; i < B.length; i++) {
+      for (let j = 0; j < A.length; j++) {
+        if (!free && i === j && j < L) continue; // убрать совпадение индексов
+        out.push({ a: B[i], b: A[j], uid: uidp('BA', i, j) });
+      }
     }
     return out;
   }
-  // Иначе — классическое домино из одного списка
-  const pair = (arr, tag) => {
-    for (let i=0;i<arr.length;i++)
-      for (let j=i;j<arr.length;j++)
-        out.push({a:arr[i], b:arr[j], uid:uid(tag+i+'_'+j)});
-  };
-  if (A.length) pair(A,'A');
-  else if (B.length) pair(B,'B');
+
+  // 2) Только один список — классическое домино на словах
+  const one = A.length ? A : B.length ? B : [];
+  if (one.length) {
+    for (let i = 0; i < one.length; i++) {
+      for (let j = i; j < one.length; j++) {
+        out.push({ a: one[i], b: one[j], uid: uidp('ONE', i, j) });
+      }
+    }
+    return out;
+  }
+
+  // 3) Фолбэк — небольшой обучающий набор
+  const F = ["раз","два","три","четыре"];
+  for (let i = 0; i < F.length; i++) {
+    for (let j = i; j < F.length; j++) {
+      out.push({ a: F[i], b: F[j], uid: uidp('FALLBACK', i, j) });
+    }
+  }
   return out;
 }
+
 /* ===== start ===== */
 function startGame(){
   const data=getQueryData()||{}; freeMode=!!data.freeMode;
