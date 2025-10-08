@@ -502,6 +502,25 @@ function tryPlace(target, data) {
   const choice = target.dataset.k;
   const endObj = isLeft ? endLeft : endRight;
   const openVal = isLeft ? openLeft : openRight;
+let matchVal, newVal;
+
+// наша логика: BA-костяшка = {a:B, b:A}
+// значит открытый "A" стыкуется с b, открытый "B" стыкуется с a
+if (data.b === openVal) { 
+  // совпало по A-части
+  matchVal = data.b;
+  newVal = data.a;
+} else if (data.a === openVal) { 
+  // совпало по B-части
+  matchVal = data.a;
+  newVal = data.b;
+} else if (freeMode) {
+  matchVal = isLeft ? data.b : data.a;
+  newVal = isLeft ? data.a : data.b;
+} else {
+  return false;
+}
+
 
   // Куда и как ляжет новая костяшка
   const pos = getNextPos(endObj, choice);
