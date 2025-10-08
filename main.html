@@ -244,6 +244,9 @@ function createTileEl(a,b,opts={}){
   const el=document.createElement('div'); el.className='tile '+(orient==='v'?'vert ':'')+role; el.dataset.a=a; el.dataset.b=b; if(id) el.dataset.uid=id; if(owner!==null) el.dataset.owner=owner;
   el.style.left=(opts.left||0)+'px'; el.style.top=(opts.top||0)+'px';
   el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
+  if (opts.idxA !== undefined) el.dataset.idxA = opts.idxA;
+if (opts.idxB !== undefined) el.dataset.idxB = opts.idxB;
+
   const h=el.getElementsByClassName('half');
   const size = (role === 'hand') ? Math.max(12, Math.floor(uniformTileFontSize * 0.8)) : uniformTileFontSize;
   h[0].firstElementChild.textContent = a;
@@ -253,7 +256,16 @@ function createTileEl(a,b,opts={}){
 
   el.addEventListener('click',()=>showPreview(a,b));
   if(draggable){ el.draggable=true;
-    el.addEventListener('dragstart',e=>{dragging={a,b,uid:id,owner}; e.dataTransfer.setData('text/plain','domino'); hidePreview(); renderDirectionalZones();});
+    el.addEventListener('dragstart',e=>{
+  dragging = {
+    a, b, uid:id, owner,
+    idxA: el.dataset.idxA !== undefined ? parseInt(el.dataset.idxA) : undefined,
+    idxB: el.dataset.idxB !== undefined ? parseInt(el.dataset.idxB) : undefined
+  };
+  e.dataTransfer.setData('text/plain','domino');
+  hidePreview();
+  renderDirectionalZones();
+});
     el.addEventListener('dragend',()=>{dragging=null; clearZones();});
   }
   return el;
@@ -346,13 +358,15 @@ function renderDirectionalZones(){
     if(!side.e || !side.e.el) continue;
    if (!freeMode) {
   if (strictPairs) {
-    if (!(pairSet.has(`${side.open}|${dragging.a}`) || pairSet.has(`${side.open}|${dragging.b}`))) {
-      continue;
-    }
+    // side.open — это "A{n}" или "B{n}".
+    const needType = side.open[0];                 // 'A' или 'B'
+    const needIdx  = parseInt(side.open.slice(1)); // число
+    const ok = (needType === 'A' && dragging.idxA === needIdx) ||
+               (needType === 'B' && dragging.idxB === needIdx);
+    if (!ok) continue;
   } else {
-    if (!(dragging.a===side.open || dragging.b===side.open)) {
-      continue;
-    }
+    // 1 список/классика: по равенству слов
+    if (!(dragging.a === side.open || dragging.b === side.open)) continue;
   }
 }
    
@@ -527,25 +541,33 @@ function tryPlace(target, data) {
   } else {
     // 🔒 Обычный режим
     if (data.idxA !== undefined && data.idxB !== undefined) {
-      // 2 списка: стыкуем только по индексу
-      if (openVal.startsWith("A") && data.idxA === parseInt(openVal.slice(1))) {
-        p1 = data.b; p2 = data.a; ok = true;
-      } else if (openVal.startsWith("B") && data.idxB === parseInt(openVal.slice(1))) {
-        p1 = data.a; p2 = data.b; ok = true;
-      }
-    } else {
-      // 1 список: классика
-      if (data.a === openVal) { p1 = data.a; p2 = data.b; ok = true; }
-      else if (data.b === openVal) { p1 = data.b; p2 = data.a; ok = true; }
-    }
+  // 2 списка: стыкуем строго по типу и индексу
+  const needType = openVal[0];                 // 'A' или 'B'
+  const needIdx  = parseInt(openVal.slice(1)); // число
+  if (needType === 'A' && data.idxA === needIdx) {
+    p1 = data.b; p2 = data.a; ok = true;
+  } else if (needType === 'B' && data.idxB === needIdx) {
+    p1 = data.a; p2 = data.b; ok = true;
   }
+} else {
+  // 1 список: классика
+  if (data.a === openVal) { p1 = data.a; p2 = data.b; ok = true; }
+  else if (data.b === openVal) { p1 = data.b; p2 = data.a; ok = true; }
+}
 
   if (!ok) return false;
 
   if (placeAt(isLeft ? "left" : "right", { a: p1, b: p2 }, choice)) {
+  if (data.idxA !== undefined && data.idxB !== undefined && strictPairs && !freeMode) {
+    // p2 — дальняя половинка новой костяшки; определим её тип по исходной BA
+    const token = (p2 === data.a) ? ('B' + data.idxB) : ('A' + data.idxA);
+    if (isLeft) openLeft = token; else openRight = token;
+  } else {
+    // классика по словам
     if (isLeft) openLeft = p2; else openRight = p2;
-    return true;
   }
+  return true;
+}
   return false;
 }
 
@@ -595,7 +617,8 @@ function buildDeckFromData(d) {
 
 /* ===== start ===== */
 function startGame(){
-  const data=getQueryData()||{}; freeMode=!!data.freeMode;
+  const data=getQueryData()||{}; freeMode=!!data.freeModestrictPairs = !freeMode && Array.isArray(data.listA) && Array.isArray(data.listB) && data.listA?.length && data.listB?.length;
+
   playerNames.length=0; const c=Math.max(1,Math.min(4,parseInt(playerCountEl.value)||2)); for(let i=0;i<c;i++){playerNames.push((document.getElementById('pname'+i)?.value||'').trim()||('Игрока '+(i+1)));}
   deck=buildDeckFromData(data); const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"]; const need=playerNames.length*5+1; 
   const ensure=(arr,tag)=>{for(let i=0;i<arr.length;i++) for(let j=i;j<arr.length;j++) deck.push({a:arr[i],b:arr[j],uid:uid(tag+i+'_'+j)})}; 
@@ -630,7 +653,21 @@ function startGame(){
   chainZoom.innerHTML=''; const sx=Math.floor((br().w-TILE_W)/2), sy=Math.floor((br().h-TILE_H)/2);
   const startTile = createTileEl(start.a,start.b,{left:sx,top:sy});
   chainZoom.appendChild(startTile);
-  openLeft=start.a; openRight=start.b;
+  const startTile = createTileEl(start.a,start.b,{left:sx,top:sy});
+  chainZoom.appendChild(startTile);
+
+  if (!freeMode && Array.isArray(data.listA) && Array.isArray(data.listB) && data.listA?.length && data.listB?.length && start.idxA !== undefined && start.idxB !== undefined) {
+    // Режим с двумя списками
+    openLeft  = 'B' + start.idxB; // слева всегда B
+    openRight = 'A' + start.idxA; // справа всегда A
+    strictPairs = true;
+  } else {
+    // Один список или свободный режим
+    openLeft=start.a; 
+    openRight=start.b;
+    strictPairs = false;
+  }
+
   endLeft={x:sx,y:sy,dir:-1, orient:'h', el: startTile};
   endRight={x:sx,y:sy,dir:1, orient:'h', el: startTile};
   fitChain();
@@ -645,7 +682,10 @@ startBtn.addEventListener('click',startGame); startBtn.onclick=startGame;
 
 addEventListener('dragover',e=>{ if(dragging) e.preventDefault(); });
 addEventListener('drop',e=>{ const t=e.target; if(!dragging) return; if(t&&t.classList&&t.classList.contains('dz')){ e.preventDefault(); const ok=tryPlace(t,dragging); if(ok){ const arr=hands[dragging.owner]||[]; hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid); award(dragging.owner,1); renderHand(); if(hands[dragging.owner].length===0){ endByWinner(dragging.owner); dragging=null; clearZones(); return; } passes[currentPlayer]=0; nextPlayer(); } dragging=null; clearZones(); }});
-trayEl.addEventListener('wheel',e=>{ trayEl.scrollLeft+=e.deltaY },{passive:true});
+trayEl.appendChild(createTileEl(
+  t.a, t.b,
+  { role:'hand', owner:currentPlayer, uid:t.uid, draggable:true, orient:'h', idxA:t.idxA, idxB:t.idxB }
+));
 
 /* safety init */
 (function(){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',()=>{fitStage();renderNameInputs();}); } else {fitStage();renderNameInputs();} })();
