@@ -157,7 +157,14 @@ function fitStage(){ const vw=innerWidth,vh=innerHeight; const w=Math.min(vw,Mat
 addEventListener('resize',fitStage); fitStage();
 
 /* ===== utils ===== */
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a.j]=[a[j],a.i];}return a;}
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function uid(i){return't'+i+'_'+Math.random().toString(36).slice(2,7);}
 function getQueryData(){const raw=new URLSearchParams(location.search).get('data'); if(!raw) return null; try{return JSON.parse(decodeURIComponent(raw));}catch(e){return null;}}
 function br(){return{w:chainEl.clientWidth,h:chainEl.clientHeight};}
@@ -496,31 +503,12 @@ function placeAt(whichEnd, tileData, choice){
 }
 
 function tryPlace(target, data) {
-  if (!data || !target.classList || !target.classList.contains('dz')) return false;
+  if (!data || !target.classList.contains("dz")) return false;
 
-  const isLeft = target.dataset.end === 'L';
+  const isLeft = target.dataset.end === "L";
   const choice = target.dataset.k;
   const endObj = isLeft ? endLeft : endRight;
   const openVal = isLeft ? openLeft : openRight;
-let matchVal, newVal;
-
-// наша логика: BA-костяшка = {a:B, b:A}
-// значит открытый "A" стыкуется с b, открытый "B" стыкуется с a
-if (data.b === openVal) { 
-  // совпало по A-части
-  matchVal = data.b;
-  newVal = data.a;
-} else if (data.a === openVal) { 
-  // совпало по B-части
-  matchVal = data.a;
-  newVal = data.b;
-} else if (freeMode) {
-  matchVal = isLeft ? data.b : data.a;
-  newVal = isLeft ? data.a : data.b;
-} else {
-  return false;
-}
-
 
   // Куда и как ляжет новая костяшка
   const pos = getNextPos(endObj, choice);
@@ -530,43 +518,32 @@ if (data.b === openVal) {
   const r = rectOf(pos.orient, pos.x, pos.y);
   if (collidesWithExisting(r)) return false;
 
-  // Какая сторона новой костяшки касается шва (seam)?
-  // Для горизонтальной: если кладём "вправо" — шов слева у новой (p1 касается), если "влево" — справа (p2 касается).
-  // Для вертикальной: если "вниз" — сверху (p1 касается), если "вверх" — снизу (p2 касается).
-  const touchIsP1 =
-    (pos.orient === 'h' && choice === 'right') ||
-    (pos.orient === 'v' && choice === 'down');
+  let ok = false, p1, p2, newOpen;
 
-  // Сформируем варианты присвоения половинок к визуальным p1/p2
-  // Если "касается p1", пробуем сначала (a->p1, b->p2), потом (b->p1, a->p2).
-  // Если "касается p2", наоборот.
-  const assignments = touchIsP1
-    ? [[data.a, data.b], [data.b, data.a]]
-    : [[data.b, data.a], [data.a, data.b]];
-
-  let p1, p2, newOpen, ok = false;
-
-  for (const [candP1, candP2] of assignments) {
-    if (freeMode) {
-      // В свободном режиме — любые пары, главное вынос наружу вторую половинку
-      p1 = candP1; p2 = candP2; newOpen = candP2; ok = true; break;
-    } else if (strictPairs) {
-      // Строгие пары: (openVal | касающаяся половинка) должно быть в pairSet
-      if (pairSet.has(`${openVal}|${candP1}`)) {
-        p1 = candP1; p2 = candP2; newOpen = candP2; ok = true; break;
+  if (freeMode) {
+    // 🟢 Свободный режим: можно стыковать любые BA
+    p1 = data.a; p2 = data.b;
+    ok = true;
+  } else {
+    // 🔒 Обычный режим
+    if (data.idxA !== undefined && data.idxB !== undefined) {
+      // 2 списка: стыкуем только по индексу
+      if (openVal.startsWith("A") && data.idxA === parseInt(openVal.slice(1))) {
+        p1 = data.b; p2 = data.a; ok = true;
+      } else if (openVal.startsWith("B") && data.idxB === parseInt(openVal.slice(1))) {
+        p1 = data.a; p2 = data.b; ok = true;
       }
     } else {
-      // Классическое равенство значений
-      if (openVal === candP1) {
-        p1 = candP1; p2 = candP2; newOpen = candP2; ok = true; break;
-      }
+      // 1 список: классика
+      if (data.a === openVal) { p1 = data.a; p2 = data.b; ok = true; }
+      else if (data.b === openVal) { p1 = data.b; p2 = data.a; ok = true; }
     }
   }
 
   if (!ok) return false;
 
-  if (placeAt(isLeft ? 'left' : 'right', { a: p1, b: p2 }, choice)) {
-    if (isLeft) openLeft = newOpen; else openRight = newOpen;
+  if (placeAt(isLeft ? "left" : "right", { a: p1, b: p2 }, choice)) {
+    if (isLeft) openLeft = p2; else openRight = p2;
     return true;
   }
   return false;
@@ -574,37 +551,48 @@ if (data.b === openVal) {
 
 
 /* ===== deck ===== */
+/* ===== deck ===== */
 function buildDeckFromData(d) {
   const out = [];
   const A = (d && Array.isArray(d.listA)) ? d.listA : [];
   const B = (d && Array.isArray(d.listB)) ? d.listB : [];
 
-  if (A.length && B.length) {
-    // создаём костяшки: слева B, справа A, но не берём правильные пары (i===j)
-    for (let i = 0; i < A.length; i++) {
-      for (let j = 0; j < B.length; j++) {
-        if (i === j) continue; // исключаем правильную пару
-        out.push({ a: B[j], b: A[i], uid: uid('BA_' + j + '_' + i) });
-      }
+  // Если включён свободный режим — строим наборы без проверки
+  if (freeMode) {
+    if (A.length && !B.length) {
+      // 1 список — классическое домино
+      for (let i = 0; i < A.length; i++)
+        for (let j = i; j < A.length; j++)
+          out.push({ a: A[i], b: A[j], uid: uid("A" + i + "_" + j) });
+    } else if (A.length && B.length) {
+      // 2 списка — каждая BA
+      for (let i = 0; i < B.length; i++)
+        for (let j = 0; j < A.length; j++)
+          out.push({ a: B[i], b: A[j], uid: uid("BA" + i + "_" + j) });
     }
-  } else if (A.length) {
-    // если только список A (игра обычным домино)
-    for (let i = 0; i < A.length; i++) {
-      for (let j = i; j < A.length; j++) {
-        out.push({ a: A[i], b: A[j], uid: uid('A_' + i + '_' + j) });
-      }
-    }
-  } else if (B.length) {
-    // если только список B
-    for (let i = 0; i < B.length; i++) {
-      for (let j = i; j < B.length; j++) {
-        out.push({ a: B[i], b: B[j], uid: uid('B_' + i + '_' + j) });
+    return out;
+  }
+
+  // 📌 Обычная игра с проверкой
+  if (A.length && !B.length) {
+    // 1 список — классическое домино
+    for (let i = 0; i < A.length; i++)
+      for (let j = i; j < A.length; j++)
+        out.push({ a: A[i], b: A[j], uid: uid("A" + i + "_" + j) });
+  } else if (A.length && B.length) {
+    // 2 списка — только BA, причём на шве должны совпадать индексы
+    const n = Math.min(A.length, B.length);
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        if (i === j) continue; // ⚠️ исключаем правильные пары на одной костяшке!
+        out.push({ a: B[i], b: A[j], idxA: j, idxB: i, uid: uid("BA" + i + "_" + j) });
       }
     }
   }
 
   return out;
 }
+
 /* ===== start ===== */
 function startGame(){
   const data=getQueryData()||{}; freeMode=!!data.freeMode;
