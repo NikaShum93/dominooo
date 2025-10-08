@@ -555,63 +555,37 @@ function tryPlace(target, data) {
 
 
 /* ===== deck ===== */
-function buildDeckFromData(d){
+function buildDeckFromData(d) {
   const out = [];
-  const norm = s => String(s ?? '').trim();
-  const dedupe = arr => {
-    const m = new Map();
-    for (const raw of arr) {
-      const s = norm(raw);
-      if (!s) continue;
-      const key = s.toLowerCase();
-      if (!m.has(key)) m.set(key, s); // сохраняем оригинальное написание
-    }
-    return [...m.values()];
-  };
+  const A = (d && Array.isArray(d.listA)) ? d.listA : [];
+  const B = (d && Array.isArray(d.listB)) ? d.listB : [];
 
-  const Araw = Array.isArray(d?.listA) ? d.listA : [];
-  const Braw = Array.isArray(d?.listB) ? d.listB : [];
-  const A = dedupe(Araw);
-  const B = dedupe(Braw);
-  const free = !!d?.freeMode;
-
-  const uidp = (tag,i,j) => uid(`${tag}_${i}_${j}`);
-
-  // 1) Есть оба списка
   if (A.length && B.length) {
-    // BA: слева B, справа A
-    // В несвободном режиме исключаем «правильные» пары одного индекса
-    const L = Math.min(A.length, B.length);
+    // создаём костяшки: слева B, справа A, но не берём правильные пары (i===j)
+    for (let i = 0; i < A.length; i++) {
+      for (let j = 0; j < B.length; j++) {
+        if (i === j) continue; // исключаем правильную пару
+        out.push({ a: B[j], b: A[i], uid: uid('BA_' + j + '_' + i) });
+      }
+    }
+  } else if (A.length) {
+    // если только список A (игра обычным домино)
+    for (let i = 0; i < A.length; i++) {
+      for (let j = i; j < A.length; j++) {
+        out.push({ a: A[i], b: A[j], uid: uid('A_' + i + '_' + j) });
+      }
+    }
+  } else if (B.length) {
+    // если только список B
     for (let i = 0; i < B.length; i++) {
-      for (let j = 0; j < A.length; j++) {
-        if (!free && i === j && j < L) continue; // убрать совпадение индексов
-        out.push({ a: B[i], b: A[j], uid: uidp('BA', i, j) });
+      for (let j = i; j < B.length; j++) {
+        out.push({ a: B[i], b: B[j], uid: uid('B_' + i + '_' + j) });
       }
     }
-    return out;
   }
 
-  // 2) Только один список — классическое домино на словах
-  const one = A.length ? A : B.length ? B : [];
-  if (one.length) {
-    for (let i = 0; i < one.length; i++) {
-      for (let j = i; j < one.length; j++) {
-        out.push({ a: one[i], b: one[j], uid: uidp('ONE', i, j) });
-      }
-    }
-    return out;
-  }
-
-  // 3) Фолбэк — небольшой обучающий набор
-  const F = ["раз","два","три","четыре"];
-  for (let i = 0; i < F.length; i++) {
-    for (let j = i; j < F.length; j++) {
-      out.push({ a: F[i], b: F[j], uid: uidp('FALLBACK', i, j) });
-    }
-  }
   return out;
 }
-
 /* ===== start ===== */
 function startGame(){
   const data=getQueryData()||{}; freeMode=!!data.freeMode;
