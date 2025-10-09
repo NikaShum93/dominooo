@@ -257,11 +257,11 @@ function createTileEl(a,b,opts={}){
   el.addEventListener('click',()=>showPreview(a,b));
   if(draggable){ el.draggable=true;
     el.addEventListener('dragstart',e=>{
-      dragging = {
-        a, b, uid:id, owner,
-        idxA: el.dataset.idxA !== undefined ? parseInt(el.dataset.idxA) : undefined,
-        idxB: el.dataset.idxB !== undefined ? parseInt(el.dataset.idxB) : undefined
-      };
+  dragging = {
+    a, b, uid:id, owner,
+    idxA: el.dataset.idxA ? parseInt(el.dataset.idxA,10) : null,
+    idxB: el.dataset.idxB ? parseInt(el.dataset.idxB,10) : null
+  };
       e.dataTransfer.setData('text/plain','domino');
       hidePreview();
       renderDirectionalZones();
@@ -381,12 +381,12 @@ function renderDirectionalZones(){
         const needIdx  = parseInt(side.open.slice(1)); 
 
         let ok = false;
-        if (needType === "A" && dragging.idxA !== undefined) {
-          ok = (dragging.idxA === needIdx);
-        }
-        if (needType === "B" && dragging.idxB !== undefined) {
-          ok = (dragging.idxB === needIdx);
-        }
+     if (needType === "A" && dragging.idxA !== null) {
+  ok = (dragging.idxA === needIdx);
+}
+if (needType === "B" && dragging.idxB !== null) {
+  ok = (dragging.idxB === needIdx);
+}
         if (!ok) continue;
       } else {
         // классический режим — проверяем совпадение слов
