@@ -224,12 +224,18 @@ function createTileEl(a,b,opts={}){
   el.style.left=(opts.left||0)+'px'; el.style.top=(opts.top||0)+'px';
   el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
 
-  const h=el.getElementsByClassName('half');
-  const size = (role === 'hand') ? Math.max(12, Math.floor(uniformTileFontSize * 0.84)) : uniformTileFontSize;
-  h[0].firstElementChild.textContent = a;
-  h[1].firstElementChild.textContent = b;
-  h[0].firstElementChild.style.fontSize = size + 'px';
-  h[1].firstElementChild.style.fontSize = size + 'px';
+const h=el.getElementsByClassName('half');
+let size;
+if (role === 'hand') {
+  size = Math.max(12, Math.floor(uniformTileFontSize * 0.9));   // руки — крупнее
+} else {
+  size = Math.max(10, Math.floor(uniformTileFontSize * 0.7));   // поле — меньше
+}
+h[0].firstElementChild.textContent = a;
+h[1].firstElementChild.textContent = b;
+h[0].firstElementChild.style.fontSize = size + 'px';
+h[1].firstElementChild.style.fontSize = size + 'px';
+
 
   el.addEventListener('click',()=>showPreview(a,b));
   if(draggable){ el.draggable=true;
@@ -380,11 +386,18 @@ function tryPlace(target, data) {
   else if (data.a===endOpen && data.b===endOpen){ p1=data.a; p2=data.b; ok=true; } // дубль
 
   if(!ok) return false;
-  if (placeAt(isLeft ? "left" : "right", { a:p1, b:p2 }, choice)) {
-    if(isLeft) openLeft = (p1===endOpen) ? p2 : p1;
-    else       openRight= (p1===endOpen) ? p2 : p1;
-    fitChain();
-    return true;
+// автоповорот: если нужная половина не совпадает с открытым концом — меняем местами
+let tileToPlace = { a:p1, b:p2 };
+if (p2 === endOpen && p1 !== endOpen) {
+  tileToPlace = { a:p2, b:p1 }; // swap
+}
+
+if (placeAt(isLeft ? "left" : "right", tileToPlace, choice)) {
+  if(isLeft) openLeft = (tileToPlace.b===endOpen) ? tileToPlace.a : tileToPlace.b;
+  else       openRight= (tileToPlace.b===endOpen) ? tileToPlace.a : tileToPlace.b;
+  fitChain();
+  return true;
+}rn true;
   }
   return false;
 }
