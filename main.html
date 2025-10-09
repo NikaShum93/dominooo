@@ -682,10 +682,7 @@ startBtn.addEventListener('click',startGame);
 
 addEventListener('dragover',e=>{ if(dragging) e.preventDefault(); });
 addEventListener('drop',e=>{ const t=e.target; if(!dragging) return; if(t&&t.classList&&t.classList.contains('dz')){ e.preventDefault(); const ok=tryPlace(t,dragging); if(ok){ const arr=hands[dragging.owner]||[]; hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid); award(dragging.owner,1); renderHand(); if(hands[dragging.owner].length===0){ endByWinner(dragging.owner); dragging=null; clearZones(); return; } passes[currentPlayer]=0; nextPlayer(); } dragging=null; clearZones(); }});
-trayEl.appendChild(createTileEl(
-  t.a, t.b,
-  { role:'hand', owner:currentPlayer, uid:t.uid, draggable:true, orient:'h', idxA:t.idxA, idxB:t.idxB }
-));
+
 
 /* safety init */
 (function(){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',()=>{fitStage();renderNameInputs();}); } else {fitStage();renderNameInputs();} })();
