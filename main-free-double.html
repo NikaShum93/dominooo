@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Domino • Free Two Lists</title>
+  <style>
+    body { margin:0; background:#1d1d2b; font-family:sans-serif; color:#fff; }
+    #menu { padding:20px; text-align:center; }
+    #chainZoom { position:relative; width:100%; height:80vh; background:#2b203b; overflow:hidden; }
+    .tile { position:absolute; width:100px; height:50px; background:#fafafa; color:#000;
+            display:flex; align-items:center; justify-content:center; font-weight:bold;
+            border-radius:6px; border:2px solid #333; }
+    .hand { text-align:center; margin-top:10px; }
+    .hand button { margin:4px; padding:6px 10px; }
+    .final-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center;
+      z-index:1000;
+    }
+    .final-message { font-size:2em; background:#fff; color:#000; padding:20px; border-radius:10px; }
+  </style>
+</head>
+<body>
+  <div id="menu">
+    <h1>Domino • Free Two Lists</h1>
+    <label>Игроков: <input type="number" id="playerCount" value="2" min="2" max="4"></label>
+    <div>
+      <input type="text" id="pname0" placeholder="Имя игрока 1">
+      <input type="text" id="pname1" placeholder="Имя игрока 2">
+      <input type="text" id="pname2" placeholder="Имя игрока 3">
+      <input type="text" id="pname3" placeholder="Имя игрока 4">
+    </div>
+    <button onclick="startGame()">Начать игру</button>
+  </div>
+
+  <div id="chainZoom"></div>
+  <div id="playersBar"></div>
+  <div id="handBar"></div>
+
+  <div id="finalOverlay" class="final-overlay">
+    <div class="final-message">🎉 Победитель: <span id="winnerName"></span> 🎉</div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script>
+const TILE_W=100, TILE_H=50;
+let deck=[],hands={},scores={},passes={},playerNames=[],currentPlayer=0;
+let openLeft, openRight,endLeft,endRight;
+let freeMode=true; // 🟢 свободная игра
+
+function uid(s){return s+'_'+Math.random().toString(36).substr(2,9);}
+function getQueryData(){ try{const url=new URL(window.location.href); return JSON.parse(decodeURIComponent(url.searchParams.get("data")));}catch(e){return {};} }
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+
+// === Колода (2 списка) ===
+function buildDeckFromData(d){
+  const out=[], A=(d&&Array.isArray(d.listA))?d.listA:[], B=(d&&Array.isArray(d.listB))?d.listB:[];
+  if(A.length && B.length){
+    for(let i=0;i<B.length;i++){
+      for(let j=0;j<A.length;j++){
+        out.push({a:B[i], b:A[j], uid:uid("B"+i+"_A"+j)});
+      }
+    }
+  }
+  return out;
+}
+
+// === Игра ===
+function startGame(){
+  const data=getQueryData()||{};
+  playerNames.length=0;
+  const c=Math.max(2,Math.min(4,parseInt(document.getElementById("playerCount").value)||2));
+  for(let i=0;i<c;i++){playerNames.push((document.getElementById("pname"+i)?.value||"").trim()||("Игрок "+(i+1)));}
+  deck=buildDeckFromData(data); shuffle(deck);
+
+  scores={}; passes={}; hands={}; currentPlayer=0;
+  for(let k=0;k<c;k++){hands[k]=[];scores[k]=0;passes[k]=0;}
+  for(let r=0;r<5;r++)for(let j=0;j<c;j++)if(deck.length)hands[j].push(deck.shift());
+
+  let start=deck.shift(); if(!start)start={a:"B",b:"A",uid:uid("S")};
+  chainZoom.innerHTML="";
+  const sx=300,sy=200;
+  const tile=createTileEl(start.a,start.b,{left:sx,top:sy});
+  chainZoom.appendChild(tile);
+
+  openLeft=start.a; openRight=start.b;
+  endLeft={x:sx,y:sy,dir:-1,orient:"h",el:tile};
+  endRight={x:sx,y:sy,dir:1,orient:"h",el:tile};
+
+  renderPlayersBar(); renderHand();
+  document.getElementById("menu").style.display="none";
+}
+
+function createTileEl(a,b,pos){
+  const d=document.createElement("div");
+  d.className="tile"; d.style.left=pos.left+"px"; d.style.top=pos.top+"px";
+  d.innerHTML=`<span>${a}</span>|<span>${b}</span>`;
+  return d;
+}
+
+// === Отображение ===
+function renderPlayersBar(){
+  let h=""; for(let i=0;i<playerNames.length;i++){
+    h+=`<b>${playerNames[i]}</b> (${hands[i].length} кост.) `;
+  }
+  document.getElementById("playersBar").innerHTML=h;
+}
+function renderHand(){
+  let h=""; const arr=hands[currentPlayer]||[];
+  for(const t of arr){
+    h+=`<button>${t.a}|${t.b}</button>`;
+  }
+  document.getElementById("handBar").innerHTML=h;
+}
+
+// === Завершение ===
+function endByWinner(i){
+  const name=playerNames[i];
+  document.getElementById("winnerName").textContent=name;
+  document.getElementById("finalOverlay").style.display="flex";
+  const winSound=new Audio("win.mp3"); winSound.play();
+  if(window.confetti){
+    const duration=3*1000,end=Date.now()+duration;
+    (function frame(){
+      confetti({particleCount:5,angle:60,spread:55,origin:{x:0}});
+      confetti({particleCount:5,angle:120,spread:55,origin:{x:1}});
+      if(Date.now()<end)requestAnimationFrame(frame);
+    })();
+  }
+}
+</script>
+</body>
+</html>
