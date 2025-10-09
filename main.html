@@ -532,7 +532,7 @@ function tryPlace(target, data) {
   const r = rectOf(pos.orient, pos.x, pos.y);
   if (collidesWithExisting(r)) return false;
 
-  let ok = false, p1, p2, newOpen;
+  let ok = false, p1, p2;
 
   if (freeMode) {
     // 🟢 Свободный режим: можно стыковать любые BA
@@ -541,38 +541,37 @@ function tryPlace(target, data) {
   } else {
     // 🔒 Обычный режим
     if (data.idxA !== undefined && data.idxB !== undefined) {
-  // 2 списка: стыкуем строго по типу и индексу
-  const needType = openVal[0];                 // 'A' или 'B'
-  const needIdx  = parseInt(openVal.slice(1)); // число
-  if (needType === 'A' && data.idxA === needIdx) {
-    p1 = data.b; p2 = data.a; ok = true;
-  } else if (needType === 'B' && data.idxB === needIdx) {
-    p1 = data.a; p2 = data.b; ok = true;
+      // 🎯 2 списка: стыкуем только по индексу
+      if (openVal.startsWith("A") && data.idxA === parseInt(openVal.slice(1))) {
+        p1 = data.b; p2 = data.a; ok = true;
+      } else if (openVal.startsWith("B") && data.idxB === parseInt(openVal.slice(1))) {
+        p1 = data.a; p2 = data.b; ok = true;
+      }
+    } else {
+      // 🟡 1 список: классика
+      if (data.a === openVal) { p1 = data.a; p2 = data.b; ok = true; }
+      else if (data.b === openVal) { p1 = data.b; p2 = data.a; ok = true; }
+    }
   }
-} else {
-  // 1 список: классика
-  if (data.a === openVal) { p1 = data.a; p2 = data.b; ok = true; }
-  else if (data.b === openVal) { p1 = data.b; p2 = data.a; ok = true; }
-}
 
   if (!ok) return false;
 
   if (placeAt(isLeft ? "left" : "right", { a: p1, b: p2 }, choice)) {
-  if (data.idxA !== undefined && data.idxB !== undefined && strictPairs && !freeMode) {
-    // p2 — дальняя половинка новой костяшки; определим её тип по исходной BA
-    const token = (p2 === data.a) ? ('B' + data.idxB) : ('A' + data.idxA);
-    if (isLeft) openLeft = token; else openRight = token;
-  } else {
-    // классика по словам
-    if (isLeft) openLeft = p2; else openRight = p2;
+    if (!freeMode && strictPairs && data.idxA !== undefined && data.idxB !== undefined) {
+      // 🟣 В режиме "2 списка со строгой проверкой" openLeft/openRight = индекс с типом A/B
+      const token = (p2 === data.a) ? ('B' + data.idxB) : ('A' + data.idxA);
+      if (isLeft) openLeft = token;
+      else openRight = token;
+    } else {
+      // 🟢 В классике (1 список или свободный режим) — просто слово
+      if (isLeft) openLeft = p2;
+      else openRight = p2;
+    }
+    return true;
   }
-  return true;
-}
   return false;
 }
 
-
-/* ===== deck ===== */
 /* ===== deck ===== */
 function buildDeckFromData(d) {
   const out = [];
