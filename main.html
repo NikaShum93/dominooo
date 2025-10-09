@@ -520,11 +520,18 @@ function tryPlace(target, data) {
       ok = true;
     }
   } else {
-    // Классика (один список)
-    if (data.a === openVal) { p1 = data.a; p2 = data.b; ok = true; }
-    else if (data.b === openVal) { p1 = data.b; p2 = data.a; ok = true; }
+     // 🟡 классика (1 список)
+    if (data.a === openVal && data.a !== data.b) { 
+      p1 = data.a; p2 = data.b; ok = true; 
+    }
+    else if (data.b === openVal && data.a !== data.b) { 
+      p1 = data.b; p2 = data.a; ok = true; 
+    }
+    // дубль (оба одинаковые) разрешён отдельно
+    else if (data.a === openVal && data.b === openVal) {
+      p1 = data.a; p2 = data.b; ok = true;
+    }
   }
-
   if (!ok) return false;
 
   if (placeAt(isLeft ? "left" : "right", { a: p1, b: p2, idxA: data.idxA, idxB: data.idxB }, choice)) {
