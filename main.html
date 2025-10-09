@@ -503,24 +503,31 @@ function tryPlace(target, data) {
   let ok = false, p1, p2;
 
   if (freeMode) {
+    // свободный режим
     p1 = data.a; 
     p2 = data.b;
     ok = true;
+
   } else if (strictPairs && data.idxA !== undefined && data.idxB !== undefined) {
-    // Строгий BA: B{i} ↔ A{i}
+    // 🎯 строгий BA-режим
     if (openVal.startsWith("B") && data.idxB === parseInt(openVal.slice(1))) {
-      // было B{i} → кладём BA{i,j} так, чтобы новым открытым стал A{j}
-      p1 = data.a;      // B{i}
-      p2 = data.b;      // A{j}  (p2 === data.b → после placeAt код выставит 'A'+idxA)
+      // было B{i}, стыкуем → открывается A{j}
+      p1 = data.a; 
+      p2 = data.b; 
+      if (isLeft) openLeft = "A" + data.idxA;
+      else openRight = "A" + data.idxA;
       ok = true;
     } else if (openVal.startsWith("A") && data.idxA === parseInt(openVal.slice(1))) {
-      // было A{j} → кладём BA{i,j} так, чтобы новым открытым стал B{i}
-      p1 = data.b;      // A{j}
-      p2 = data.a;      // B{i}  (p2 === data.a → после placeAt код выставит 'B'+idxB)
+      // было A{j}, стыкуем → открывается B{i}
+      p1 = data.b; 
+      p2 = data.a;
+      if (isLeft) openLeft = "B" + data.idxB;
+      else openRight = "B" + data.idxB;
       ok = true;
     }
-  } else {
-     // 🟡 классика (1 список)
+
+  } else if (!strictPairs) {
+    // 🟡 классика (1 список)
     if (data.a === openVal && data.a !== data.b) { 
       p1 = data.a; p2 = data.b; ok = true; 
     }
@@ -532,22 +539,16 @@ function tryPlace(target, data) {
       p1 = data.a; p2 = data.b; ok = true;
     }
   }
+
   if (!ok) return false;
 
   if (placeAt(isLeft ? "left" : "right", { a: p1, b: p2, idxA: data.idxA, idxB: data.idxB }, choice)) {
-    // Дальнейшее обновление openLeft/openRight выполняется существующим кодом ниже:
-    if (!freeMode && strictPairs && data.idxA !== undefined && data.idxB !== undefined) {
-      const token = (p2 === data.a) ? ('B' + data.idxB) : ('A' + data.idxA);
-      if (isLeft) openLeft = token;
-      else openRight = token;
-    } else {
-      if (isLeft) openLeft = p2;
-      else openRight = p2;
-    }
     return true;
   }
+
   return false;
 }
+
 
 /* ===== deck ===== */
 function buildDeckFromData(d) {
