@@ -48,6 +48,7 @@
 function cleanList(raw){
   return raw.split(/[\n,]+/).map(x=>x.trim()).filter(x=>x);
 }
+
 document.getElementById("generateBtn").addEventListener("click", ()=>{
   const A = cleanList(document.getElementById("listA").value);
   const B = cleanList(document.getElementById("listB").value);
@@ -61,8 +62,15 @@ document.getElementById("generateBtn").addEventListener("click", ()=>{
   const data = {listA:A, listB:B, freeMode:freeMode};
   const json = encodeURIComponent(JSON.stringify(data));
 
-  // ⚡ меняешь путь под свой репозиторий GitHub Pages
-  const url = `main.html?data=${json}`;
+  // Определяем, какой main-файл использовать
+  let file="";
+  if (freeMode && B.length) file = "main-free-double.html";
+  else if (freeMode && !B.length) file = "main-free-single.html";
+  else if (!freeMode && B.length) file = "main-double.html";
+  else file = "main-classic.html";
+
+  // ⚡ путь под GitHub Pages
+  const url = `${file}?data=${json}`;
 
   const code = `<iframe src="${url}" width="960" height="540" style="border:0;" allowfullscreen></iframe>`;
   document.getElementById("embedCode").value = code;
