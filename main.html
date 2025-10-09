@@ -367,18 +367,29 @@ function getSeam(end) {
 }
 function clearZones(){[...chainZoom.querySelectorAll('.dz')].forEach(n=>n.remove())}
 function renderDirectionalZones(){
-  clearZones(); if(!dragging) return;
+  clearZones(); 
+  if (!dragging) return;
+
   const ends=[{e:endLeft,id:'L',open:openLeft},{e:endRight,id:'R',open:openRight}];
-  for(const side of ends){
-    if(!side.e || !side.e.el) continue;
+  for (const side of ends) {
+    if (!side.e || !side.e.el) continue;
+
     if (!freeMode) {
       if (strictPairs) {
-        const needType = side.open[0];
-        const needIdx  = parseInt(side.open.slice(1));
-        const ok = (needType === 'A' && dragging.idxA === needIdx) ||
-                   (needType === 'B' && dragging.idxB === needIdx);
+        // side.open — это "A{n}" или "B{n}"
+        const needType = side.open[0];                 
+        const needIdx  = parseInt(side.open.slice(1)); 
+
+        let ok = false;
+        if (needType === "A" && dragging.idxA !== undefined) {
+          ok = (dragging.idxA === needIdx);
+        }
+        if (needType === "B" && dragging.idxB !== undefined) {
+          ok = (dragging.idxB === needIdx);
+        }
         if (!ok) continue;
       } else {
+        // классический режим — проверяем совпадение слов
         if (!(dragging.a === side.open || dragging.b === side.open)) continue;
       }
     }
