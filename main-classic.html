@@ -3,85 +3,116 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Domino · Classic (1 список)</title>
+<title>Domino · Classic</title>
 <style>
   :root{
     --accent:#e6a8ff; --accent2:#ffda8b;
+    --tile:#fffaf5; --tile-edge:#e2c0ff; --tile-shadow:rgba(0,0,0,.25);
     --seat-fs:14px;
+    --wood:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%232b1d12'/><stop offset='100%' stop-color='%2354321e'/></linearGradient><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0.2'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.08'/></feComponentTransfer></filter></defs><rect width='512' height='512' fill='url(%23g)'/><rect width='512' height='512' filter='url(%23n)' opacity='.25'/><g opacity='.35' stroke='%2329160d' stroke-width='6'><path d='M0 80h512M0 160h512M0 240h512M0 320h512M0 400h512'/></g></svg>");
   }
-  *{box-sizing:border-box} html,body{height:100%}
+  *{box-sizing:border-box}
+  html,body{height:100%}
   body{
     margin:0; font:500 16px Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
-    color:#fdf4ff; background:#2c1a32; overflow:hidden;
+    color:#fdf4ff; background:#3b281b; overflow:hidden;
     display:flex; align-items:center; justify-content:center;
   }
   #stage{
     position:relative; width:960px; height:540px;
     display:flex; flex-direction:column; align-items:center;
-    background:#2c1a32; border-radius:12px;
+    background-image:var(--wood); background-repeat:no-repeat; background-size:cover; background-position:center;
+    box-shadow:inset 0 0 80px rgba(0,0,0,.45), inset 0 0 140px rgba(0,0,0,.35);
+    border-radius:12px;
   }
-  h1{margin:8px 0 6px; font-size:22px; font-weight:900; color:#ffda8b}
+  h1{margin:8px 0 6px; font-size:24px; font-weight:900; color:#f2d39a; text-shadow:0 1px 0 #402b16,0 0 18px rgba(0,0,0,.45)}
 
-  .topbar{width:95%; display:flex; align-items:center; justify-content:space-between; gap:10px}
-  .players{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-  .player{padding:6px 10px; border-radius:12px; background:rgba(230,168,255,.15); font-size:12px}
-  .player.active{background:#ffda8b; color:#2c1a32; font-weight:900; box-shadow:0 0 12px #ffda8b}
-  .controls{display:flex; gap:8px}
-  .btn{padding:8px 14px; border-radius:10px; border:2px solid #7a5525; background:linear-gradient(#f1c97a,#e7b85f); color:#2c1a32; font-weight:800}
-  .btn:disabled{opacity:.6; cursor:not-allowed}
-  #turnInfo{margin:4px 0 2px; font-size:14px; color:#ffda8b; font-weight:800}
-
-  .board{
-    position:relative; width:95%; height:68%; margin:6px 0;
-    background:#402b46; border-radius:18px; overflow:hidden; cursor:grab;
-    box-shadow:inset 0 0 18px rgba(0,0,0,.35);
-  }
-  .board.grabbing{cursor:grabbing}
-  .chain{position:relative; width:100%; height:100%}
-  #chainZoom{position:absolute; inset:0; transform-origin:0 0;}
-
-  .tile{
-    width:200px; height:70px;
-    background:linear-gradient(#fffdf8,#fff6e7);
-    border:2px solid #e7dbc9; border-radius:12px; display:grid; grid-template-columns:1fr 1fr;
-    position:absolute; box-shadow:0 2px 6px rgba(0,0,0,.35);
-    overflow:hidden; user-select:none; transition:transform .12s;
-  }
-  .tile.vert{width:70px; height:200px; grid-template-columns:1fr; grid-template-rows:1fr 1fr}
-  .tile .half{display:flex; align-items:center; justify-content:center; padding:0 8px; overflow:hidden; min-width:0}
-  .tile .half:first-child { border-right: 2px solid #d8c8aa; }
-  .tile.vert .half:first-child { border-right: none; border-bottom: 2px solid #d8c8aa; }
-  .tile b{font-weight:900; color:#1c1712; white-space:nowrap;}
-
-  .hands{width:100%; display:flex; flex-direction:column; gap:6px; padding:8px 0}
-  .hand-header{width:95%; margin:0 auto; text-align:center; font-weight:900; color:#e9d2a2}
-  .tray{width:95%; margin:0 auto; height:60px; display:flex; gap:8px; flex-wrap:nowrap; align-items:center; overflow-x:auto; padding:8px 10px; border:2px solid #8c5c2f; background:#5a3b21; border-radius:12px}
-  .tray > .tile{position:static} .tile.hand{transform:scale(.50); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
-  .tile.hand *{pointer-events:none}
-
-  /* Стрелки-зоны */
-  .dz{position:absolute; width:38px; height:38px; border:2px dashed #ffda8b; border-radius:10px; display:none; background:rgba(255,218,139,.1)}
-  .dz.active{display:block; background:rgba(255,218,139,.25); box-shadow:0 0 12px rgba(255,218,139,.6)}
-  .dz::after{content:attr(data-dir); font-size:12px; color:#2c1a32; font-weight:900; background:#ffda8b; padding:2px 6px; border-radius:8px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%)}
-
-  /* Меню стартовое */
+  /* MENU */
   .menu{
     position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
     padding:30px; z-index:100000;
-    background:linear-gradient(rgba(44,26,50,.92), rgba(44,26,50,.94)); border-radius:12px;
+    background:linear-gradient(rgba(32,21,12,.92), rgba(32,21,12,.94)), var(--wood);
+    background-repeat:no-repeat; background-size:cover; background-position:center;
+    box-shadow:inset 0 0 80px rgba(0,0,0,.55); border-radius:12px;
   }
   .menu label{color:#f2d39a; font-weight:800}
   .menu input{padding:8px 12px; width:220px; border-radius:8px; border:2px solid #8c5c2f; background:#fff6e7; color:#2b1a10; margin-top:4px}
   .menu button{padding:10px 16px; border-radius:10px; border:2px solid #7a5525; font-weight:900; cursor:pointer; background:linear-gradient(#f1c97a,#e7b85f); color:#2b1a10}
 
-  /* Победитель */
-  .final-overlay {position:absolute; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:200000;}
-  .final-message {font-size:40px; font-weight:900; color:#ffe97f;}
+  /* HUD */
+  .topbar{width:95%; display:flex; align-items:center; justify-content:space-between; gap:10px}
+  .players{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .player{padding:6px 12px; border-radius:14px; background:rgba(230,168,255,.15); font-size:12px}
+  .player.active{background:#f2c56a; color:#2b1a10; font-weight:900; box-shadow:0 0 14px #f2c56a}
+  .score{margin-left:4px; font-weight:900}
+  .controls{display:flex; gap:8px}
+  .btn{padding:8px 14px; border-radius:10px; border:2px solid #7a5525; background:linear-gradient(#f1c97a,#e7b85f); color:#2c1a32; font-weight:800}
+  .btn:disabled{opacity:.6; cursor:not-allowed}
+  #turnInfo{margin:4px 0 6px; color:#ffda8b; font-weight:800}
+
+  /* BOARD */
+  .board{
+    position:relative; width:95%; height:68%; margin:6px 0;
+    background:radial-gradient(120% 100% at 50% 50%, #3c2a3e, #2e2130 70%) padding-box;
+    border:10px solid transparent; border-radius:18px;
+    border-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><rect width='20' height='20' fill='%2354321e'/><rect x='1' y='1' width='18' height='18' fill='none' stroke='%238c5c2f' stroke-width='1.5'/></svg>") 30 round;
+    box-shadow:0 8px 24px rgba(0,0,0,.45), inset 0 0 18px rgba(0,0,0,.35);
+    overflow:hidden; cursor:grab;
+  }
+  .board.grabbing{cursor:grabbing}
+  .chain{position:relative; width:100%; height:100%}
+  #chainZoom{position:absolute; inset:0; transform-origin:0 0;}
+
+  /* SEATS */
+  #seats{pointer-events:none; position:absolute; inset:0}
+  .seat{position:absolute; background:rgba(0,0,0,.25); border:1px solid rgba(255,218,139,.45); color:#f5e6bf; font-weight:800; padding:6px 10px; border-radius:12px; font-size:var(--seat-fs,14px)}
+  .seat-bottom{left:50%; transform:translateX(-50%); bottom:8px}
+  .seat-top{left:50%; transform:translateX(-50%); top:8px}
+  .seat-right,.seat-left{writing-mode:vertical-rl; text-orientation:mixed; top:50%; transform:translateY(-50%); max-height:60%; padding:8px 6px}
+  .seat-right{right:8px} .seat-left{left:8px} .seat.hidden{display:none}
+
+  /* TILES */
+  .tile{
+    width:200px; height:70px;
+    background:radial-gradient(120% 120% at 20% 20%, rgba(0,0,0,.08), transparent 60%), linear-gradient(#fffdf8,#fff6e7);
+    border:2px solid #e7dbc9; border-radius:12px; display:grid; grid-template-columns:1fr 1fr;
+    position:absolute; box-shadow:0 2px 6px rgba(0,0,0,.35), inset 0 0 0 2px #e0d3bd, inset 0 -10px 20px rgba(0,0,0,.06);
+    overflow:hidden; user-select:none; transition:transform .12s; -webkit-user-drag:element;
+  }
+  .tile:hover{transform:scale(1.04)}
+  .tile .half{display:flex; align-items:center; justify-content:center; padding:0 8px; overflow:hidden; min-width:0; position:relative}
+  .tile .half:first-child{border-right:2px solid #d8c8aa}
+  .tile.vert{width:70px; height:200px; grid-template-columns:1fr; grid-template-rows:1fr 1fr}
+  .tile.vert .half:first-child{border-right:none; border-bottom:2px solid #d8c8aa}
+  .tile b{display:block; line-height:1.05; font-weight:900; color:#1c1712; white-space:nowrap; max-width:100%}
+  .tile img{max-width:100%; max-height:100%; object-fit:contain; display:block; filter:drop-shadow(0 1px 0 rgba(0,0,0,.15))}
+  .tile.hand{transform:scale(.50); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+  .tile.hand *{pointer-events:none}
+
+  /* HAND */
+  .hands{width:100%; display:flex; flex-direction:column; gap:6px; padding:8px 0}
+  .hand-header{width:95%; margin:0 auto; text-align:center; font-weight:900; color:#e9d2a2}
+  .tray{width:95%; margin:0 auto; height:60px; display:flex; gap:8px; flex-wrap:nowrap; align-items:center; overflow-x:auto; padding:8px 10px; border:2px solid #8c5c2f; background:#5a3b21; border-radius:12px}
+  .tray > .tile{position:static}
+
+  /* DROP ZONES */
+  .dz{position:absolute; width:38px; height:38px; border:2px dashed #b68a3e; border-radius:10px; display:none; background:rgba(255,215,120,.08)}
+  .dz.active{display:block; background:rgba(255,215,120,.28); box-shadow:0 0 16px rgba(255,215,120,.7)}
+  .dz::after{content:attr(data-dir); font-size:11px; color:#2c1a32; font-weight:900; background:#f2c56a; padding:2px 6px; border-radius:8px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%)}
+
+  /* PREVIEW */
+  #tilePreview{position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:999999; background:rgba(0,0,0,.6)}
+  #tilePreview .tile{position:static; width:680px; height:260px; box-shadow:0 18px 60px rgba(0,0,0,.55), inset 0 0 0 2px #e0d3bd}
+
+  /* WIN OVERLAY */
+  .final-overlay{position:absolute; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:100000;}
+  .final-message{font-size:48px; font-weight:900; color:#ffe97f; text-shadow:0 0 20px #ff0000, 0 0 40px #ff9900, 0 0 60px #fff; animation:pop 1s ease-out;}
+  @keyframes pop{0%{transform:scale(0.2); opacity:0;}60%{transform:scale(1.2); opacity:1;}100%{transform:scale(1);}}
 </style>
 </head>
 <body>
 <div id="stage">
-  <h1 id="title">Domino · Classic (1 список)</h1>
+  <h1 id="title">Domino · Classic</h1>
 
   <!-- Меню -->
   <div id="menu" class="menu">
@@ -92,6 +123,7 @@
     <button id="startBtn" type="button">Начать игру</button>
   </div>
 
+  <!-- HUD -->
   <div class="topbar">
     <div id="playersBar" class="players"></div>
     <div class="controls">
@@ -104,8 +136,12 @@
 
   <!-- Поле -->
   <div class="board" id="board">
-    <div class="chain" id="chain">
-      <div id="chainZoom"></div>
+    <div class="chain" id="chain"><div id="chainZoom"></div></div>
+    <div id="seats">
+      <div class="seat seat-bottom"><span></span></div>
+      <div class="seat seat-right"><span></span></div>
+      <div class="seat seat-top"><span></span></div>
+      <div class="seat seat-left"><span></span></div>
     </div>
   </div>
 
@@ -121,40 +157,60 @@
   </div>
 </div>
 
+<!-- PREVIEW -->
+<div id="tilePreview"><div id="tilePreviewInner"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <script>
-/* ===== Константы геометрии ===== */
+/* ====== geometry / constants ====== */
 const TILE_W=200, TILE_H=70, VERT_W=70, VERT_H=200, GAP=4, DZ=38;
+const START_HAND = 7; // раздача по 7
+let uniformTileFontSize = 22;
 
-/* ===== DOM refs ===== */
-const menuEl=document.getElementById('menu');
-const playerCountEl=document.getElementById('playerCount');
-const nameInputsEl=document.getElementById('nameInputs');
-const playersBarEl=document.getElementById('playersBar');
-const boardEl=document.getElementById('board');
-const chainEl=document.getElementById('chain');
-const chainZoom=document.getElementById('chainZoom');
-const handHeader=document.getElementById('handHeader');
-const trayEl=document.getElementById('tray');
-const drawBtn=document.getElementById('drawBtn');
-const skipBtn=document.getElementById('skipBtn');
-const restartBtn=document.getElementById('restartBtn');
-const turnInfo=document.getElementById('turnInfo');
+/* ====== DOM refs ====== */
+const menuEl=document.getElementById('menu'), nameInputsEl=document.getElementById('nameInputs'), playerCountEl=document.getElementById('playerCount'), startBtn=document.getElementById('startBtn');
+const playersBarEl=document.getElementById('playersBar'), boardEl=document.getElementById('board'), chainEl=document.getElementById('chain'), chainZoom=document.getElementById('chainZoom');
+const handHeader=document.getElementById('handHeader'), trayEl=document.getElementById('tray');
+const drawBtn=document.getElementById('drawBtn'), skipBtn=document.getElementById('skipBtn'), restartBtn=document.getElementById('restartBtn'), turnInfo=document.getElementById('turnInfo');
+const previewWrap=document.getElementById('tilePreview'), previewInner=document.getElementById('tilePreviewInner');
+const seats={bottom:document.querySelector('.seat-bottom span'),right:document.querySelector('.seat-right span'),top:document.querySelector('.seat-top span'),left:document.querySelector('.seat-left span')};
+const seatBoxes={bottom:document.querySelector('.seat-bottom'),right:document.querySelector('.seat-right'),top:document.querySelector('.seat-top'),left:document.querySelector('.seat-left')};
 
-/* ===== Состояние ===== */
-let playerNames=[], hands={}, deck=[], currentPlayer=0, passes={};
+/* ====== state ====== */
+let playerNames=[], hands={}, deck=[], currentPlayer=0, scores={}, passes={};
 let openLeft=null, openRight=null, endLeft=null, endRight=null, dragging=null;
 
-/* ===== Вспомогательные ===== */
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a;}
-function uid(i){return't'+i+'_'+Math.random().toString(36).slice(2,7);}
+/* ====== utils ====== */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a;}
+function uid(i){return 't'+i+'_'+Math.random().toString(36).slice(2,7);}
+function getQueryData(){const raw=new URLSearchParams(location.search).get('data'); if(!raw) return null; try{return JSON.parse(decodeURIComponent(raw));}catch(e){return null;}}
 function br(){return{w:chainEl.clientWidth,h:chainEl.clientHeight};}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
-function getQueryData(){
-  const raw=new URLSearchParams(location.search).get('data'); if(!raw) return null;
-  try{return JSON.parse(decodeURIComponent(raw));}catch(e){return null;}
+function isImg(v){return /^https?:\/\//i.test(v)||/^data:image\//i.test(v);}
+
+/* ====== text fit (unified size across tiles) ====== */
+function computeUniformFontSize(words){
+  if(!words.length) return 22;
+  const temp = document.createElement('div');
+  temp.style.position='fixed'; temp.style.left='-9999px'; temp.style.top='-9999px';
+  temp.style.width=(TILE_W/2 - 24)+'px';
+  const b = document.createElement('b');
+  b.style.fontFamily='Inter, system-ui, sans-serif';
+  b.style.fontWeight='900';
+  b.style.whiteSpace='nowrap';
+  temp.appendChild(b); document.body.appendChild(temp);
+  let minFS=30;
+  for(const w of words){
+    if (isImg(w)) continue; // картинки не влияют на шрифт
+    let s=30; b.style.fontSize=s+'px'; b.textContent=w;
+    while(s>10 && b.scrollWidth>=temp.clientWidth){ s--; b.style.fontSize=s+'px'; }
+    minFS=Math.min(minFS,s);
+  }
+  document.body.removeChild(temp);
+  return Math.max(12, minFS);
 }
 
-/* ===== Меню: поля имён ===== */
+/* ====== menu inputs ====== */
 function renderNameInputs(){
   nameInputsEl.innerHTML='';
   const n=parseInt(playerCountEl.value,10)||2;
@@ -165,129 +221,203 @@ function renderNameInputs(){
     nameInputsEl.appendChild(inp);
   }
 }
-playerCountEl.addEventListener('input',renderNameInputs); renderNameInputs();
+playerCountEl.addEventListener('input',renderNameInputs);
+renderNameInputs();
 
-/* ===== Пан/зум по полю (простенько) ===== */
+/* ====== Pan & Zoom ====== */
 let scale=1, panX=0, panY=0, isPanning=false, startPanX=0, startPanY=0;
 function updateTransform(){ chainZoom.style.transform=`translate(${panX}px, ${panY}px) scale(${scale})`; }
 boardEl.addEventListener('mousedown',e=>{ if(e.button!==0 || e.target.closest('.dz, .tile')) return; e.preventDefault(); isPanning=true; startPanX=e.clientX-panX; startPanY=e.clientY-panY; boardEl.classList.add('grabbing'); });
-window.addEventListener('mousemove',e=>{ if(!isPanning) return; e.preventDefault(); panX=e.clientX-startPanX; panY=e.clientY-startPanY; updateTransform();});
-window.addEventListener('mouseup',()=>{ if(isPanning){ isPanning=false; boardEl.classList.remove('grabbing'); }});
-boardEl.addEventListener('wheel',e=>{ e.preventDefault(); const rect=boardEl.getBoundingClientRect(); const mx=e.clientX-rect.left, my=e.clientY-rect.top; const k=1 - e.deltaY*0.001; const ns=clamp(scale*k, 0.3, 2.5); panX=mx - (mx-panX)*(ns/scale); panY=my - (my-panY)*(ns/scale); scale=ns; updateTransform(); });
+window.addEventListener('mousemove',e=>{ if(!isPanning) return; e.preventDefault(); panX=e.clientX-startPanX; panY=e.clientY-startPanY; updateTransform(); });
+window.addEventListener('mouseup',()=>{ if(isPanning){isPanning=false; boardEl.classList.remove('grabbing');} });
+boardEl.addEventListener('wheel',e=>{ e.preventDefault(); const rect=boardEl.getBoundingClientRect(); const mx=e.clientX-rect.left, my=e.clientY-rect.top; const k=1 - e.deltaY*0.001; const newS=clamp(scale*k,0.2,2.5); panX = mx - (mx - panX) * (newS/scale); panY = my - (my - panY) * (newS/scale); scale=newS; updateTransform(); });
 
-/* ===== Костяшка DOM ===== */
+/* ====== seats ====== */
+function setDensity(){ const n=playerNames.length; document.documentElement.style.setProperty('--seat-fs', (n>=4?11:n===3?12:14)+'px'); }
+function shrinkToFit(span,min){ let fs=parseInt(getComputedStyle(span.parentElement).fontSize)||14; const ok=()=>span.scrollWidth<=span.clientWidth&&span.scrollHeight<=span.clientHeight; span.style.whiteSpace='nowrap'; while(!ok()&&fs>min){fs--; span.parentElement.style.fontSize=fs+'px';} }
+const fitSeatTextHorizontal=(box,txt)=>{const s=box.querySelector('span'); s.textContent=txt; box.style.fontSize='var(--seat-fs,14px)'; shrinkToFit(s,9); };
+const fitSeatTextVertical=(box,txt)=>{const s=box.querySelector('span'); s.textContent=txt; box.style.fontSize='var(--seat-fs,14px)'; const ok=()=>s.scrollHeight<=box.clientHeight&&s.scrollWidth<=box.clientWidth; let fs=parseInt(getComputedStyle(box).fontSize)||14; s.style.whiteSpace='nowrap'; while(!ok()&&fs>9){fs--; box.style.fontSize=fs+'px';} };
+function updateSeats(){
+  if(!playerNames.length) return;
+  setDensity();
+  const n=playerNames.length;
+  const order=[currentPlayer,(currentPlayer+1)%n,(currentPlayer+2)%n,(currentPlayer+3)%n];
+  const map=[{box:seatBoxes.bottom,i:order[0],fit:fitSeatTextHorizontal},
+             {box:seatBoxes.right,i:order[1],fit:fitSeatTextVertical},
+             {box:seatBoxes.top,i:order[2],fit:fitSeatTextHorizontal},
+             {box:seatBoxes.left,i:order[3],fit:fitSeatTextVertical}];
+  map.forEach((row,idx)=>{
+    if(idx<n){
+      const i=row.i, name=String(playerNames[i]).trim().replace(/\s+/g,' '), cnt=(hands[i]?hands[i].length:0);
+      row.box.classList.remove('hidden');
+      row.fit(row.box,`${name} (${cnt})`);
+    } else {
+      row.box.classList.add('hidden');
+      row.box.querySelector('span').textContent='';
+    }
+  });
+}
+
+/* ====== tile factory (text / image) ====== */
+function fillHalf(halfEl, content, sizePx){
+  halfEl.innerHTML='';
+  if(isImg(content)){
+    const img=document.createElement('img'); img.src=content; img.alt=''; halfEl.appendChild(img);
+  } else {
+    const b=document.createElement('b'); b.textContent=content; b.style.fontSize=sizePx+'px'; b.style.fontWeight='900'; halfEl.appendChild(b);
+  }
+}
 function createTileEl(a,b,opts={}){
   const role=opts.role||'chain'; const owner=Number.isInteger(opts.owner)?opts.owner:null; const id=opts.uid||null; const orient=opts.orient||'h'; const draggable=!!opts.draggable;
-  const el=document.createElement('div'); el.className='tile '+(orient==='v'?'vert ':'')+role;
-  el.dataset.a=a; el.dataset.b=b; if(id) el.dataset.uid=id; if(owner!==null) el.dataset.owner=owner;
-  if(opts.left!==undefined){ el.style.left=opts.left+'px'; el.style.top=opts.top+'px'; }
-  el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
-  const h=el.getElementsByClassName('half');
-  h[0].firstElementChild.textContent=a; h[1].firstElementChild.textContent=b;
+  const el=document.createElement('div'); el.className='tile '+(orient==='v'?'vert ':'')+role; el.dataset.a=a; el.dataset.b=b; if(id) el.dataset.uid=id; if(owner!==null) el.dataset.owner=owner;
+  el.style.left=(opts.left||0)+'px'; el.style.top=(opts.top||0)+'px';
+  el.innerHTML='<div class="half"></div><div class="half"></div>';
 
-  if(draggable){
-    el.draggable=true;
-    el.addEventListener('dragstart',e=>{ dragging={a,b,uid:id,owner}; e.dataTransfer.setData('text/plain','domino'); renderDirectionalZones(); });
-    el.addEventListener('dragend',()=>{ dragging=null; clearZones(); });
+  const h=el.getElementsByClassName('half');
+  const size = (role === 'hand') ? Math.max(12, Math.floor(uniformTileFontSize * 0.84)) : uniformTileFontSize;
+  fillHalf(h[0], a, size);
+  fillHalf(h[1], b, size);
+
+  el.addEventListener('click',()=>showPreview(a,b));
+  if(draggable){ el.draggable=true;
+    el.addEventListener('dragstart',e=>{
+      dragging = {a,b, uid:id, owner};
+      e.dataTransfer.setData('text/plain','domino');
+      hidePreview();
+      renderDirectionalZones();
+    });
+    el.addEventListener('dragend',()=>{dragging=null; clearZones();});
   }
   return el;
 }
 
-/* ===== Раздача/рука ===== */
-function renderHand(){
-  const hand=hands[currentPlayer]||[];
-  handHeader.textContent=`${playerNames[currentPlayer]}: (${hand.length} костяшек)`;
-  trayEl.innerHTML='';
-  for(const t of hand){
-    trayEl.appendChild(createTileEl(t.a,t.b,{role:'hand',owner:currentPlayer,uid:t.uid,draggable:true,orient:'h'}));
-  }
+/* ====== preview ====== */
+function showPreview(a,b){
+  previewInner.innerHTML='';
+  const big=createTileEl(a,b,{orient:'h', role:'preview'});
+  big.style.position='static'; big.style.width='680px'; big.style.height='260px';
+  previewInner.appendChild(big);
+  previewWrap.style.display='flex';
 }
+function hidePreview(){previewWrap.style.display='none';}
+addEventListener('keydown',e=>{if(e.key==='Escape') hidePreview();});
+previewWrap.addEventListener('click',hidePreview);
+
+/* ====== deck (classic A×A) ====== */
+function buildDeckFromData(d){
+  const out=[];
+  const A=(d && Array.isArray(d.listA)) ? d.listA : [];
+  if(A.length){
+    for(let i=0;i<A.length;i++)
+      for(let j=i;j<A.length;j++)
+        out.push({a:A[i], b:A[j], uid:uid('A'+i+'_'+j)});
+  }
+  return out;
+}
+
+/* ====== HUD / Hand ====== */
 function renderPlayersBar(){
   playersBarEl.innerHTML='';
   for(let i=0;i<playerNames.length;i++){
     const el=document.createElement('div');
     el.className='player'+(i===currentPlayer?' active':'');
-    el.textContent=playerNames[i];
+    el.innerHTML=`${playerNames[i]} <span class="score" id="score-${i}">${scores[i]||0}</span>`;
     playersBarEl.appendChild(el);
   }
 }
-function updateControls(){
-  const playable=hasPlayable(hands[currentPlayer]||[]);
-  drawBtn.disabled=(playable)||deck.length===0;
-  turnInfo.textContent=`Ход: ${playerNames[currentPlayer]}`;
+function renderHand(){
+  handHeader.textContent = `${playerNames[currentPlayer]}: (${(hands[currentPlayer]?.length || 0)} костяшек)`;
+  trayEl.innerHTML='';
+  for (const t of (hands[currentPlayer] || [])){
+    trayEl.appendChild(createTileEl(t.a,t.b,{role:'hand',owner:currentPlayer,uid:t.uid,draggable:true,orient:'h'}));
+  }
+  updateSeats();
 }
 
-/* ===== Проверка ходов (классика) ===== */
+/* ====== rules helpers ====== */
 function hasPlayable(hand){
   for(const t of hand){
     if (t.a===openLeft || t.b===openLeft || t.a===openRight || t.b===openRight) return true;
   }
   return false;
 }
+function award(i,pts=1){scores[i]=(scores[i]||0)+pts; const el=document.getElementById('score-'+i); if(el) el.textContent=String(scores[i]);}
+function nextPlayer(){currentPlayer=(currentPlayer+1)%playerNames.length; renderHand(); renderPlayersBar(); updateControls(); updateSeats();}
+function everyonePassed(){for(let i=0;i<playerNames.length;i++){if(!passes[i]) return false} return true}
 
-/* ===== Геометрия размещения ===== */
-function getSeam(end){
-  if(end.orient==='h'){
-    return end.dir===1? {x:end.x+TILE_W, y:end.y+TILE_H/2} : {x:end.x, y:end.y+TILE_H/2};
-  } else {
-    return end.dir===1? {x:end.x+VERT_W/2, y:end.y+VERT_H} : {x:end.x+VERT_W/2, y:end.y};
-  }
-}
-function getNextPos(end,choice){
+/* ====== layout helpers ====== */
+function getNextPos(end, choice) {
   let x,y,orient,nextDir;
-  if(end.orient==='h'){
-    const seamX=end.dir===1? end.x+TILE_W : end.x; const ay=end.y;
+  if (end.orient==='h'){
+    const seamX = end.dir===1 ? end.x + TILE_W : end.x;
+    const alignY = end.y;
     switch(choice){
-      case 'right': x=seamX+GAP; y=ay; orient='h'; nextDir=1; break;
-      case 'left':  x=seamX-TILE_W-GAP; y=ay; orient='h'; nextDir=-1; break;
-      case 'down':  x=(end.dir===1? seamX-VERT_W : seamX); y=ay+TILE_H+GAP; orient='v'; nextDir=1; break;
-      case 'up':    x=(end.dir===1? seamX-VERT_W : seamX); y=ay-VERT_H-GAP; orient='v'; nextDir=-1; break;
+      case 'right': x=seamX + GAP; y=alignY; orient='h'; nextDir=1; break;
+      case 'left':  x=seamX - TILE_W - GAP; y=alignY; orient='h'; nextDir=-1; break;
+      case 'down':  x=(end.dir===1?seamX - VERT_W : seamX); y=alignY + TILE_H + GAP; orient='v'; nextDir=1; break;
+      case 'up':    x=(end.dir===1?seamX - VERT_W : seamX); y=alignY - VERT_H - GAP; orient='v'; nextDir=-1; break;
     }
   } else {
-    const seamY=end.dir===1? end.y+VERT_H : end.y; const ax=end.x;
+    const seamY = end.dir===1 ? end.y + VERT_H : end.y;
+    const alignX = end.x;
     switch(choice){
-      case 'up':    x=ax; y=seamY-VERT_H-GAP; orient='v'; nextDir=-1; break;
-      case 'down':  x=ax; y=seamY+GAP; orient='v'; nextDir=1; break;
-      case 'right': x=ax+VERT_W+GAP; y=(end.dir===1? seamY-TILE_H : seamY); orient='h'; nextDir=1; break;
-      case 'left':  x=ax-TILE_W-GAP; y=(end.dir===1? seamY-TILE_H : seamY); orient='h'; nextDir=-1; break;
+      case 'up':    x=alignX; y=seamY - VERT_H - GAP; orient='v'; nextDir=-1; break;
+      case 'down':  x=alignX; y=seamY + GAP; orient='v'; nextDir=1; break;
+      case 'right': x=alignX + VERT_W + GAP; y=(end.dir===1?seamY - TILE_H : seamY); orient='h'; nextDir=1; break;
+      case 'left':  x=alignX - TILE_W - GAP; y=(end.dir===1?seamY - TILE_H : seamY); orient='h'; nextDir=-1; break;
     }
   }
   return {x,y,orient,nextDir};
 }
+function applyPlaced(end,pos){ end.x=pos.x; end.y=pos.y; end.orient=pos.orient; end.dir=pos.nextDir; }
+
+/* ====== collisions ====== */
 function rectOf(o,x,y){return{x,y,w:o==='v'?VERT_W:TILE_W,h:o==='v'?VERT_H:TILE_H}}
 function intersects(r1,r2){return !(r2.x>=r1.x+r1.w||r2.x+r2.w<=r1.x||r2.y>=r1.y+r1.h||r2.y+r2.h<=r1.y)}
-function collidesWithExisting(r){
-  for(const t of [...chainZoom.querySelectorAll('.tile:not(.hand)')]){
-    const w=t.classList.contains('vert')?VERT_W:TILE_W;
-    const h=t.classList.contains('vert')?VERT_H:TILE_H;
-    const r2={x:parseInt(t.style.left||0),y:parseInt(t.style.top||0),w,h};
-    if(intersects(r,r2)) return true;
+function collidesWithExisting(r, ignoreEl) {
+  for (const t of [...chainZoom.querySelectorAll('.tile:not(.hand)')]) {
+    if (t === ignoreEl) continue;
+    const w = t.classList.contains('vert') ? VERT_W : TILE_W;
+    const h = t.classList.contains('vert') ? VERT_H : TILE_H;
+    const r2 = { x: parseInt(t.style.left||0), y: parseInt(t.style.top||0), w, h };
+    if (intersects(r, r2)) return true;
   }
   return false;
 }
-function applyPlaced(end,pos){ end.x=pos.x; end.y=pos.y; end.orient=pos.orient; end.dir=pos.nextDir; }
 
-/* ===== Зоны-стрелки ===== */
-function clearZones(){[...chainZoom.querySelectorAll('.dz')].forEach(n=>n.remove());}
+/* ====== drop zones ====== */
+function getSeam(end){
+  if(end.orient==='h'){
+    return end.dir===1 ? {x:end.x + TILE_W, y:end.y + TILE_H/2} : {x:end.x, y:end.y + TILE_H/2};
+  } else {
+    return end.dir===1 ? {x:end.x + VERT_W/2, y:end.y + VERT_H} : {x:end.x + VERT_W/2, y:end.y};
+  }
+}
+function clearZones(){[...chainZoom.querySelectorAll('.dz')].forEach(n=>n.remove())}
 function renderDirectionalZones(){
-  clearZones(); if(!dragging) return;
+  clearZones(); 
+  if(!dragging) return;
+
   const ends=[{e:endLeft,id:'L',open:openLeft},{e:endRight,id:'R',open:openRight}];
-  for(const side of ends){
+  for (const side of ends){
     if(!side.e || !side.e.el) continue;
-    // допустить только если кость вообще подходит по слову
+
+    // проверка на возможность состыковки по значению
     if(!(dragging.a===side.open || dragging.b===side.open)) continue;
 
     const seam=getSeam(side.e);
     const OFFSET=20;
     const zones={
-      up:{ left:seam.x-DZ/2, top:seam.y-DZ-GAP-OFFSET, dir:'↑', k:'up'},
-      right:{ left:seam.x+GAP+OFFSET, top:seam.y-DZ/2, dir:'→', k:'right'},
-      down:{ left:seam.x-DZ/2, top:seam.y+GAP+OFFSET, dir:'↓', k:'down'},
-      left:{ left:seam.x-DZ-GAP-OFFSET, top:seam.y-DZ/2, dir:'←', k:'left'}
+      up:    {left:seam.x - DZ/2, top:seam.y - DZ - GAP - OFFSET, dir:'↑', k:'up'},
+      right: {left:seam.x + GAP + OFFSET, top:seam.y - DZ/2, dir:'→', k:'right'},
+      down:  {left:seam.x - DZ/2, top:seam.y + GAP + OFFSET, dir:'↓', k:'down'},
+      left:  {left:seam.x - DZ - GAP - OFFSET, top:seam.y - DZ/2, dir:'←', k:'left'}
     };
     for(const k of Object.keys(zones)){
-      const pos=getNextPos(side.e,k); if(!pos.orient) continue;
-      const r=rectOf(pos.orient,pos.x,pos.y); if(collidesWithExisting(r)) continue;
+      const pos=getNextPos(side.e,k);
+      if(!pos.orient) continue;
+      const r=rectOf(pos.orient,pos.x,pos.y);
+      if(collidesWithExisting(r)) continue;
       const z=document.createElement('div'); z.className='dz active';
       z.style.left=zones[k].left+'px'; z.style.top=zones[k].top+'px';
       z.dataset.dir=zones[k].dir; z.dataset.end=side.id; z.dataset.k=k;
@@ -297,40 +427,10 @@ function renderDirectionalZones(){
 }
 addEventListener('resize',()=>{ if(dragging) renderDirectionalZones(); });
 
-/* ===== Размещение кости ===== */
-function placeAt(whichEnd, tileData, choice){
-  const end=(whichEnd==='left')? endLeft : endRight;
-  const pos=getNextPos(end,choice);
-  if(!pos.orient || collidesWithExisting(rectOf(pos.orient,pos.x,pos.y))) return false;
-
-  const newTile=createTileEl(tileData.a,tileData.b,{orient:pos.orient,left:pos.x,top:pos.y});
-  chainZoom.appendChild(newTile);
-  applyPlaced(end,pos);
-  end.el=newTile;
-  return true;
-}
-function tryPlace(target,data){
-  if(!data || !target.classList.contains('dz')) return false;
-  const isLeft=target.dataset.end==='L';
-  const choice=target.dataset.k;
-  const endOpen=isLeft? openLeft : openRight;
-
-  // проверка по слову
-  let p1,p2,ok=false;
-  if(data.a===endOpen){ p1=data.a; p2=data.b; ok=true; }
-  else if(data.b===endOpen){ p1=data.b; p2=data.a; ok=true; }
-  if(!ok) return false;
-
-  if(placeAt(isLeft?'left':'right',{a:p1,b:p2},choice)){
-    if(isLeft) openLeft=p2; else openRight=p2;
-    return true;
-  }
-  return false;
-}
-
-/* ===== Масштабирование под цепочку ===== */
+/* ====== fit chain in view ====== */
 function fitChain(){
-  const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')]; if(!tiles.length){ scale=1; panX=panY=0; updateTransform(); return; }
+  const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')];
+  if(!tiles.length){ scale=1; panX=0; panY=0; updateTransform(); return; }
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
   for(const t of tiles){
     const x=parseInt(t.style.left||0), y=parseInt(t.style.top||0);
@@ -338,99 +438,159 @@ function fitChain(){
     const h=t.classList.contains('vert')?VERT_H:TILE_H;
     minX=Math.min(minX,x); minY=Math.min(minY,y); maxX=Math.max(maxX,x+w); maxY=Math.max(maxY,y+h);
   }
-  const pad=30; const bw=br().w, bh=br().h;
-  const s=Math.min(1,(bw-pad)/(maxX-minX),(bh-pad)/(maxY-minY));
-  scale=s; panX=(bw-(maxX-minX)*s)/2 - minX*s; panY=(bh-(maxY-minY)*s)/2 - minY*s; updateTransform();
+  const pad=20;
+  const s=Math.min(1,(br().w-pad)/(maxX-minX),(br().h-pad)/(maxY-minY));
+  scale=s; panX=(br().w-(maxX-minX)*s)/2 - minX*s; panY=(br().h-(maxY-minY)*s)/2 - minY*s;
+  updateTransform();
 }
 
-/* ===== Колода (1 список) ===== */
-function buildDeckFromData(d){
-  const out=[]; const A=(d && Array.isArray(d.listA))? d.listA : [];
-  const src=A.length? A : ["кот","пёс","луна","солнце","звезда","мост","река","дом"];
-  for(let i=0;i<src.length;i++){
-    for(let j=i;j<src.length;j++){
-      out.push({a:src[i], b:src[j], uid:uid(i+'_'+j)});
-    }
+/* ====== place / tryPlace ====== */
+function placeAt(whichEnd, tileData, choice){
+  const end = (whichEnd==='left') ? endLeft : endRight;
+  const pos = getNextPos(end, choice);
+  if(!pos.orient || collidesWithExisting(rectOf(pos.orient,pos.x,pos.y))) return false;
+  const newTile=createTileEl(tileData.a,tileData.b,{orient:pos.orient,left:pos.x,top:pos.y});
+  chainZoom.appendChild(newTile);
+  applyPlaced(end,pos); end.el=newTile;
+  return true;
+}
+
+function tryPlace(target, data){
+  if(!data || !target.classList.contains('dz')) return false;
+  const isLeft = target.dataset.end==='L';
+  const choice = target.dataset.k;
+  const endOpen = isLeft ? openLeft : openRight;
+
+  let p1, p2, ok=false;
+  if (data.a===endOpen && data.a!==data.b){ p1=data.a; p2=data.b; ok=true; }
+  else if (data.b===endOpen && data.a!==data.b){ p1=data.b; p2=data.a; ok=true; }
+  else if (data.a===endOpen && data.b===endOpen){ p1=data.a; p2=data.b; ok=true; } // дубль
+
+  if(!ok) return false;
+  if(placeAt(isLeft?'left':'right', {a:p1,b:p2}, choice)){
+    // обновляем открытые края
+    if(isLeft) openLeft = (p1===endOpen) ? p2 : p1;
+    else       openRight= (p1===endOpen) ? p2 : p1;
+    fitChain();
+    return true;
   }
-  return out;
+  return false;
 }
 
-/* ===== Игра ===== */
-function award(i,pts=1){ /* если нужны очки — можно добавить */ }
-function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderPlayersBar(); renderHand(); updateControls(); }
-function everyonePassed(){ for(let i=0;i<playerNames.length;i++){ if(!(passes[i]>0)) return false; } return true; }
-function endByWinner(i){
-  document.getElementById('winnerName').textContent=playerNames[i];
+/* ====== controls ====== */
+function updateControls(){
+  [...playersBarEl.getElementsByClassName('player')].forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer));
+  turnInfo.textContent=`Ход: ${playerNames[currentPlayer]}`;
+  const playable=hasPlayable(hands[currentPlayer]||[]);
+  drawBtn.disabled = playable || deck.length===0;
+  skipBtn.disabled = playable && deck.length>0; // если есть ход — не надо скипать; если колоды нет и нет хода — можно скипнуть
+}
+
+/* ====== finish ====== */
+function endByWinner(i, extra=''){
+  const name=playerNames[i]+(extra?` ${extra}`:'');
+  document.getElementById('winnerName').textContent=name;
   document.getElementById('finalOverlay').style.display='flex';
+  try{ new Audio('win.mp3').play().catch(()=>{}); }catch(e){}
+  if(window.confetti){
+    const duration=3000,end=Date.now()+duration;
+    (function frame(){
+      confetti({particleCount:5,angle:60,spread:55,origin:{x:0}});
+      confetti({particleCount:5,angle:120,spread:55,origin:{x:1}});
+      if(Date.now()<end) requestAnimationFrame(frame);
+    })();
+  }
+}
+function endByPoints(){
+  // меньше очков на руке — лучше. Очки = количество костяшек (можно заменить суммой «пипсов», но у нас слова).
+  let best=Infinity, wi=0;
+  for(let i=0;i<playerNames.length;i++){
+    const s = (hands[i]||[]).length;
+    if (s<best){best=s; wi=i;}
+  }
+  endByWinner(wi,'(по остаткам)');
 }
 
-/* ===== Старт ===== */
+/* ====== start ====== */
 function startGame(){
-  const data=getQueryData()||{};
+  // собрать имена/кол-во
   playerNames.length=0;
   const c=Math.max(2,Math.min(4,parseInt(playerCountEl.value)||2));
-  for(let i=0;i<c;i++){
-    playerNames.push((document.getElementById('pname'+i)?.value||'').trim()||('Игрок '+(i+1)));
-  }
+  for(let i=0;i<c;i++){ playerNames.push((document.getElementById('pname'+i)?.value||'').trim()||('Игрок '+(i+1))); }
 
+  // построить колоду
+  const data=getQueryData()||{};
   deck=buildDeckFromData(data);
+  if(!deck.length){
+    const fallback=["CAT","DOG","SUN","MOON","STAR","TREE","RIVER","HOUSE"];
+    for(let i=0;i<fallback.length;i++)
+      for(let j=i;j<fallback.length;j++)
+        deck.push({a:fallback[i], b:fallback[j], uid:uid('F'+i+'_'+j)});
+  }
   shuffle(deck);
 
-  hands={}; passes={}; currentPlayer=0;
-  for(let k=0;k<c;k++){ hands[k]=[]; passes[k]=0; }
+  // посчитать единый размер шрифта по всем текстовым значениям
+  const allWords = [...new Set(deck.flatMap(t=>[t.a,t.b]).concat(['Старт']))];
+  uniformTileFontSize = computeUniformFontSize(allWords);
 
-  // Раздача по 5
-  for(let r=0;r<5;r++){
+  // init state
+  scores={}; passes={}; hands={}; currentPlayer=0;
+  for(let k=0;k<c;k++){hands[k]=[];scores[k]=0;passes[k]=0;}
+
+  // раздача
+  for(let r=0;r<START_HAND;r++){
     for(let j=0;j<c;j++){
       if(!deck.length) break;
       hands[j].push(deck.shift());
     }
   }
 
-  // Стартовая кость
-  let start=deck.shift();
-  if(!start){ const h=hands[0]||[]; start = h.length? h.shift() : {a:"Start", b:"Start", uid:uid('S')}; hands[0]=h; }
+  // стартовый камень
+  let start = deck.shift();
+  if(!start){
+    const h=hands[0]||[];
+    start=h.length?h.shift():{a:'Старт',b:'Старт',uid:uid('S')};
+    hands[0]=h;
+  }
 
+  // отрисовать
   chainZoom.innerHTML='';
   const sx=Math.floor((br().w-TILE_W)/2), sy=Math.floor((br().h-TILE_H)/2);
   const startTile=createTileEl(start.a,start.b,{left:sx,top:sy});
   chainZoom.appendChild(startTile);
-
   openLeft=start.a; openRight=start.b;
-  endLeft ={x:sx,y:sy,dir:-1,orient:'h',el:startTile};
-  endRight={x:sx,y:sy,dir: 1,orient:'h',el:startTile};
-
+  endLeft={x:sx,y:sy,dir:-1,orient:'h',el:startTile};
+  endRight={x:sx,y:sy,dir:1, orient:'h',el:startTile};
   fitChain();
+
   renderPlayersBar();
   renderHand();
   updateControls();
+  updateSeats();
+
   menuEl.style.display='none';
+  document.getElementById('title').textContent='Domino · Classic';
 }
 
-/* ===== Кнопки ===== */
+/* ====== buttons & dnd ====== */
 drawBtn.addEventListener('click',()=>{
   const hand=hands[currentPlayer]||[];
-  if(hasPlayable(hand) || !deck.length) return;
+  if(hasPlayable(hand)) return; // если уже можно ходить — нечего брать
+  if(!deck.length) return;
   hand.push(deck.splice(Math.floor(Math.random()*deck.length),1)[0]);
   hands[currentPlayer]=hand;
   renderHand(); updateControls();
 });
 skipBtn.addEventListener('click',()=>{
+  const hand=hands[currentPlayer]||[];
+  if(hasPlayable(hand) && deck.length>0) return; // если есть ход и есть колода — нельзя скипать
   passes[currentPlayer]=(passes[currentPlayer]||0)+1;
-  if(everyonePassed()){ // по-простому: победа по наименьшему числу костяшек
-    let wi=0, best=Infinity;
-    for(let i=0;i<playerNames.length;i++){
-      const len=(hands[i]||[]).length;
-      if(len<best){best=len; wi=i;}
-    }
-    endByWinner(wi); return;
-  }
+  if (everyonePassed()){ endByPoints(); return; }
   nextPlayer();
 });
 restartBtn.addEventListener('click',()=>location.reload());
-document.getElementById('startBtn').addEventListener('click',startGame);
+startBtn.addEventListener('click',startGame);
 
-/* ===== DnD на поле ===== */
 addEventListener('dragover',e=>{ if(dragging) e.preventDefault(); });
 addEventListener('drop',e=>{
   const t=e.target;
@@ -441,10 +601,9 @@ addEventListener('drop',e=>{
     if(ok){
       const arr=hands[dragging.owner]||[];
       hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid);
+      award(dragging.owner,1);
       renderHand();
-      if(hands[dragging.owner].length===0){
-        endByWinner(dragging.owner); dragging=null; clearZones(); return;
-      }
+      if(hands[dragging.owner].length===0){ endByWinner(dragging.owner); dragging=null; clearZones(); return; }
       passes[currentPlayer]=0;
       nextPlayer();
     }
@@ -452,11 +611,11 @@ addEventListener('drop',e=>{
   }
 });
 
-/* ===== Автоскролл руки колесом ===== */
-trayEl.addEventListener('wheel',e=>{ trayEl.scrollLeft+=e.deltaY },{passive:true});
-
-/* ===== Init ===== */
-(function(){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',()=>{}); }})();
+/* ====== init name inputs on load ====== */
+(function(){
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',()=>{renderNameInputs();}); }
+  else { renderNameInputs(); }
+})();
 </script>
 </body>
 </html>
