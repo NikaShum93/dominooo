@@ -616,7 +616,9 @@ function buildDeckFromData(d) {
 
 /* ===== start ===== */
 function startGame(){
-  const data=getQueryData()||{}; freeMode=!!data.freeModestrictPairs = !freeMode && Array.isArray(data.listA) && Array.isArray(data.listB) && data.listA?.length && data.listB?.length;
+ const data = getQueryData() || {};
+freeMode = !!data.freeMode;
+strictPairs = !freeMode && Array.isArray(data.listA) && Array.isArray(data.listB) && data.listA?.length && data.listB?.length;
 
   playerNames.length=0; const c=Math.max(1,Math.min(4,parseInt(playerCountEl.value)||2)); for(let i=0;i<c;i++){playerNames.push((document.getElementById('pname'+i)?.value||'').trim()||('Игрока '+(i+1)));}
   deck=buildDeckFromData(data); const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"]; const need=playerNames.length*5+1; 
@@ -652,8 +654,7 @@ function startGame(){
   chainZoom.innerHTML=''; const sx=Math.floor((br().w-TILE_W)/2), sy=Math.floor((br().h-TILE_H)/2);
   const startTile = createTileEl(start.a,start.b,{left:sx,top:sy});
   chainZoom.appendChild(startTile);
-  const startTile = createTileEl(start.a,start.b,{left:sx,top:sy});
-  chainZoom.appendChild(startTile);
+
 
   if (!freeMode && Array.isArray(data.listA) && Array.isArray(data.listB) && data.listA?.length && data.listB?.length && start.idxA !== undefined && start.idxB !== undefined) {
     // Режим с двумя списками
@@ -677,7 +678,7 @@ function startGame(){
 drawBtn.addEventListener('click',()=>{ if(!deck.length) return; const hand=hands[currentPlayer]||[]; if(!freeMode&&hasPlayable(hand)) return; hand.push(deck.splice(Math.floor(Math.random()*deck.length),1)[0]); hands[currentPlayer]=hand; renderHand(); updateControls(); });
 skipBtn.addEventListener('click',()=>{ passes[currentPlayer]=(passes[currentPlayer]||0)+1; if(everyonePassed()){endByPasses(); return;} nextPlayer(); });
 restartBtn.addEventListener('click',()=>location.reload());
-startBtn.addEventListener('click',startGame); startBtn.onclick=startGame;
+startBtn.addEventListener('click',startGame); 
 
 addEventListener('dragover',e=>{ if(dragging) e.preventDefault(); });
 addEventListener('drop',e=>{ const t=e.target; if(!dragging) return; if(t&&t.classList&&t.classList.contains('dz')){ e.preventDefault(); const ok=tryPlace(t,dragging); if(ok){ const arr=hands[dragging.owner]||[]; hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid); award(dragging.owner,1); renderHand(); if(hands[dragging.owner].length===0){ endByWinner(dragging.owner); dragging=null; clearZones(); return; } passes[currentPlayer]=0; nextPlayer(); } dragging=null; clearZones(); }});
