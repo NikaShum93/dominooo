@@ -245,7 +245,7 @@ function createTileEl(a,b,opts={}){
   el.style.left=(opts.left||0)+'px'; el.style.top=(opts.top||0)+'px';
   el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
   if (opts.idxA !== undefined) el.dataset.idxA = opts.idxA;
-if (opts.idxB !== undefined) el.dataset.idxB = opts.idxB;
+  if (opts.idxB !== undefined) el.dataset.idxB = opts.idxB;
 
   const h=el.getElementsByClassName('half');
   const size = (role === 'hand') ? Math.max(12, Math.floor(uniformTileFontSize * 0.8)) : uniformTileFontSize;
@@ -257,15 +257,15 @@ if (opts.idxB !== undefined) el.dataset.idxB = opts.idxB;
   el.addEventListener('click',()=>showPreview(a,b));
   if(draggable){ el.draggable=true;
     el.addEventListener('dragstart',e=>{
-  dragging = {
-    a, b, uid:id, owner,
-    idxA: el.dataset.idxA !== undefined ? parseInt(el.dataset.idxA) : undefined,
-    idxB: el.dataset.idxB !== undefined ? parseInt(el.dataset.idxB) : undefined
-  };
-  e.dataTransfer.setData('text/plain','domino');
-  hidePreview();
-  renderDirectionalZones();
-});
+      dragging = {
+        a, b, uid:id, owner,
+        idxA: el.dataset.idxA !== undefined ? parseInt(el.dataset.idxA) : undefined,
+        idxB: el.dataset.idxB !== undefined ? parseInt(el.dataset.idxB) : undefined
+      };
+      e.dataTransfer.setData('text/plain','domino');
+      hidePreview();
+      renderDirectionalZones();
+    });
     el.addEventListener('dragend',()=>{dragging=null; clearZones();});
   }
   return el;
@@ -303,7 +303,6 @@ function setDensity(){ const n=playerNames.length; document.documentElement.styl
 function updateSeats(){ if(!playerNames.length) return; setDensity(); const n=playerNames.length; const order=[currentPlayer,(currentPlayer+1)%n,(currentPlayer+2)%n,(currentPlayer+3)%n]; const map=[{box:seatBoxes.bottom,i:order[0],fit:fitSeatTextHorizontal},{box:seatBoxes.right,i:order[1],fit:fitSeatTextVertical},{box:seatBoxes.top,i:order[2],fit:fitSeatTextHorizontal},{box:seatBoxes.left,i:order[3],fit:fitSeatTextVertical}]; map.forEach((row,idx)=>{ if(idx<n){const i=row.i, name=String(playerNames[i]).trim().replace(/\s+/g,' '), cnt=(hands[i]?hands[i].length:0); row.box.classList.remove('hidden'); row.fit(row.box,`${name} (${cnt})`);} else{row.box.classList.add('hidden'); row.box.querySelector('span').textContent='';}}); }
 
 /* ===== layout helpers ===== */
-// FIX: Rewritten from scratch for clarity and correctness
 function getNextPos(end, choice) {
     let x, y, orient, nextDir;
 
@@ -358,7 +357,6 @@ function collidesWithExisting(r, ignoreEl) {
     return false;
 }
 
-
 /* ===== zones ===== */
 function getSeam(end) {
     if (end.orient === 'h') {
@@ -373,39 +371,30 @@ function renderDirectionalZones(){
   const ends=[{e:endLeft,id:'L',open:openLeft},{e:endRight,id:'R',open:openRight}];
   for(const side of ends){
     if(!side.e || !side.e.el) continue;
-   if (!freeMode) {
-  if (strictPairs) {
-    // side.open — это "A{n}" или "B{n}".
-    const needType = side.open[0];                 // 'A' или 'B'
-    const needIdx  = parseInt(side.open.slice(1)); // число
-    const ok = (needType === 'A' && dragging.idxA === needIdx) ||
-               (needType === 'B' && dragging.idxB === needIdx);
-    if (!ok) continue;
-  } else {
-    // 1 список/классика: по равенству слов
-    if (!(dragging.a === side.open || dragging.b === side.open)) continue;
-  }
-}
-   
+    if (!freeMode) {
+      if (strictPairs) {
+        const needType = side.open[0];
+        const needIdx  = parseInt(side.open.slice(1));
+        const ok = (needType === 'A' && dragging.idxA === needIdx) ||
+                   (needType === 'B' && dragging.idxB === needIdx);
+        if (!ok) continue;
+      } else {
+        if (!(dragging.a === side.open || dragging.b === side.open)) continue;
+      }
+    }
     const seam = getSeam(side.e);
-    const OFFSET = 20; // отступ стрелочек от костяшки
-
-const zones = {
-    up:    { left: seam.x - DZ / 2, top: seam.y - DZ - GAP - OFFSET, dir: '↑', k: 'up' },
-    right: { left: seam.x + GAP + OFFSET, top: seam.y - DZ / 2, dir: '→', k: 'right' },
-    down:  { left: seam.x - DZ / 2, top: seam.y + GAP + OFFSET, dir: '↓', k: 'down' },
-    left:  { left: seam.x - DZ - GAP - OFFSET, top: seam.y - DZ / 2, dir: '←', k: 'left' }
-};
-
-    
+    const OFFSET = 20;
+    const zones = {
+      up:    { left: seam.x - DZ / 2, top: seam.y - DZ - GAP - OFFSET, dir: '↑', k: 'up' },
+      right: { left: seam.x + GAP + OFFSET, top: seam.y - DZ / 2, dir: '→', k: 'right' },
+      down:  { left: seam.x - DZ / 2, top: seam.y + GAP + OFFSET, dir: '↓', k: 'down' },
+      left:  { left: seam.x - DZ - GAP - OFFSET, top: seam.y - DZ / 2, dir: '←', k: 'left' }
+    };
     for(const k of Object.keys(zones)){
       const pos = getNextPos(side.e, k);
       if (!pos.orient) continue;
-
       const r = rectOf(pos.orient, pos.x, pos.y);
-      
       if (collidesWithExisting(r)) continue;
-      
       const zoneInfo = zones[k];
       const z=document.createElement('div'); z.className='dz active';
       z.style.left=zoneInfo.left+'px'; z.style.top=zoneInfo.top+'px';
@@ -431,7 +420,6 @@ function hasPlayable(hand){
     }
     return false;
   }
-  // классическое равенство значений
   for (const t of hand){
     if (t.a===openLeft||t.b===openLeft||t.a===openRight||t.b===openRight) return true;
   }
@@ -445,75 +433,36 @@ function endByWinner(i) {
   const name = playerNames[i];
   document.getElementById("winnerName").textContent = name;
   document.getElementById("finalOverlay").style.display = "flex";
-
-  // Звук победы
   const winSound = new Audio("win.mp3");
   winSound.play();
-
-  // Фейерверк
   if (window.confetti) {
     const duration = 3 * 1000;
     const end = Date.now() + duration;
-
     (function frame() {
-      confetti({
-        particleCount: 4,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 }
-      });
-      confetti({
-        particleCount: 4,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 }
-      });
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
+      confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0 } });
+      confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1 } });
+      if (Date.now() < end) requestAnimationFrame(frame);
     }());
   }
 }
-
 function endByPasses() {
   let best = -Infinity, wi = 0;
   for (let i = 0; i < playerNames.length; i++) {
     const s = scores[i] || 0;
-    if (s > best) {
-      best = s;
-      wi = i;
-    }
+    if (s > best) { best = s; wi = i; }
   }
-
   const name = playerNames[wi];
   document.getElementById("winnerName").textContent = name + " (по очкам)";
   document.getElementById("finalOverlay").style.display = "flex";
-
-  // Звук победы
   const winSound = new Audio("win.mp3");
   winSound.play();
-
-  // Фейерверк
   if (window.confetti) {
     const duration = 3 * 1000;
     const end = Date.now() + duration;
-
     (function frame() {
-      confetti({
-        particleCount: 4,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 }
-      });
-      confetti({
-        particleCount: 4,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 }
-      });
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
+      confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0 } });
+      confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1 } });
+      if (Date.now() < end) requestAnimationFrame(frame);
     }());
   }
 }
@@ -522,24 +471,21 @@ function endByPasses() {
 function placeAt(whichEnd, tileData, choice){
   const end = (whichEnd==='left') ? endLeft : endRight;
   const pos = getNextPos(end, choice);
-
   if(!pos.orient || collidesWithExisting(rectOf(pos.orient,pos.x,pos.y))) return false;
-
   const newTile = createTileEl(tileData.a, tileData.b, {
-  orient: pos.orient,
-  left: pos.x,
-  top: pos.y,
-  idxA: tileData.idxA,
-  idxB: tileData.idxB
-});
-
+    orient: pos.orient,
+    left: pos.x,
+    top: pos.y,
+    idxA: tileData.idxA,
+    idxB: tileData.idxB
+  });
   chainZoom.appendChild(newTile);
-  
   applyPlaced(end, pos);
   end.el = newTile;
   return true;
 }
 
+/* ===== tryPlace (ЗАМЕНЕНО) ===== */
 function tryPlace(target, data) {
   if (!data || !target.classList.contains("dz")) return false;
 
@@ -548,46 +494,46 @@ function tryPlace(target, data) {
   const endObj = isLeft ? endLeft : endRight;
   const openVal = isLeft ? openLeft : openRight;
 
-  // Куда и как ляжет новая костяшка
   const pos = getNextPos(endObj, choice);
   if (!pos.orient) return false;
 
-  // Проверка на наезд на существующие
   const r = rectOf(pos.orient, pos.x, pos.y);
   if (collidesWithExisting(r)) return false;
 
   let ok = false, p1, p2;
 
   if (freeMode) {
-    // 🟢 Свободный режим: можно стыковать любые BA
-    p1 = data.a; p2 = data.b;
+    p1 = data.a; 
+    p2 = data.b;
     ok = true;
-  } else {
-    // 🔒 Обычный режим
-    if (data.idxA !== undefined && data.idxB !== undefined) {
-      // 🎯 2 списка: стыкуем только по индексу
-      if (openVal.startsWith("A") && data.idxA === parseInt(openVal.slice(1))) {
-        p1 = data.b; p2 = data.a; ok = true;
-      } else if (openVal.startsWith("B") && data.idxB === parseInt(openVal.slice(1))) {
-        p1 = data.a; p2 = data.b; ok = true;
-      }
-    } else {
-      // 🟡 1 список: классика
-      if (data.a === openVal) { p1 = data.a; p2 = data.b; ok = true; }
-      else if (data.b === openVal) { p1 = data.b; p2 = data.a; ok = true; }
+  } else if (strictPairs && data.idxA !== undefined && data.idxB !== undefined) {
+    // Строгий BA: B{i} ↔ A{i}
+    if (openVal.startsWith("B") && data.idxB === parseInt(openVal.slice(1))) {
+      // было B{i} → кладём BA{i,j} так, чтобы новым открытым стал A{j}
+      p1 = data.a;      // B{i}
+      p2 = data.b;      // A{j}  (p2 === data.b → после placeAt код выставит 'A'+idxA)
+      ok = true;
+    } else if (openVal.startsWith("A") && data.idxA === parseInt(openVal.slice(1))) {
+      // было A{j} → кладём BA{i,j} так, чтобы новым открытым стал B{i}
+      p1 = data.b;      // A{j}
+      p2 = data.a;      // B{i}  (p2 === data.a → после placeAt код выставит 'B'+idxB)
+      ok = true;
     }
+  } else {
+    // Классика (один список)
+    if (data.a === openVal) { p1 = data.a; p2 = data.b; ok = true; }
+    else if (data.b === openVal) { p1 = data.b; p2 = data.a; ok = true; }
   }
 
   if (!ok) return false;
 
-  if (placeAt(isLeft ? "left" : "right", { a: p1, b: p2 }, choice)) {
+  if (placeAt(isLeft ? "left" : "right", { a: p1, b: p2, idxA: data.idxA, idxB: data.idxB }, choice)) {
+    // Дальнейшее обновление openLeft/openRight выполняется существующим кодом ниже:
     if (!freeMode && strictPairs && data.idxA !== undefined && data.idxB !== undefined) {
-      // 🟣 В режиме "2 списка со строгой проверкой" openLeft/openRight = индекс с типом A/B
       const token = (p2 === data.a) ? ('B' + data.idxB) : ('A' + data.idxA);
       if (isLeft) openLeft = token;
       else openRight = token;
     } else {
-      // 🟢 В классике (1 список или свободный режим) — просто слово
       if (isLeft) openLeft = p2;
       else openRight = p2;
     }
@@ -602,13 +548,15 @@ function buildDeckFromData(d) {
   const A = (d && Array.isArray(d.listA)) ? d.listA : [];
   const B = (d && Array.isArray(d.listB)) ? d.listB : [];
 
+  // Если включён свободный режим — строим наборы без проверки
   if (freeMode) {
-    // свободная игра — без проверки
     if (A.length && !B.length) {
+      // 1 список — классическое домино
       for (let i = 0; i < A.length; i++)
         for (let j = i; j < A.length; j++)
           out.push({ a: A[i], b: A[j], uid: uid("A" + i + "_" + j) });
     } else if (A.length && B.length) {
+      // 2 списка — каждая BA
       for (let i = 0; i < B.length; i++)
         for (let j = 0; j < A.length; j++)
           out.push({ a: B[i], b: A[j], uid: uid("BA" + i + "_" + j) });
@@ -616,20 +564,21 @@ function buildDeckFromData(d) {
     return out;
   }
 
-  // 🔒 строгий режим
-  if (A.length && B.length) {
-    const n = Math.min(A.length, B.length);
-    for (let i = 0; i < n; i++) {
-      for (let j = 0; j < n; j++) {
-        if (i === j) continue; // 🚫 исключаем правильные пары
-        out.push({ a: B[i], b: A[j], idxA: j, idxB: i, uid: uid("BA" + i + "_" + j) });
-      }
-    }
-  } else if (A.length) {
-    // классическое домино
+  // 📌 Обычная игра с проверкой
+  if (A.length && !B.length) {
+    // 1 список — классическое домино
     for (let i = 0; i < A.length; i++)
       for (let j = i; j < A.length; j++)
         out.push({ a: A[i], b: A[j], uid: uid("A" + i + "_" + j) });
+  } else if (A.length && B.length) {
+    // 2 списка — только BA, причём на шве должны совпадать индексы (и != на одной кости)
+    const n = Math.min(A.length, B.length);
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        if (i === j) continue; // исключаем правильные пары на одной костяшке
+        out.push({ a: B[i], b: A[j], idxA: j, idxB: i, uid: uid("BA" + i + "_" + j) });
+      }
+    }
   }
 
   return out;
@@ -637,9 +586,9 @@ function buildDeckFromData(d) {
 
 /* ===== start ===== */
 function startGame(){
- const data = getQueryData() || {};
-freeMode = !!data.freeMode;
-strictPairs = !freeMode && Array.isArray(data.listA) && Array.isArray(data.listB) && data.listA?.length && data.listB?.length;
+  const data = getQueryData() || {};
+  freeMode = !!data.freeMode;
+  strictPairs = !freeMode && Array.isArray(data.listA) && Array.isArray(data.listB) && data.listA?.length && data.listB?.length;
 
   playerNames.length=0; const c=Math.max(1,Math.min(4,parseInt(playerCountEl.value)||2)); for(let i=0;i<c;i++){playerNames.push((document.getElementById('pname'+i)?.value||'').trim()||('Игрока '+(i+1)));}
   deck=buildDeckFromData(data); const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"]; const need=playerNames.length*5+1; 
@@ -671,40 +620,27 @@ strictPairs = !freeMode && Array.isArray(data.listA) && Array.isArray(data.listB
 
   scores={}; passes={}; currentPlayer=0; hands={}; endMessage.style.display='none'; for(let k=0;k<playerNames.length;k++){hands[k]=[]; scores[k]=0; passes[k]=0;}
   for(let r=0;r<5;r++){ for(let j=0;j<playerNames.length;j++){ if(!deck.length) break; hands[j].push(deck.shift()); } }
-  let start = deck.find(t => t.idxA !== undefined && t.idxB !== undefined);
-if (start) {
-  deck = deck.filter(t => t !== start);
-} else {
-  const h = hands[0] || [];
-  start = h.length ? h.shift() : {a:"Старт", b:"Старт", uid:uid('S')};
-  hands[0] = h;
-}
+  let start=deck.shift(); if(!start){const h=hands[0]||[]; start=h.length?h.shift():{a:"Старт",b:"Старт",uid:uid('S')}; hands[0]=h;}
   chainZoom.innerHTML=''; const sx=Math.floor((br().w-TILE_W)/2), sy=Math.floor((br().h-TILE_H)/2);
   const startTile = createTileEl(start.a,start.b,{left:sx,top:sy});
   chainZoom.appendChild(startTile);
 
-
- if (!freeMode && strictPairs && data.idxA !== undefined && data.idxB !== undefined) {
-  // 🎯 Режим BA
-  if (openVal.startsWith("B") && data.idxB === parseInt(openVal.slice(1))) {
-    // было B{i}, стыкуем → открывается A{j}
-    p1 = data.a; p2 = data.b; 
-    if (isLeft) openLeft = "A" + data.idxA;
-    else openRight = "A" + data.idxA;
-    ok = true;
-  } 
-  else if (openVal.startsWith("A") && data.idxA === parseInt(openVal.slice(1))) {
-    // было A{j}, стыкуем → открывается B{i}
-    p1 = data.b; p2 = data.a;
-    if (isLeft) openLeft = "B" + data.idxB;
-    else openRight = "B" + data.idxB;
-    ok = true;
+  if (!freeMode && Array.isArray(data.listA) && Array.isArray(data.listB) && data.listA?.length && data.listB?.length && start.idxA !== undefined && start.idxB !== undefined) {
+    openLeft  = 'B' + start.idxB; // слева всегда B
+    openRight = 'A' + start.idxA; // справа всегда A
+    strictPairs = true;
+  } else {
+    openLeft=start.a; 
+    openRight=start.b;
+    strictPairs = false;
   }
-} else {
-  // 🟡 классика (1 список)
-  if (data.a === openVal) { p1 = data.a; p2 = data.b; ok = true; }
-  else if (data.b === openVal) { p1 = data.b; p2 = data.a; ok = true; }
+
+  endLeft={x:sx,y:sy,dir:-1, orient:'h', el: startTile};
+  endRight={x:sx,y:sy,dir:1, orient:'h', el: startTile};
+  fitChain();
+  renderPlayersBar(); renderHand(); updateControls(); updateSeats(); if(freeMode) document.getElementById('title').textContent='Domino · Cozy Edition · Свободная игра'; menuEl.style.display='none';
 }
+
 /* ===== buttons & dnd ===== */
 drawBtn.addEventListener('click',()=>{ if(!deck.length) return; const hand=hands[currentPlayer]||[]; if(!freeMode&&hasPlayable(hand)) return; hand.push(deck.splice(Math.floor(Math.random()*deck.length),1)[0]); hands[currentPlayer]=hand; renderHand(); updateControls(); });
 skipBtn.addEventListener('click',()=>{ passes[currentPlayer]=(passes[currentPlayer]||0)+1; if(everyonePassed()){endByPasses(); return;} nextPlayer(); });
@@ -714,7 +650,6 @@ startBtn.addEventListener('click',startGame);
 addEventListener('dragover',e=>{ if(dragging) e.preventDefault(); });
 addEventListener('drop',e=>{ const t=e.target; if(!dragging) return; if(t&&t.classList&&t.classList.contains('dz')){ e.preventDefault(); const ok=tryPlace(t,dragging); if(ok){ const arr=hands[dragging.owner]||[]; hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid); award(dragging.owner,1); renderHand(); if(hands[dragging.owner].length===0){ endByWinner(dragging.owner); dragging=null; clearZones(); return; } passes[currentPlayer]=0; nextPlayer(); } dragging=null; clearZones(); }});
 
-
 /* safety init */
 (function(){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',()=>{fitStage();renderNameInputs();}); } else {fitStage();renderNameInputs();} })();
 </script>
@@ -722,4 +657,3 @@ addEventListener('drop',e=>{ const t=e.target; if(!dragging) return; if(t&&t.cla
 
 </body>
 </html>
-
