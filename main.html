@@ -259,8 +259,8 @@ function createTileEl(a,b,opts={}){
     el.addEventListener('dragstart',e=>{
   dragging = {
     a, b, uid:id, owner,
-    idxA: el.dataset.idxA ? parseInt(el.dataset.idxA,10) : null,
-    idxB: el.dataset.idxB ? parseInt(el.dataset.idxB,10) : null
+   idxA: (el.dataset.idxA !== undefined) ? parseInt(el.dataset.idxA, 10) : undefined,
+idxB: (el.dataset.idxB !== undefined) ? parseInt(el.dataset.idxB, 10) : undefined
   };
       e.dataTransfer.setData('text/plain','domino');
       hidePreview();
@@ -380,14 +380,15 @@ function renderDirectionalZones(){
         const needType = side.open[0];                 
         const needIdx  = parseInt(side.open.slice(1)); 
 
-        let ok = false;
-     if (needType === "A" && dragging.idxA !== null) {
+     let ok = false;
+if (needType === "A" && dragging.idxA !== undefined) {
   ok = (dragging.idxA === needIdx);
 }
-if (needType === "B" && dragging.idxB !== null) {
+if (needType === "B" && dragging.idxB !== undefined) {
   ok = (dragging.idxB === needIdx);
 }
-        if (!ok) continue;
+if (!ok) continue;
+
       } else {
         // классический режим — проверяем совпадение слов
         if (!(dragging.a === side.open || dragging.b === side.open)) continue;
@@ -422,15 +423,24 @@ function fitChain(){ const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand
 /* ===== rules ===== */
 function hasPlayable(hand){
   if (freeMode) return true;
+
   if (strictPairs) {
+    // openLeft / openRight в формате "A{j}" или "B{i}"
+    const canMatch = (openToken, t) => {
+      if (!openToken) return false;
+      const needType = openToken[0];
+      const needIdx  = parseInt(openToken.slice(1), 10);
+      if (needType === 'A') return t.idxA !== undefined && t.idxA === needIdx;
+      if (needType === 'B') return t.idxB !== undefined && t.idxB === needIdx;
+      return false;
+    };
     for (const t of hand) {
-      if (pairSet.has(`${openLeft}|${t.a}`) || pairSet.has(`${openLeft}|${t.b}`)
-       || pairSet.has(`${openRight}|${t.a}`) || pairSet.has(`${openRight}|${t.b}`)) {
-        return true;
-      }
+      if (canMatch(openLeft, t) || canMatch(openRight, t)) return true;
     }
     return false;
   }
+
+  // классика (1 список)
   for (const t of hand){
     if (t.a===openLeft||t.b===openLeft||t.a===openRight||t.b===openRight) return true;
   }
