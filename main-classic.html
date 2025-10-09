@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Domino · Classic Edition</title>
+<style>
+  :root{
+    --accent:#e6a8ff; --accent2:#ffda8b;
+    --tile:#fffaf5; --tile-edge:#e2c0ff; --tile-shadow:rgba(0,0,0,.25);
+    --seat-fs:14px;
+    --wood:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%232b1d12'/><stop offset='100%' stop-color='%2354321e'/></linearGradient><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0.2'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.08'/></feComponentTransfer></filter></defs><rect width='512' height='512' fill='url(%23g)'/><rect width='512' height='512' filter='url(%23n)' opacity='.25'/><g opacity='.35' stroke='%2329160d' stroke-width='6'><path d='M0 80h512M0 160h512M0 240h512M0 320h512M0 400h512'/></g></svg>");
+  }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0; font:500 16px Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif; color:#fdf4ff; background:#3b281b; overflow:hidden; display:flex; align-items:center; justify-content:center;}
+  #stage{position:relative; width:960px; height:540px; display:flex; flex-direction:column; align-items:center; background-image:var(--wood); background-repeat:no-repeat; background-size:cover; background-position:center; box-shadow:inset 0 0 80px rgba(0,0,0,.45), inset 0 0 140px rgba(0,0,0,.35); border-radius:12px;}
+  h1{margin:8px 0 6px; font-size:24px; font-weight:900; color:#f2d39a; text-shadow:0 1px 0 #402b16,0 0 18px rgba(0,0,0,.45)}
+  .menu{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:30px; z-index:100000; background:linear-gradient(rgba(32,21,12,.92), rgba(32,21,12,.94)), var(--wood); background-repeat:no-repeat; background-size:cover; background-position:center; box-shadow:inset 0 0 80px rgba(0,0,0,.55); border-radius:12px;}
+  .menu label{color:#f2d39a; font-weight:800} .menu input{padding:8px 12px; width:220px; border-radius:8px; border:2px solid #8c5c2f; background:#fff6e7; color:#2b1a10}
+  .menu button{padding:10px 16px; border-radius:10px; border:2px solid #7a5525; font-weight:900; cursor:pointer; background:linear-gradient(#f1c97a,#e7b85f); color:#2b1a10}
+  .topbar{width:95%; display:flex; align-items:center; justify-content:space-between; gap:10px}
+  .players{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .player{padding:6px 12px; border-radius:14px; background:rgba(230,168,255,.15); font-size:12px}
+  .player.active{background:#f2c56a; color:#2b1a10; font-weight:900; box-shadow:0 0 14px #f2c56a}
+  .score{margin-left:4px; font-weight:900}
+  .controls{display:flex; gap:8px}
+  .btn{padding:8px 14px; border-radius:10px; border:2px solid #7a5525; background:linear-gradient(#f1c97a,#e7b85f); color:#2c1a32; font-weight:800}
+  .btn:disabled{opacity:.6; cursor:not-allowed}
+  .board{position:relative; width:95%; height:68%; margin:6px 0; background:radial-gradient(120% 100% at 50% 50%, #3c2a3e, #2e2130 70%) padding-box; border:10px solid transparent; border-radius:18px; border-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><rect width='20' height='20' fill='%2354321e'/><rect x='1' y='1' width='18' height='18' fill='none' stroke='%238c5c2f' stroke-width='1.5'/></svg>") 30 round; box-shadow:0 8px 24px rgba(0,0,0,.45), inset 0 0 18px rgba(0,0,0,.35); overflow:hidden;}
+  .chain{position:relative; width:100%; height:100%}
+  #chainZoom{position:absolute; inset:0; transform-origin:0 0;}
+  .tile{width:200px; height:70px; background:radial-gradient(120% 120% at 20% 20%, rgba(0,0,0,.08), transparent 60%), linear-gradient(#fffdf8,#fff6e7); border:2px solid #e7dbc9; border-radius:12px; display:grid; grid-template-columns:1fr 1fr; position:absolute; box-shadow:0 2px 6px rgba(0,0,0,.35), inset 0 0 0 2px #e0d3bd, inset 0 -10px 20px rgba(0,0,0,.06); overflow:hidden; user-select:none; transition:transform .12s; -webkit-user-drag:element;}
+  .tile:hover{transform:scale(1.04)}
+  .tile .half{display:flex; align-items:center; justify-content:center; padding:0 8px; overflow:hidden; min-width:0;}
+  .tile .half:first-child { border-right: 2px solid #d8c8aa; }
+  .tile b{display:block; line-height:1.05; font-weight:900; color:#1c1712; white-space:nowrap; max-width:100%}
+  .tile.hand{transform:scale(.50); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+  .dz{position:absolute; width:38px; height:38px; border:2px dashed #b68a3e; border-radius:10px; display:none; background:rgba(255,215,120,.08)}
+  .dz.active{display:block; background:rgba(255,215,120,.28); box-shadow:0 0 16px rgba(255,215,120,.7)}
+  .dz::after{content:attr(data-dir); font-size:11px; color:#2c1a32; font-weight:900; background:#f2c56a; padding:2px 6px; border-radius:8px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%)}
+  .final-overlay{position:absolute; inset:0; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:100000;}
+  .final-message{font-size:48px; font-weight:900; color:#ffe97f; text-shadow:0 0 20px #ff0000, 0 0 40px #ff9900, 0 0 60px #fff; animation:pop 1s ease-out;}
+  @keyframes pop{0%{transform:scale(0.2); opacity:0;}60%{transform:scale(1.2); opacity:1;}100%{transform:scale(1);} }
+</style>
+</head>
+<body>
+<div id="stage">
+  <h1 id="title">Domino · Classic Edition</h1>
+  <div id="menu" class="menu">
+    <label>Количество игроков: <input type="number" id="playerCount" min="1" max="4" value="2"></label>
+    <div id="nameInputs"></div>
+    <button id="startBtn">Начать игру</button>
+  </div>
+  <div class="topbar">
+    <div id="playersBar" class="players"></div>
+    <div class="controls">
+      <button id="drawBtn" class="btn">Взять</button>
+      <button id="skipBtn" class="btn">Пропустить</button>
+      <button id="restartBtn" class="btn">Перезапустить</button>
+    </div>
+  </div>
+  <div id="turnInfo"></div>
+  <div class="board" id="board">
+    <div class="chain" id="chain"><div id="chainZoom"></div></div>
+  </div>
+  <div class="hands">
+    <div id="handHeader"></div>
+    <div id="tray" class="tray"></div>
+  </div>
+  <div id="finalOverlay" class="final-overlay" style="display:none;">
+    <div class="final-message">🎉 Победитель: <span id="winnerName"></span> 🎉</div>
+  </div>
+</div>
+<script>
+/* ===== utils ===== */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function uid(){return Math.random().toString(36).slice(2,7)}
+
+/* ===== refs ===== */
+const menuEl=document.getElementById('menu'), nameInputsEl=document.getElementById('nameInputs'), playerCountEl=document.getElementById('playerCount'), startBtn=document.getElementById('startBtn');
+const playersBarEl=document.getElementById('playersBar'), handHeader=document.getElementById('handHeader'), trayEl=document.getElementById('tray');
+const drawBtn=document.getElementById('drawBtn'), skipBtn=document.getElementById('skipBtn'), restartBtn=document.getElementById('restartBtn'), turnInfo=document.getElementById('turnInfo');
+const chainZoom=document.getElementById('chainZoom'), finalOverlay=document.getElementById('finalOverlay'), winnerName=document.getElementById('winnerName');
+
+/* ===== state ===== */
+let playerNames=[], hands={}, deck=[], currentPlayer=0, openLeft=null, openRight=null, dragging=null;
+
+/* ===== tiles ===== */
+function createTileEl(a,b,opts={}){
+  const el=document.createElement('div');
+  el.className='tile'+(opts.role==='hand'?' hand':'');
+  el.dataset.a=a; el.dataset.b=b; el.dataset.uid=opts.uid||uid();
+  el.style.left=(opts.left||0)+'px'; el.style.top=(opts.top||0)+'px';
+  el.innerHTML='<div class="half"><b>'+a+'</b></div><div class="half"><b>'+b+'</b></div>';
+  if(opts.draggable){el.draggable=true; el.addEventListener('dragstart',()=>{dragging={a,b,uid:el.dataset.uid,owner:opts.owner}; renderZones();}); el.addEventListener('dragend',()=>{dragging=null; clearZones();});}
+  return el;
+}
+
+/* ===== hand ===== */
+function renderHand(){handHeader.textContent=`${playerNames[currentPlayer]}: (${hands[currentPlayer].length} костяшек)`; trayEl.innerHTML=''; for(const t of hands[currentPlayer]) trayEl.appendChild(createTileEl(t.a,t.b,{uid:t.uid,owner:currentPlayer,draggable:true,role:'hand'}));}
+
+/* ===== rules ===== */
+function hasPlayable(hand){for(const t of hand){if(t.a===openLeft||t.b===openLeft||t.a===openRight||t.b===openRight) return true;}return false;}
+function tryPlace(target,tile){const side=target.dataset.end;const openVal=side==='L'?openLeft:openRight; if(tile.a===openVal){if(side==='L') openLeft=tile.b; else openRight=tile.b; return true;} if(tile.b===openVal){if(side==='L') openLeft=tile.a; else openRight=tile.a; return true;} return false;}
+
+/* ===== zones ===== */
+function clearZones(){document.querySelectorAll('.dz').forEach(z=>z.remove());}
+function renderZones(){clearZones(); if(!dragging) return; const ends=[{id:'L',val:openLeft},{id:'R',val:openRight}]; for(const side of ends){if(dragging.a===side.val||dragging.b===side.val){const z=document.createElement('div'); z.className='dz active'; z.dataset.end=side.id; z.dataset.dir=side.id==='L'?'←':'→'; chainZoom.appendChild(z); z.style.left=(side.id==='L'?50:400)+'px'; z.style.top='200px';}}}
+
+/* ===== game flow ===== */
+function startGame(){playerNames.length=0;const c=parseInt(playerCountEl.value)||2;for(let i=0;i<c;i++){playerNames.push(document.getElementById('pname'+i)?.value||`Игрок ${i+1}`)} deck=[];const listA=["кот","пёс","луна","солнце","звезда"];for(let i=0;i<listA.length;i++)for(let j=i;j<listA.length;j++)deck.push({a:listA[i],b:listA[j],uid:uid()});shuffle(deck);hands={};for(let i=0;i<c;i++){hands[i]=deck.splice(0,5);} const start=deck.shift(); const startTile=createTileEl(start.a,start.b,{left:200,top:150}); chainZoom.innerHTML=''; chainZoom.appendChild(startTile); openLeft=start.a; openRight=start.b; currentPlayer=0; renderHand(); renderPlayersBar(); updateControls(); menuEl.style.display='none';}
+function renderPlayersBar(){playersBarEl.innerHTML=playerNames.map((n,i)=>`<div class="player${i===currentPlayer?' active':''}">${n}</div>`).join('');}
+function updateControls(){turnInfo.textContent=`Ход: ${playerNames[currentPlayer]}`; drawBtn.disabled=(!hasPlayable(hands[currentPlayer])&&deck.length===0);}
+function nextPlayer(){currentPlayer=(currentPlayer+1)%playerNames.length; renderHand(); renderPlayersBar(); updateControls();}
+
+/* ===== buttons ===== */
+drawBtn.addEventListener('click',()=>{if(deck.length) hands[currentPlayer].push(deck.shift()); renderHand(); updateControls();});
+skipBtn.addEventListener('click',()=>{nextPlayer();});
+restartBtn.addEventListener('click',()=>location.reload());
+startBtn.addEventListener('click',startGame);
+
+/* ===== dnd ===== */
+addEventListener('dragover',e=>{if(dragging) e.preventDefault();});
+addEventListener('drop',e=>{const t=e.target;if(!dragging||!t.classList.contains('dz')) return; e.preventDefault(); if(tryPlace(t,dragging)){hands[dragging.owner]=hands[dragging.owner].filter(x=>x.uid!==dragging.uid); renderHand(); if(hands[dragging.owner].length===0){winnerName.textContent=playerNames[dragging.owner]; finalOverlay.style.display='flex'; return;} nextPlayer();} dragging=null; clearZones();});
+
+/* ===== menu inputs ===== */
+function renderNameInputs(){nameInputsEl.innerHTML=''; const c=parseInt(playerCountEl.value)||2; for(let i=0;i<c;i++){nameInputsEl.innerHTML+=`<input id="pname${i}" placeholder="Имя игрока ${i+1}">`;}}
+playerCountEl.addEventListener('input',renderNameInputs); renderNameInputs();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+</body>
+</html>
