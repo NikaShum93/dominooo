@@ -272,7 +272,18 @@ if (opts.idxB !== undefined) el.dataset.idxB = opts.idxB;
 }
 
 /* ===== hand ===== */
-function renderHand(){ handHeader.textContent=`${playerNames[currentPlayer]}: (${(hands[currentPlayer]?.length||0)} костяшек)`; trayEl.innerHTML=''; for(const t of (hands[currentPlayer]||[])) trayEl.appendChild(createTileEl(t.a,t.b,{role:'hand',owner:currentPlayer,uid:t.uid,draggable:true,orient:'h'})); updateSeats(); }
+function renderHand(){ handHeader.textContent=`${playerNames[currentPlayer]}: (${(hands[currentPlayer]?.length||0)} костяшек)`; trayEl.innerHTML=''; for(const t of (hands[currentPlayer]||[]))
+  trayEl.appendChild(
+  createTileEl(t.a, t.b, {
+    role: 'hand',
+    owner: currentPlayer,
+    uid: t.uid,
+    draggable: true,
+    orient: 'h',
+    idxA: t.idxA,
+    idxB: t.idxB
+  })
+);
 
 /* ===== hud ===== */
 function renderPlayersBar(){ playersBarEl.innerHTML=''; for(let i=0;i<playerNames.length;i++){const el=document.createElement('div'); el.className='player'+(i===currentPlayer?' active':''); el.innerHTML=`${playerNames[i]} <span class="score" id="score-${i}">${scores[i]||0}</span>`; playersBarEl.appendChild(el);} }
