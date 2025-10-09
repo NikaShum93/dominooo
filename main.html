@@ -602,15 +602,13 @@ function buildDeckFromData(d) {
   const A = (d && Array.isArray(d.listA)) ? d.listA : [];
   const B = (d && Array.isArray(d.listB)) ? d.listB : [];
 
-  // Если включён свободный режим — строим наборы без проверки
   if (freeMode) {
+    // свободная игра — без проверки
     if (A.length && !B.length) {
-      // 1 список — классическое домино
       for (let i = 0; i < A.length; i++)
         for (let j = i; j < A.length; j++)
           out.push({ a: A[i], b: A[j], uid: uid("A" + i + "_" + j) });
     } else if (A.length && B.length) {
-      // 2 списка — каждая BA
       for (let i = 0; i < B.length; i++)
         for (let j = 0; j < A.length; j++)
           out.push({ a: B[i], b: A[j], uid: uid("BA" + i + "_" + j) });
@@ -618,21 +616,20 @@ function buildDeckFromData(d) {
     return out;
   }
 
-  // 📌 Обычная игра с проверкой
-  if (A.length && !B.length) {
-    // 1 список — классическое домино
-    for (let i = 0; i < A.length; i++)
-      for (let j = i; j < A.length; j++)
-        out.push({ a: A[i], b: A[j], uid: uid("A" + i + "_" + j) });
-  } else if (A.length && B.length) {
-    // 2 списка — только BA, причём на шве должны совпадать индексы
+  // 🔒 строгий режим
+  if (A.length && B.length) {
     const n = Math.min(A.length, B.length);
     for (let i = 0; i < n; i++) {
       for (let j = 0; j < n; j++) {
-        if (i === j) continue; // ⚠️ исключаем правильные пары на одной костяшке!
+        if (i === j) continue; // 🚫 исключаем правильные пары
         out.push({ a: B[i], b: A[j], idxA: j, idxB: i, uid: uid("BA" + i + "_" + j) });
       }
     }
+  } else if (A.length) {
+    // классическое домино
+    for (let i = 0; i < A.length; i++)
+      for (let j = i; j < A.length; j++)
+        out.push({ a: A[i], b: A[j], uid: uid("A" + i + "_" + j) });
   }
 
   return out;
@@ -687,24 +684,27 @@ if (start) {
   chainZoom.appendChild(startTile);
 
 
-  if (!freeMode && Array.isArray(data.listA) && Array.isArray(data.listB) && data.listA?.length && data.listB?.length && start.idxA !== undefined && start.idxB !== undefined) {
-    // Режим с двумя списками
-    openLeft  = 'B' + start.idxB; // слева всегда B
-    openRight = 'A' + start.idxA; // справа всегда A
-    strictPairs = true;
-  } else {
-    // Один список или свободный режим
-    openLeft=start.a; 
-    openRight=start.b;
-    strictPairs = false;
+ if (!freeMode && strictPairs && data.idxA !== undefined && data.idxB !== undefined) {
+  // 🎯 Режим BA
+  if (openVal.startsWith("B") && data.idxB === parseInt(openVal.slice(1))) {
+    // было B{i}, стыкуем → открывается A{j}
+    p1 = data.a; p2 = data.b; 
+    if (isLeft) openLeft = "A" + data.idxA;
+    else openRight = "A" + data.idxA;
+    ok = true;
+  } 
+  else if (openVal.startsWith("A") && data.idxA === parseInt(openVal.slice(1))) {
+    // было A{j}, стыкуем → открывается B{i}
+    p1 = data.b; p2 = data.a;
+    if (isLeft) openLeft = "B" + data.idxB;
+    else openRight = "B" + data.idxB;
+    ok = true;
   }
-
-  endLeft={x:sx,y:sy,dir:-1, orient:'h', el: startTile};
-  endRight={x:sx,y:sy,dir:1, orient:'h', el: startTile};
-  fitChain();
-  renderPlayersBar(); renderHand(); updateControls(); updateSeats(); if(freeMode) document.getElementById('title').textContent='Domino · Cozy Edition · Свободная игра'; menuEl.style.display='none';
+} else {
+  // 🟡 классика (1 список)
+  if (data.a === openVal) { p1 = data.a; p2 = data.b; ok = true; }
+  else if (data.b === openVal) { p1 = data.b; p2 = data.a; ok = true; }
 }
-
 /* ===== buttons & dnd ===== */
 drawBtn.addEventListener('click',()=>{ if(!deck.length) return; const hand=hands[currentPlayer]||[]; if(!freeMode&&hasPlayable(hand)) return; hand.push(deck.splice(Math.floor(Math.random()*deck.length),1)[0]); hands[currentPlayer]=hand; renderHand(); updateControls(); });
 skipBtn.addEventListener('click',()=>{ passes[currentPlayer]=(passes[currentPlayer]||0)+1; if(everyonePassed()){endByPasses(); return;} nextPlayer(); });
