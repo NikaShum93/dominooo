@@ -508,7 +508,14 @@ function placeAt(whichEnd, tileData, choice){
 
   if(!pos.orient || collidesWithExisting(rectOf(pos.orient,pos.x,pos.y))) return false;
 
-  const newTile = createTileEl(tileData.a, tileData.b, {orient:pos.orient,left:pos.x,top:pos.y});
+  const newTile = createTileEl(tileData.a, tileData.b, {
+  orient: pos.orient,
+  left: pos.x,
+  top: pos.y,
+  idxA: tileData.idxA,
+  idxB: tileData.idxB
+});
+
   chainZoom.appendChild(newTile);
   
   applyPlaced(end, pos);
