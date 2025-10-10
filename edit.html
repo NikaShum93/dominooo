@@ -69,8 +69,9 @@ document.getElementById("generateBtn").addEventListener("click", ()=>{
   else if (!freeMode && B.length) file = "main-double.html";
   else file = "main-classic.html";
 
-  // ⚡ путь под GitHub Pages
-  const url = `${file}?data=${json}`;
+  // ⚡ путь под GitHub Pages (обязательно указываем папку main)
+  const base = "https://nikashum93.github.io/dominooo/main/";
+  const url = `${base}${file}?data=${json}`;
 
   const code = `<iframe src="${url}" width="960" height="540" style="border:0;" allowfullscreen></iframe>`;
   document.getElementById("embedCode").value = code;
