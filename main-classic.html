@@ -187,15 +187,17 @@
   height: 260px !important;
 }
 #tilePreview .tile b {
-  font-size: 10px; /* стартовое значение — JS потом увеличит */
+  font-size: inherit;   /* размер берёт из JS */
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;  /* перенос строк разрешён */
+  word-break: keep-all; /* не рвём слова */
 }
-#tilePreview .half {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+#tilePreview .half img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  display: block;
+  margin: auto;
 }
   .tile.hand{
     transform:scale(.50);
@@ -469,13 +471,9 @@ function showPreview(a, b) {
   function renderHalf(el, value) {
     el.innerHTML = '';
     if (/^https?:\/\//i.test(value)) {
-      const img = document.createElement('img');
-      img.src = value;
-      img.style.maxWidth = '100%';
-      img.style.maxHeight = '100%';
-      img.style.objectFit = 'contain';
-      img.style.display = 'block';
-      img.style.margin = 'auto';
+    const img = document.createElement('img');
+img.src = value;
+el.appendChild(img);
       el.appendChild(img);
     } else {
       el.textContent = value;
