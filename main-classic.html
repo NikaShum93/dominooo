@@ -368,7 +368,20 @@ function placeAt(whichEnd, tileData, choice){
   const end = (whichEnd==='left') ? endLeft : endRight;
   const pos = getNextPos(end, choice);
   if(!pos.orient || collidesWithExisting(rectOf(pos.orient,pos.x,pos.y))) return false;
-  const newTile = createTileEl(tileData.a, tileData.b, { orient: pos.orient, left: pos.x, top: pos.y });
+ const newTile = createTileEl(
+  tileData.a,
+  tileData.b,
+  { orient: pos.orient, left: pos.x, top: pos.y }
+);
+
+// если был swap, визуально тоже разворачиваем
+if (tileData.swapped) {
+  const halves = newTile.querySelectorAll('.half b');
+  const tmp = halves[0].textContent;
+  halves[0].textContent = halves[1].textContent;
+  halves[1].textContent = tmp;
+}
+
   chainZoom.appendChild(newTile);
   applyPlaced(end, pos);
   end.el = newTile;
@@ -387,9 +400,9 @@ function tryPlace(target, data) {
 
   if(!ok) return false;
 // автоповорот: если нужная половина не совпадает с открытым концом — меняем местами
-let tileToPlace = { a:p1, b:p2 };
+let tileToPlace = { a:p1, b:p2, swapped:false };
 if (p2 === endOpen && p1 !== endOpen) {
-  tileToPlace = { a:p2, b:p1 }; // swap
+  tileToPlace = { a:p2, b:p1, swapped:true }; // swap
 }
 
 if (placeAt(isLeft ? "left" : "right", tileToPlace, choice)) {
@@ -397,7 +410,7 @@ if (placeAt(isLeft ? "left" : "right", tileToPlace, choice)) {
   else       openRight= (tileToPlace.b===endOpen) ? tileToPlace.a : tileToPlace.b;
   fitChain();
   return true;
-  }
+}
   return false;
 }
 
