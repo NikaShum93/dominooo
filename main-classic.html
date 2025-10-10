@@ -273,27 +273,79 @@ function updateSeats(){ if(!playerNames.length) return; setDensity(); const n=pl
 /* ===== layout helpers ===== */
 function getNextPos(end, choice) {
   let x, y, orient, nextDir;
+
   if (end.orient === 'h') {
     const seamX = end.dir === 1 ? end.x + TILE_W : end.x;
-    const alignY = end.y;
+    const centerY = end.y;
+
     switch (choice) {
-      case 'right': x = seamX + GAP; y = alignY; orient = 'h'; nextDir = 1; break;
-      case 'left':  x = seamX - TILE_W - GAP; y = alignY; orient = 'h'; nextDir = -1; break;
-      case 'down':  x = (end.dir === 1 ? seamX - VERT_W : seamX); y = alignY + TILE_H + GAP; orient = 'v'; nextDir = 1; break;
-      case 'up':    x = (end.dir === 1 ? seamX - VERT_W : seamX); y = alignY - VERT_H - GAP; orient = 'v'; nextDir = -1; break;
+      case 'right':
+        x = seamX + GAP;
+        y = centerY;
+        orient = 'h';
+        nextDir = 1;
+        break;
+
+      case 'left':
+        x = seamX - TILE_W - GAP;
+        y = centerY;
+        orient = 'h';
+        nextDir = -1;
+        break;
+
+      case 'down':
+        x = seamX - VERT_W/2;
+        y = centerY + TILE_H + GAP;
+        orient = 'v';
+        nextDir = 1;
+        break;
+
+      case 'up':
+        x = seamX - VERT_W/2;
+        y = centerY - VERT_H - GAP;
+        orient = 'v';
+        nextDir = -1;
+        break;
     }
-  } else { // 'v'
+
+  } else { // end.orient === 'v'
     const seamY = end.dir === 1 ? end.y + VERT_H : end.y;
-    const alignX = end.x;
+    const centerX = end.x;
+
     switch (choice) {
-      case 'up':    x = alignX; y = seamY - VERT_H - GAP; orient = 'v'; nextDir = -1; break;
-      case 'down':  x = alignX; y = seamY + GAP; orient = 'v'; nextDir = 1; break;
-      case 'right': x = alignX + VERT_W + GAP; y = (end.dir === 1 ? seamY - TILE_H : seamY); orient = 'h'; nextDir = 1; break;
-      case 'left':  x = alignX - TILE_W - GAP; y = (end.dir === 1 ? seamY - TILE_H : seamY); orient = 'h'; nextDir = -1; break;
+      case 'up':
+        x = centerX;
+        y = seamY - VERT_H - GAP;
+        orient = 'v';
+        nextDir = -1;
+        break;
+
+      case 'down':
+        x = centerX;
+        y = seamY + GAP;
+        orient = 'v';
+        nextDir = 1;
+        break;
+
+      case 'right':
+        x = centerX + VERT_W + GAP;
+        y = seamY - TILE_H/2;
+        orient = 'h';
+        nextDir = 1;
+        break;
+
+      case 'left':
+        x = centerX - TILE_W - GAP;
+        y = seamY - TILE_H/2;
+        orient = 'h';
+        nextDir = -1;
+        break;
     }
   }
+
   return { x, y, orient, nextDir };
 }
+
 function applyPlaced(end, pos) { end.x = pos.x; end.y = pos.y; end.orient = pos.orient; end.dir = pos.nextDir; }
 
 /* ===== collisions ===== */
