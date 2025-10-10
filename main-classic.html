@@ -449,6 +449,7 @@ renderNameInputs();
 =========================================================================================== */
 function showPreview(a, b) {
   previewInner.innerHTML = '';
+
   const big = document.createElement('div');
   big.className = 'tile';
   big.style.position = 'static';
@@ -457,44 +458,60 @@ function showPreview(a, b) {
   big.innerHTML = '<div class="half"><b></b></div><div class="half"><b></b></div>';
   previewInner.appendChild(big);
 
-  const l = big.querySelector('.half:first-child b'),
-        r = big.querySelector('.half:last-child b');
+  const l = big.querySelector('.half:first-child b');
+  const r = big.querySelector('.half:last-child b');
   const halfL = l.parentElement, halfR = r.parentElement;
 
-  l.textContent = a;
-  r.textContent = b;
+  // Картинка или текст
+  function renderHalf(el, value) {
+    el.innerHTML = '';
+    if (/^https?:\/\/.+\.(png|jpe?g|gif|svg|webp)$/i.test(value)) {
+      const img = document.createElement('img');
+      img.src = value;
+      img.style.maxWidth = '100%';
+      img.style.maxHeight = '100%';
+      img.style.objectFit = 'contain';
+      el.appendChild(img);
+    } else {
+      el.textContent = value;
+      el.style.whiteSpace = 'normal';
+      el.style.wordBreak = 'keep-all';
+      el.style.textAlign = 'center';
+    }
+  }
 
-  // ищем максимально возможный размер (с переносами по словам)
-  function maxFit(wordEl, container){
+  renderHalf(l, a);
+  renderHalf(r, b);
+
+  // Подбор максимального шрифта для текстов (картинки не трогаем)
+  function maxFit(wordEl, container) {
+    if (wordEl.querySelector('img')) return null; // это картинка
     let best = 10;
-    for(let s=10; s<=200; s++){
-      wordEl.style.fontSize = s + "px";
-      wordEl.style.lineHeight = "1.2";
-      wordEl.style.whiteSpace = "normal";   // ← перенос по пробелам
-      wordEl.style.wordBreak = "keep-all";  // ← не разрывать слово
-      wordEl.style.textAlign = "center";
-
-      const fits = wordEl.scrollWidth <= container.clientWidth-20 &&
-                   wordEl.scrollHeight <= container.clientHeight-10;
-      if(fits){
-        best = s;
-      } else {
-        break;
-      }
+    for (let s = 10; s <= 200; s++) {
+      wordEl.style.fontSize = s + 'px';
+      wordEl.style.lineHeight = '1.2';
+      const fits =
+        wordEl.scrollWidth <= container.clientWidth - 20 &&
+        wordEl.scrollHeight <= container.clientHeight - 10;
+      if (fits) best = s; else break;
     }
     return best;
   }
 
-  const leftSize  = maxFit(l, halfL);
-  const rightSize = maxFit(r, halfR);
+  const sL = maxFit(l, halfL);
+  const sR = maxFit(r, halfR);
+  // Если обе половинки — текст, делаем одинаковый размер
+  if (sL && sR) {
+    const finalSize = Math.min(sL, sR);
+    l.style.fontSize = r.style.fontSize = finalSize + 'px';
+  } else if (sL) {
+    l.style.fontSize = sL + 'px';
+  } else if (sR) {
+    r.style.fontSize = sR + 'px';
+  }
 
-  const finalSize = Math.min(leftSize, rightSize);
-  l.style.fontSize = r.style.fontSize = finalSize + "px";
-  r.style.fontSize = finalSize + "px";
-
-  previewWrap.style.display='flex';
+  previewWrap.style.display = 'flex';
 }
-
 function hidePreview(){ previewWrap.style.display='none'; }
 previewWrap.addEventListener('click',hidePreview);
 addEventListener('keydown',e=>{ if(e.key==='Escape') hidePreview(); });
