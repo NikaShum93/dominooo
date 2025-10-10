@@ -9,7 +9,6 @@
     --accent:#e6a8ff; --accent2:#ffda8b;
     --tile:#fffaf5; --tile-edge:#e2c0ff; --tile-shadow:rgba(0,0,0,.25);
     --seat-fs:14px;
-    --wood:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%232b1d12'/><stop offset='100%' stop-color='%2354321e'/></linearGradient><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0.2'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.08'/></feComponentTransfer></filter></defs><rect width='512' height='512' fill='url(%23g)'/><rect width='512' height='512' filter='url(%23n)' opacity='.25'/><g opacity='.35' stroke='%2329160d' stroke-width='6'><path d='M0 80h512M0 160h512M0 240h512M0 320h512M0 400h512'/></g></svg>");
   }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;padding:0}
@@ -17,21 +16,13 @@
     font:500 16px Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
     color:#fdf4ff; background:#3b281b; overflow:hidden;
   }
-  #stage{
-    position:relative; width:100%; height:100%;
-    display:flex; flex-direction:column; align-items:center;
-    background-image:var(--wood); background-repeat:no-repeat; background-size:cover; background-position:center;
-    box-shadow:inset 0 0 80px rgba(0,0,0,.45), inset 0 0 140px rgba(0,0,0,.35);
-  }
-  h1{margin:8px 0 6px; font-size:24px; font-weight:900; color:#f2d39a; text-shadow:0 1px 0 #402b16,0 0 18px rgba(0,0,0,.45)}
+  #stage{position:relative; width:100%; height:100%; display:flex; flex-direction:column; align-items:center;}
+  h1{margin:8px 0 6px; font-size:24px; font-weight:900; color:#f2d39a;}
 
   /* MENU */
   .menu{
     position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
-    padding:30px; z-index:100000;
-    background:linear-gradient(rgba(32,21,12,.92), rgba(32,21,12,.94)), var(--wood);
-    background-repeat:no-repeat; background-size:cover; background-position:center;
-    box-shadow:inset 0 0 80px rgba(0,0,0,.55);
+    padding:30px; z-index:100000; background:rgba(0,0,0,.8);
   }
   .menu label{color:#f2d39a; font-weight:800}
   .menu input{padding:8px 12px; width:220px; border-radius:8px; border:2px solid #8c5c2f; background:#fff6e7; color:#2b1a10; margin-top:4px}
@@ -42,7 +33,6 @@
   .players{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
   .player{padding:6px 12px; border-radius:14px; background:rgba(230,168,255,.15); font-size:12px}
   .player.active{background:#f2c56a; color:#2b1a10; font-weight:900; box-shadow:0 0 14px #f2c56a}
-  .score{margin-left:4px; font-weight:900}
   .controls{display:flex; gap:8px}
   .btn{padding:8px 14px; border-radius:10px; border:2px solid #7a5525; background:linear-gradient(#f1c97a,#e7b85f); color:#2c1a32; font-weight:800}
   .btn:disabled{opacity:.6; cursor:not-allowed}
@@ -51,46 +41,34 @@
   /* BOARD */
   .board{
     position:relative; width:100%; flex:1; margin:6px 0;
-    background:radial-gradient(120% 100% at 50% 50%, #3c2a3e, #2e2130 70%) padding-box;
-    border:10px solid transparent; border-radius:18px;
-    border-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><rect width='20' height='20' fill='%2354321e'/><rect x='1' y='1' width='18' height='18' fill='none' stroke='%238c5c2f' stroke-width='1.5'/></svg>") 30 round;
-    box-shadow:0 8px 24px rgba(0,0,0,.45), inset 0 0 18px rgba(0,0,0,.35);
-    overflow:hidden; cursor:grab;
+    background:#2e2130; overflow:hidden; cursor:grab;
+    border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 0 18px rgba(0,0,0,.35);
   }
   .board.grabbing{ cursor:grabbing; }
   .chain{position:relative; width:100%; height:100%}
   #chainZoom{position:absolute; inset:0; transform-origin:0 0;}
 
-  /* SEATS */
-  #seats{pointer-events:none; position:absolute; inset:0}
-  .seat{position:absolute; background:rgba(0,0,0,.25); border:1px solid rgba(255,218,139,.45); color:#f5e6bf; font-weight:800; padding:6px 10px; border-radius:12px; font-size:var(--seat-fs,14px)}
-  .seat-bottom{left:50%; transform:translateX(-50%); bottom:8px}
-  .seat-top{left:50%; transform:translateX(-50%); top:8px}
-  .seat-right,.seat-left{writing-mode:vertical-rl; text-orientation:mixed; top:50%; transform:translateY(-50%); max-height:60%; padding:8px 6px}
-  .seat-right{right:8px} .seat-left{left:8px} .seat.hidden{display:none}
-
   /* TILES */
   .tile{
     width:200px; height:70px;
-    background:radial-gradient(120% 120% at 20% 20%, rgba(0,0,0,.08), transparent 60%), linear-gradient(#fffdf8,#fff6e7);
+    background:linear-gradient(#fffdf8,#fff6e7);
     border:2px solid #e7dbc9; border-radius:12px; display:grid; grid-template-columns:1fr 1fr;
-    position:absolute; box-shadow:0 2px 6px rgba(0,0,0,.35), inset 0 0 0 2px #e0d3bd, inset 0 -10px 20px rgba(0,0,0,.06);
-    overflow:hidden; user-select:none; transition:transform .12s; -webkit-user-drag:element;
+    position:absolute; box-shadow:0 2px 6px rgba(0,0,0,.35), inset 0 0 0 2px #e0d3bd;
+    overflow:hidden; user-select:none; -webkit-user-drag:element;
   }
-  .tile:hover{transform:scale(1.04)}
-  .tile .half{display:flex; align-items:center; justify-content:center; padding:0 8px; overflow:hidden; min-width:0; position:relative}
-  .tile .half:first-child { border-right: 2px solid #d8c8aa; }
+  .tile .half{display:flex; align-items:center; justify-content:center; padding:0 8px; overflow:hidden; min-width:0}
+  .tile .half:first-child{border-right:2px solid #d8c8aa}
   .tile.vert{width:70px; height:200px; grid-template-columns:1fr; grid-template-rows:1fr 1fr}
-  .tile.vert .half:first-child { border-right: none; border-bottom: 2px solid #d8c8aa; }
-  .tile b{display:block; line-height:1.05; font-weight:900; color:#1c1712; white-space:nowrap; max-width:100%}
+  .tile.vert .half:first-child{border-right:none; border-bottom:2px solid #d8c8aa}
+  .tile b{display:block; font-weight:900; color:#1c1712; white-space:nowrap; max-width:100%}
   .tile.hand{transform:scale(.50); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
   .tile.hand *{pointer-events:none}
 
   /* HAND */
   .hands{width:100%; display:flex; flex-direction:column; gap:6px; padding:8px 0}
-  .hand-header{width:100%; margin:0 auto; text-align:center; font-weight:900; color:#e9d2a2}
-  .tray{width:100%; margin:0 auto; height:60px; display:flex; gap:8px; flex-wrap:nowrap; align-items:center; overflow-x:auto; padding:8px 10px; border:2px solid #8c5c2f; background:#5a3b21; border-radius:12px}
-  .tray > .tile{position:static}
+  .hand-header{width:100%; text-align:center; font-weight:900; color:#e9d2a2}
+  .tray{width:100%; height:60px; display:flex; gap:8px; align-items:center; overflow-x:auto; padding:8px 10px; border:2px solid #8c5c2f; background:#5a3b21; border-radius:12px}
+  .tray>.tile{position:static}
 
   /* DROP ZONES */
   .dz{position:absolute; width:38px; height:38px; border:2px dashed #b68a3e; border-radius:10px; display:none; background:rgba(255,215,120,.08)}
@@ -99,8 +77,7 @@
 
   /* WIN OVERLAY */
   .final-overlay{position:absolute; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:100000;}
-  .final-message{font-size:48px; font-weight:900; color:#ffe97f; text-shadow:0 0 20px #ff0000, 0 0 40px #ff9900, 0 0 60px #fff; animation:pop 1s ease-out;}
-  @keyframes pop{0%{transform:scale(0.2); opacity:0;}60%{transform:scale(1.2); opacity:1;}100%{transform:scale(1);}}
+  .final-message{font-size:42px; font-weight:900; color:#ffe97f;}
 </style>
 </head>
 <body>
@@ -128,12 +105,6 @@
   <!-- Поле -->
   <div class="board" id="board">
     <div class="chain" id="chain"><div id="chainZoom"></div></div>
-    <div id="seats">
-      <div class="seat seat-bottom"><span></span></div>
-      <div class="seat seat-right"><span></span></div>
-      <div class="seat seat-top"><span></span></div>
-      <div class="seat seat-left"><span></span></div>
-    </div>
   </div>
 
   <!-- Руки -->
@@ -148,381 +119,340 @@
   </div>
 </div>
 
-<!-- PREVIEW -->
-<div id="tilePreview" style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:999999; background:rgba(0,0,0,.6)">
-  <div id="tilePreviewInner"></div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <script>
-/* ===== utils & state ===== */
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a;}
-function uid(i){return't'+i+'_'+Math.random().toString(36).slice(2,7);}
-function getQueryData(){const raw=new URLSearchParams(location.search).get('data'); if(!raw) return null; try{return JSON.parse(decodeURIComponent(raw));}catch(e){return null;}}
+/* ===== Utils & state ===== */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function uid(){return Math.random().toString(36).slice(2,9);}
 function br(){return{w:chainEl.clientWidth,h:chainEl.clientHeight};}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 
-const TILE_W=200, TILE_H=70, VERT_W=70, VERT_H=200, GAP=4, DZ=38;
-let uniformTileFontSize = 22;
+const TILE_W=200,TILE_H=70,VERT_W=70,VERT_H=200,GAP=4,DZ=38;
+let uniformTileFontSize=22;
 
-const menuEl=document.getElementById('menu'), nameInputsEl=document.getElementById('nameInputs'), playerCountEl=document.getElementById('playerCount'), startBtn=document.getElementById('startBtn');
-const playersBarEl=document.getElementById('playersBar'), boardEl=document.getElementById('board'), chainEl=document.getElementById('chain'), chainZoom=document.getElementById('chainZoom');
+const menuEl=document.getElementById('menu'), nameInputsEl=document.getElementById('nameInputs'),
+playerCountEl=document.getElementById('playerCount'), startBtn=document.getElementById('startBtn');
+const playersBarEl=document.getElementById('playersBar'), boardEl=document.getElementById('board'),
+chainEl=document.getElementById('chain'), chainZoom=document.getElementById('chainZoom');
 const handHeader=document.getElementById('handHeader'), trayEl=document.getElementById('tray');
 const drawBtn=document.getElementById('drawBtn'), skipBtn=document.getElementById('skipBtn'), restartBtn=document.getElementById('restartBtn'), turnInfo=document.getElementById('turnInfo');
-const previewWrap=document.getElementById('tilePreview'), previewInner=document.getElementById('tilePreviewInner');
-const seats={bottom:document.querySelector('.seat-bottom span'),right:document.querySelector('.seat-right span'),top:document.querySelector('.seat-top span'),left:document.querySelector('.seat-left span')};
-const seatBoxes={bottom:document.querySelector('.seat-bottom'),right:document.querySelector('.seat-right'),top:document.querySelector('.seat-top'),left:document.querySelector('.seat-left')};
 
-let playerNames=[], hands={}, deck=[], currentPlayer=0, scores={}, passes={};
-let openLeft=null, openRight=null, endLeft=null, endRight=null, dragging=null, freeMode=false;
-let strictPairs=false;
-
-/* ===== text fitting ===== */
-function fitAndApplyUniformSize(elA, elB, textA, textB, start=36, max=220, pad=12) {
-  elA.textContent = textA; elB.textContent = textB;
-  elA.style.whiteSpace = elB.style.whiteSpace = 'nowrap';
-  elA.style.fontWeight = elB.style.fontWeight = '900';
-  let s = start;
-  const checkFit = () => {
-    elA.style.fontSize = s + 'px'; elB.style.fontSize = s + 'px';
-    return elA.scrollWidth <= elA.parentElement.clientWidth - pad && elB.scrollWidth <= elB.parentElement.clientWidth - pad;
-  };
-  while (s > 6 && !checkFit()) s--;
-  while (s < max) { s++; if (!checkFit()) { s--; elA.style.fontSize = s + 'px'; elB.style.fontSize = s + 'px'; break; } }
-}
+let playerNames=[],hands={},deck=[],currentPlayer=0,scores={},passes={};
+let openLeft=null,openRight=null,endLeft=null,endRight=null,dragging=null;
 
 /* ===== Pan & Zoom ===== */
-let scale = 1, panX = 0, panY = 0, isPanning = false, startPanX = 0, startPanY = 0;
-function updateTransform() { chainZoom.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`; }
-boardEl.addEventListener('mousedown', e => { if (e.button !== 0 || e.target.closest('.dz, .tile')) return; e.preventDefault(); isPanning = true; startPanX = e.clientX - panX; startPanY = e.clientY - panY; boardEl.classList.add('grabbing'); });
-window.addEventListener('mousemove', e => { if (!isPanning) return; e.preventDefault(); panX = e.clientX - startPanX; panY = e.clientY - startPanY; updateTransform(); });
-window.addEventListener('mouseup', () => { if (isPanning) { isPanning = false; boardEl.classList.remove('grabbing'); } });
-boardEl.addEventListener('wheel', e => { e.preventDefault(); const rect = boardEl.getBoundingClientRect(); const mouseX = e.clientX - rect.left; const mouseY = e.clientY - rect.top; const scaleAmount = 1 - e.deltaY * 0.001; const newScale = clamp(scale * scaleAmount, 0.2, 2.5); panX = mouseX - (mouseX - panX) * (newScale / scale); panY = mouseY - (mouseY - panY) * (newScale / scale); scale = newScale; updateTransform(); });
+let scale=1,panX=0,panY=0,isPanning=false,startPanX=0,startPanY=0;
+function updateTransform(){chainZoom.style.transform=`translate(${panX}px,${panY}px) scale(${scale})`;}
+boardEl.addEventListener('mousedown',e=>{if(e.button!==0||e.target.closest('.dz, .tile'))return; e.preventDefault();isPanning=true;startPanX=e.clientX-panX;startPanY=e.clientY-panY;boardEl.classList.add('grabbing');});
+window.addEventListener('mousemove',e=>{if(!isPanning)return; e.preventDefault();panX=e.clientX-startPanX;panY=e.clientY-startPanY;updateTransform();});
+window.addEventListener('mouseup',()=>{if(isPanning){isPanning=false;boardEl.classList.remove('grabbing');}});
+boardEl.addEventListener('wheel',e=>{e.preventDefault();const rect=boardEl.getBoundingClientRect();const mx=e.clientX-rect.left,my=e.clientY-rect.top;const ns=clamp(scale*(1-e.deltaY*0.001),0.2,2.5);panX=mx-(mx-panX)*(ns/scale);panY=my-(my-panY)*(ns/scale);scale=ns;updateTransform();});
 
-/* ===== menu inputs ===== */
-function renderNameInputs(){ nameInputsEl.innerHTML=''; const c=parseInt(playerCountEl.value,10)||2; for(let i=0;i<c;i++){const inp=document.createElement('input'); inp.placeholder='Имя игрока '+(i+1); inp.id='pname'+i; nameInputsEl.appendChild(inp);} }
-playerCountEl.addEventListener('input',renderNameInputs); renderNameInputs();
+/* ===== Menu Inputs ===== */
+function renderNameInputs(){nameInputsEl.innerHTML='';const c=parseInt(playerCountEl.value,10)||2;for(let i=0;i<c;i++){const inp=document.createElement('input');inp.placeholder='Имя игрока '+(i+1);inp.id='pname'+i;nameInputsEl.appendChild(inp);}}
+playerCountEl.addEventListener('input',renderNameInputs);renderNameInputs();
 
-/* ===== preview ===== */
-function showPreview(a,b){
-  previewInner.innerHTML='';
-  const big=document.createElement('div'); big.className='tile'; big.style.position='static'; big.style.width='680px'; big.style.height='260px';
-  big.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
-  previewInner.appendChild(big);
-  previewWrap.style.display='flex';
-  const l=big.querySelector('.half:first-child b'), r=big.querySelector('.half:last-child b');
-  fitAndApplyUniformSize(l, r, a, b, 100, 220, 20);
-}
-function hidePreview(){previewWrap.style.display='none';}
-addEventListener('keydown',e=>{if(e.key==='Escape') hidePreview();});
-previewWrap.addEventListener('click',hidePreview);
-
-/* ===== tile factory ===== */
+/* ===== Tile DOM ===== */
 function createTileEl(a,b,opts={}){
-  const role=opts.role||'chain'; const owner=Number.isInteger(opts.owner)?opts.owner:null; const id=opts.uid||null; const orient=opts.orient||'h'; const draggable=!!opts.draggable;
-  const el=document.createElement('div'); el.className='tile '+(orient==='v'?'vert ':'')+role; el.dataset.a=a; el.dataset.b=b; if(id) el.dataset.uid=id; if(owner!==null) el.dataset.owner=owner;
+  const role=opts.role||'chain',orient=opts.orient||'h';
+  const el=document.createElement('div');
+  el.className='tile '+(orient==='v'?'vert ':'')+(role==='hand'?'hand':'');
   el.style.left=(opts.left||0)+'px'; el.style.top=(opts.top||0)+'px';
   el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
+  const halves=el.getElementsByClassName('half');
+  const size = role==='hand' ? Math.max(12, Math.floor(uniformTileFontSize*0.9))
+                              : Math.max(10, Math.floor(uniformTileFontSize*0.7));
+  halves[0].firstElementChild.textContent=a;
+  halves[1].firstElementChild.textContent=b;
+  halves[0].firstElementChild.style.fontSize=size+'px';
+  halves[1].firstElementChild.style.fontSize=size+'px';
 
-const h=el.getElementsByClassName('half');
-let size;
-if (role === 'hand') {
-  size = Math.max(12, Math.floor(uniformTileFontSize * 0.9));   // руки — крупнее
-} else {
-  size = Math.max(10, Math.floor(uniformTileFontSize * 0.7));   // поле — меньше
-}
-h[0].firstElementChild.textContent = a;
-h[1].firstElementChild.textContent = b;
-h[0].firstElementChild.style.fontSize = size + 'px';
-h[1].firstElementChild.style.fontSize = size + 'px';
-
-
-  el.addEventListener('click',()=>showPreview(a,b));
-  if(draggable){ el.draggable=true;
+  if(role==='hand'){
+    el.draggable=true;
     el.addEventListener('dragstart',e=>{
-      dragging = {a,b, uid:id, owner};
+      dragging={a,b,owner:opts.owner,uid:opts.uid};
       e.dataTransfer.setData('text/plain','domino');
-      hidePreview();
       renderDirectionalZones();
     });
-    el.addEventListener('dragend',()=>{dragging=null; clearZones();});
+    el.addEventListener('dragend',()=>{dragging=null;clearZones();});
   }
   return el;
 }
 
-/* ===== hand & HUD ===== */
-function renderHand() {
-  handHeader.textContent = `${playerNames[currentPlayer]}: (${(hands[currentPlayer]?.length || 0)} костяшек)`;
-  trayEl.innerHTML = '';
-  for (const t of (hands[currentPlayer] || [])) {
-    const opts = { role: 'hand', owner: currentPlayer, uid: t.uid, draggable: true, orient: 'h' };
-    trayEl.appendChild(createTileEl(t.a, t.b, opts));
-  }
-  updateSeats();
-}
-function renderPlayersBar(){ playersBarEl.innerHTML=''; for(let i=0;i<playerNames.length;i++){const el=document.createElement('div'); el.className='player'+(i===currentPlayer?' active':''); el.innerHTML=`${playerNames[i]} <span class="score" id="score-${i}">${scores[i]||0}</span>`; playersBarEl.appendChild(el);} }
-function updateControls(){ [...playersBarEl.getElementsByClassName('player')].forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer)); turnInfo.textContent=`Ход: ${playerNames[currentPlayer]}`; const playable=hasPlayable(hands[currentPlayer]||[]); drawBtn.disabled=playable||deck.length===0; skipBtn.disabled = playable && deck.length>0; }
-
-/* ===== seats ===== */
-function shrinkToFit(span,min){ let fs=parseInt(getComputedStyle(span.parentElement).fontSize)||14; const ok=()=>span.scrollWidth<=span.clientWidth&&span.scrollHeight<=span.clientHeight; span.style.whiteSpace='nowrap'; while(!ok()&&fs>min){fs--; span.parentElement.style.fontSize=fs+'px';} }
-const fitSeatTextHorizontal=(box,txt)=>{const s=box.querySelector('span'); s.textContent=txt; box.style.fontSize='var(--seat-fs,14px)'; shrinkToFit(s,9); };
-const fitSeatTextVertical=(box,txt)=>{const s=box.querySelector('span'); s.textContent=txt; box.style.fontSize='var(--seat-fs,14px)'; const ok=()=>s.scrollHeight<=box.clientHeight&&s.scrollWidth<=box.clientWidth; let fs=parseInt(getComputedStyle(box).fontSize)||14; s.style.whiteSpace='nowrap'; while(!ok()&&fs>9){fs--; box.style.fontSize=fs+'px';} };
-function setDensity(){ const n=playerNames.length; document.documentElement.style.setProperty('--seat-fs', (n>=4?11:n===3?12:14)+'px'); }
-function updateSeats(){ if(!playerNames.length) return; setDensity(); const n=playerNames.length; const order=[currentPlayer,(currentPlayer+1)%n,(currentPlayer+2)%n,(currentPlayer+3)%n]; const map=[{box:seatBoxes.bottom,i:order[0],fit:fitSeatTextHorizontal},{box:seatBoxes.right,i:order[1],fit:fitSeatTextVertical},{box:seatBoxes.top,i:order[2],fit:fitSeatTextHorizontal},{box:seatBoxes.left,i:order[3],fit:fitSeatTextVertical}]; map.forEach((row,idx)=>{ if(idx<n){const i=row.i, name=String(playerNames[i]).trim().replace(/\s+/g,' '), cnt=(hands[i]?hands[i].length:0); row.box.classList.remove('hidden'); row.fit(row.box,`${name} (${cnt})`);} else{row.box.classList.add('hidden'); row.box.querySelector('span').textContent='';}}); }
-
-/* ===== layout helpers ===== */
-function getNextPos(end, choice) {
-  let x, y, orient, nextDir;
-
-  if (end.orient === 'h') {
-    const seamX = end.dir === 1 ? end.x + TILE_W : end.x;
-    const centerY = end.y;
-
-    switch (choice) {
-      case 'right':
-        x = seamX + GAP;
-        y = centerY;
-        orient = 'h';
-        nextDir = 1;
-        break;
-
-      case 'left':
-        x = seamX - TILE_W - GAP;
-        y = centerY;
-        orient = 'h';
-        nextDir = -1;
-        break;
-
-      case 'down':
-        x = seamX - VERT_W/2;
-        y = centerY + TILE_H + GAP;
-        orient = 'v';
-        nextDir = 1;
-        break;
-
-      case 'up':
-        x = seamX - VERT_W/2;
-        y = centerY - VERT_H - GAP;
-        orient = 'v';
-        nextDir = -1;
-        break;
-    }
-
-  } else { // end.orient === 'v'
-    const seamY = end.dir === 1 ? end.y + VERT_H : end.y;
-    const centerX = end.x;
-
-    switch (choice) {
-      case 'up':
-        x = centerX;
-        y = seamY - VERT_H - GAP;
-        orient = 'v';
-        nextDir = -1;
-        break;
-
-      case 'down':
-        x = centerX;
-        y = seamY + GAP;
-        orient = 'v';
-        nextDir = 1;
-        break;
-
-      case 'right':
-        x = centerX + VERT_W + GAP;
-        y = seamY - TILE_H/2;
-        orient = 'h';
-        nextDir = 1;
-        break;
-
-      case 'left':
-        x = centerX - TILE_W - GAP;
-        y = seamY - TILE_H/2;
-        orient = 'h';
-        nextDir = -1;
-        break;
-    }
-  }
-
-  return { x, y, orient, nextDir };
-}
-
-function applyPlaced(end, pos) { end.x = pos.x; end.y = pos.y; end.orient = pos.orient; end.dir = pos.nextDir; }
-
-/* ===== collisions ===== */
+/* ===== Collision ===== */
 function rectOf(o,x,y){return{x,y,w:o==='v'?VERT_W:TILE_W,h:o==='v'?VERT_H:TILE_H}}
 function intersects(r1,r2){return !(r2.x>=r1.x+r1.w||r2.x+r2.w<=r1.x||r2.y>=r1.y+r1.h||r2.y+r2.h<=r1.y)}
-function collidesWithExisting(r) {
-  for (const t of [...chainZoom.querySelectorAll('.tile:not(.hand)')]) {
-    const w = t.classList.contains('vert') ? VERT_W : TILE_W;
-    const h = t.classList.contains('vert') ? VERT_H : TILE_H;
-    const r2 = { x: parseInt(t.style.left||0), y: parseInt(t.style.top||0), w, h };
-    if (intersects(r, r2)) return true;
+function collidesWithExisting(r){
+  for(const t of chainZoom.querySelectorAll('.tile:not(.hand)')){
+    const w=t.classList.contains('vert')?VERT_W:TILE_W;
+    const h=t.classList.contains('vert')?VERT_H:TILE_H;
+    const r2={x:parseInt(t.style.left||0),y:parseInt(t.style.top||0),w,h};
+    if(intersects(r,r2)) return true;
   }
   return false;
 }
 
-/* ===== drop zones (FIXED) ===== */
+/* ===== Ends helpers ===== */
 function getSeam(end){
   if(end.orient==='h'){
-    return end.dir===1 ? {x:end.x + TILE_W, y:end.y + TILE_H/2} : {x:end.x, y:end.y + TILE_H/2};
-  } else {
-    return end.dir===1 ? {x:end.x + VERT_W/2, y:end.y + VERT_H} : {x:end.x + VERT_W/2, y:end.y};
+    return end.dir===1?{x:end.x+TILE_W,y:end.y+TILE_H/2}:{x:end.x,y:end.y+TILE_H/2};
+  }else{
+    return end.dir===1?{x:end.x+VERT_W/2,y:end.y+VERT_H}:{x:end.x+VERT_W/2,y:end.y};
   }
 }
-function clearZones(){[...chainZoom.querySelectorAll('.dz')].forEach(n=>n.remove())}
+
+/* ===== Positioning (mechanics from old main, adapted) ===== */
+function getNextPos(end, choice) {
+  let x,y,orient,nextDir;
+  if(end.orient==='h'){
+    const seamX=end.dir===1?end.x+TILE_W:end.x;
+    switch(choice){
+      case 'right': x=seamX+GAP; y=end.y; orient='h'; nextDir=1; break;
+      case 'left':  x=seamX-TILE_W-GAP; y=end.y; orient='h'; nextDir=-1; break;
+      case 'down':  x=seamX-VERT_W/2; y=end.y+TILE_H+GAP; orient='v'; nextDir=1; break;
+      case 'up':    x=seamX-VERT_W/2; y=end.y-VERT_H-GAP; orient='v'; nextDir=-1; break;
+    }
+  } else {
+    const seamY=end.dir===1?end.y+VERT_H:end.y;
+    switch(choice){
+      case 'up':    x=end.x; y=seamY-VERT_H-GAP; orient='v'; nextDir=-1; break;
+      case 'down':  x=end.x; y=seamY+GAP; orient='v'; nextDir=1; break;
+      case 'right': x=end.x+VERT_W+GAP; y=seamY-TILE_H/2; orient='h'; nextDir=1; break;
+      case 'left':  x=end.x-TILE_W-GAP; y=seamY-TILE_H/2; orient='h'; nextDir=-1; break;
+    }
+  }
+  return {x,y,orient,nextDir};
+}
+function applyPlaced(end,pos){end.x=pos.x;end.y=pos.y;end.orient=pos.orient;end.dir=pos.nextDir;}
+
+/* ===== Drop zones ===== */
+function clearZones(){chainZoom.querySelectorAll('.dz').forEach(n=>n.remove());}
 function renderDirectionalZones(){
-  clearZones(); 
-  if (!dragging) return;
-
+  clearZones(); if(!dragging) return;
   const ends=[{e:endLeft,id:'L',open:openLeft},{e:endRight,id:'R',open:openRight}];
-  for (const side of ends) {
-    if (!side.e || !side.e.el) continue;
-    if (!(dragging.a === side.open || dragging.b === side.open)) continue;
+  for(const side of ends){
+    if(!side.e||!side.e.el) continue;
+    if(!(dragging.a===side.open||dragging.b===side.open)) continue;
 
-    const seam = getSeam(side.e);
-    const zones = {
-      up:    { left: seam.x - DZ/2, top: seam.y - DZ*2,      dir: '↑', k: 'up'    },
-      right: { left: seam.x + DZ,   top: seam.y - DZ/2,      dir: '→', k: 'right' },
-      down:  { left: seam.x - DZ/2, top: seam.y + DZ,        dir: '↓', k: 'down'  },
-      left:  { left: seam.x - DZ*2, top: seam.y - DZ/2,      dir: '←', k: 'left'  }
+    const seam=getSeam(side.e);
+    const zones={
+      up:    {left:seam.x - DZ/2, top:seam.y - DZ*2, dir:'↑', k:'up'},
+      right: {left:seam.x + DZ,   top:seam.y - DZ/2, dir:'→', k:'right'},
+      down:  {left:seam.x - DZ/2, top:seam.y + DZ,   dir:'↓', k:'down'},
+      left:  {left:seam.x - DZ*2, top:seam.y - DZ/2, dir:'←', k:'left'}
     };
 
-    for (const k of Object.keys(zones)) {
-      const pos = getNextPos(side.e, k);
-      if (!pos.orient) continue;
-      const r = rectOf(pos.orient, pos.x, pos.y);
-      if (collidesWithExisting(r)) continue; // единственное ограничение — не класть сверху на плитку
-      const z = document.createElement('div'); z.className='dz active';
-      z.style.left = zones[k].left + 'px'; z.style.top = zones[k].top + 'px';
-      z.dataset.dir = zones[k].dir; z.dataset.end = side.id; z.dataset.k = k;
+    for(const k in zones){
+      const pos=getNextPos(side.e,k);
+      if(!pos.orient) continue;
+      const r=rectOf(pos.orient,pos.x,pos.y);
+      if(collidesWithExisting(r)) continue; // запрет накладываться
+      const z=document.createElement('div');
+      z.className='dz active';
+      z.style.left=zones[k].left+'px';
+      z.style.top=zones[k].top+'px';
+      z.dataset.dir=zones[k].dir;
+      z.dataset.end=side.id; // 'L' / 'R'
+      z.dataset.k=k;         // up/down/left/right
       chainZoom.appendChild(z);
     }
   }
 }
-addEventListener('resize',()=>{ fitChain(); if(dragging) renderDirectionalZones(); });
 
-/* ===== fit chain ===== */
-function fitChain(){ const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')]; if(!tiles.length){scale=1; panX=0; panY=0; updateTransform(); return;} let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity; for(const t of tiles){const x=parseInt(t.style.left||0),y=parseInt(t.style.top||0),w=t.classList.contains('vert')?VERT_W:TILE_W,h=t.classList.contains('vert')?VERT_H:TILE_H; minX=Math.min(minX,x); minY=Math.min(minY,y); maxX=Math.max(maxX,x+w); maxY=Math.max(maxY,y+h);} const pad=20; const s=Math.min(1,(br().w-pad)/(maxX-minX),(br().h-pad)/(maxY-minY)); scale=s; panX = (br().w - (maxX - minX) * s) / 2 - minX * s; panY = (br().h - (maxY - minY) * s) / 2 - minY * s; updateTransform(); }
-
-/* ===== rules ===== */
+/* ===== Rules ===== */
 function hasPlayable(hand){
-  for (const t of hand){ if (t.a===openLeft||t.b===openLeft||t.a===openRight||t.b===openRight) return true; }
+  for(const t of hand){ if(t.a===openLeft||t.b===openLeft||t.a===openRight||t.b===openRight) return true; }
   return false;
 }
-function award(i,pts=1){scores[i]=(scores[i]||0)+pts; const el=document.getElementById('score-'+i); if(el) el.textContent=String(scores[i]);}
-function nextPlayer(){currentPlayer=(currentPlayer+1)%playerNames.length; renderHand(); renderPlayersBar(); updateControls(); updateSeats();}
-function everyonePassed(){for(let i=0;i<playerNames.length;i++){if(!passes[i]) return false} return true}
-function endByWinner(i, extra=''){ const name = playerNames[i] + (extra?` ${extra}`:''); document.getElementById("winnerName").textContent = name; document.getElementById("finalOverlay").style.display = "flex"; try{ new Audio("win.mp3").play().catch(()=>{});}catch(e){} if (window.confetti) { const duration = 3000; const end = Date.now() + duration; (function frame(){ confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 } }); confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 } }); if (Date.now() < end) requestAnimationFrame(frame); })(); } }
-function endByPoints(){ let best=Infinity, wi=0; for(let i=0;i<playerNames.length;i++){ const s=(hands[i]||[]).length; if(s<best){best=s; wi=i;} } endByWinner(wi,'(по остаткам)'); }
 
-/* ===== placing ===== */
-function tryPlace(target, data) {
-  if (!data || !target.classList.contains("dz")) return false;
-  const isLeft = target.dataset.end === "L";
-  const choice = target.dataset.k; // up / down / left / right
-  const endOpen = isLeft ? openLeft : openRight;
+/* ===== Place tile (with autorotate by direction) ===== */
+function desiredHalfFor(choice){
+  // какую половинку (a или b) нужно прижать к шву
+  // right/down — a у шва (левая/верхняя половина новой плитки)
+  // left/up    — b у шва (правая/нижняя половина новой плитки)
+  return (choice==='right'||choice==='down') ? 'a' : 'b';
+}
+function placeAt(whichEnd,tileData,choice){
+  const end=(whichEnd==='left')?endLeft:endRight;
+  const pos=getNextPos(end,choice);
+  const r=rectOf(pos.orient,pos.x,pos.y);
+  if(!pos.orient||collidesWithExisting(r)) return false;
 
-  // Проверяем, совпадает ли хоть одна сторона
-  if (!(data.a === endOpen || data.b === endOpen)) return false;
+  const newTile=createTileEl(tileData.a,tileData.b,{orient:pos.orient,left:pos.x,top:pos.y});
+  chainZoom.appendChild(newTile);
+  applyPlaced(end,pos); end.el=newTile;
+  return true;
+}
+function tryPlace(target,data){
+  if(!data||!target.classList.contains('dz')) return false;
+  const isLeft=target.dataset.end==='L';
+  const choice=target.dataset.k;
+  const endOpen=isLeft?openLeft:openRight;
 
-  let tileToPlace = { a: data.a, b: data.b, choice: choice };
+  // должна совпасть хотя бы одна половинка
+  if(!(data.a===endOpen||data.b===endOpen)) return false;
 
-  // Автоповорот: если совпала не та сторона → свап
-  if (data.b === endOpen && data.a !== endOpen) {
-    tileToPlace = { a: data.b, b: data.a, choice: choice };
+  // построим (a,b), чтобы нужная половинка (в зависимости от направления) лежала у шва
+  const need=desiredHalfFor(choice); // 'a' или 'b' должна равняться endOpen
+  let a=data.a, b=data.b;
+
+  if(need==='a'){
+    // у шва должна быть 'a' == endOpen
+    if(a!==endOpen && b===endOpen){ [a,b]=[b,a]; }
+  }else{ // need==='b'
+    // у шва должна быть 'b' == endOpen
+    if(b!==endOpen && a===endOpen){ [a,b]=[b,a]; }
   }
 
-  // Доп. переворот для направлений up/left
-  if (choice === "up" || choice === "left") {
-    tileToPlace = { a: tileToPlace.b, b: tileToPlace.a, choice: choice };
-  }
+  // ещё раз проверим корректность после возможного свопа
+  if((need==='a' && a!==endOpen) || (need==='b' && b!==endOpen)) return false;
 
-  if (placeAt(isLeft ? "left" : "right", tileToPlace, choice)) {
-    // Обновляем открытые концы
-    if (isLeft) {
-      openLeft = (tileToPlace.a === endOpen) ? tileToPlace.b : tileToPlace.a;
-    } else {
-      openRight = (tileToPlace.a === endOpen) ? tileToPlace.b : tileToPlace.a;
-    }
-    fitChain();
+  if(placeAt(isLeft?'left':'right',{a,b},choice)){
+    // новый открытый — противоположная половинка от примкнувшей
+    const newOpen = (need==='a') ? b : a;
+    if(isLeft) openLeft=newOpen; else openRight=newOpen;
     return true;
   }
-
   return false;
 }
 
-
-/* ===== deck ===== */
-function buildDeckFromData(d) {
-  const out = [];
-  const A = (d && Array.isArray(d.listA)) ? d.listA : [];
-  if (A.length) {
-    for (let i = 0; i < A.length; i++)
-      for (let j = i; j < A.length; j++)
-        out.push({ a: A[i], b: A[j], uid: uid("A" + i + "_" + j) });
+/* ===== Fit chain (optional auto-fit on start) ===== */
+function fitChain(){
+  const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')];
+  if(!tiles.length){scale=1;panX=0;panY=0;updateTransform();return;}
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(const t of tiles){
+    const x=parseInt(t.style.left||0),y=parseInt(t.style.top||0);
+    const w=t.classList.contains('vert')?VERT_W:TILE_W;
+    const h=t.classList.contains('vert')?VERT_H:TILE_H;
+    minX=Math.min(minX,x); minY=Math.min(minY,y); maxX=Math.max(maxX,x+w); maxY=Math.max(maxY,y+h);
   }
-  return out;
+  const pad=20; const s=Math.min(1,(br().w-pad)/(maxX-minX),(br().h-pad)/(maxY-minY));
+  scale=s; panX=(br().w-(maxX-minX)*s)/2 - minX*s; panY=(br().h-(maxY-minY)*s)/2 - minY*s; updateTransform();
+}
+addEventListener('resize',()=>{fitChain(); if(dragging) renderDirectionalZones();});
+
+/* ===== UI: players & hand ===== */
+function renderPlayersBar(){
+  playersBarEl.innerHTML='';
+  for(let i=0;i<playerNames.length;i++){
+    const el=document.createElement('div');
+    el.className='player'+(i===currentPlayer?' active':'');
+    el.textContent=playerNames[i];
+    playersBarEl.appendChild(el);
+  }
+}
+function renderHand(){
+  handHeader.textContent=`${playerNames[currentPlayer]}: (${(hands[currentPlayer]||[]).length} костяшек)`;
+  trayEl.innerHTML='';
+  for(const t of (hands[currentPlayer]||[])){
+    const el=createTileEl(t.a,t.b,{role:'hand',owner:currentPlayer,uid:t.uid,orient:'h',draggable:true});
+    trayEl.appendChild(el);
+  }
+}
+function updateControls(){
+  const playable=hasPlayable(hands[currentPlayer]||[]);
+  drawBtn.disabled=playable||deck.length===0;
+  skipBtn.disabled=playable && deck.length>0;
+  turnInfo.textContent=`Ход: ${playerNames[currentPlayer]}`;
 }
 
-/* ===== start ===== */
+/* ===== Game flow ===== */
+function nextPlayer(){currentPlayer=(currentPlayer+1)%playerNames.length; renderPlayersBar(); renderHand(); updateControls();}
+
+function everyonePassed(){for(let i=0;i<playerNames.length;i++){if(!passes[i]) return false;} return true;}
+
+function endByWinner(i){
+  document.getElementById('winnerName').textContent=playerNames[i];
+  document.getElementById('finalOverlay').style.display='flex';
+}
+
+function endByPoints(){
+  let best=Infinity,win=0;
+  for(let i=0;i<playerNames.length;i++){const s=(hands[i]||[]).length; if(s<best){best=s;win=i;}}
+  endByWinner(win);
+}
+
+/* ===== Deck ===== */
+function makeDeck(){
+  const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
+  const out=[];
+  for(let i=0;i<F.length;i++) for(let j=i;j<F.length;j++) out.push({a:F[i],b:F[j],uid:uid()});
+  return shuffle(out);
+}
+
+/* uniform font estimate */
+function computeUniformSize(allWords){
+  const meas=document.createElement('div');
+  meas.style.cssText=`position:fixed;left:-9999px;top:-9999px;width:${TILE_W/2-24}px;white-space:nowrap;font-weight:900;font-family:Inter,system-ui,sans-serif;`;
+  document.body.appendChild(meas);
+  let min=30;
+  for(const w of allWords){
+    let s=30; meas.style.fontSize=s+'px'; meas.textContent=w;
+    while(s>10 && meas.scrollWidth>meas.clientWidth){s--; meas.style.fontSize=s+'px';}
+    min=Math.min(min,s);
+  }
+  document.body.removeChild(meas);
+  uniformTileFontSize=min;
+}
+
+/* ===== Start ===== */
 function startGame(){
-  const data = getQueryData() || {};
-  freeMode = false; strictPairs = false;
+  const n=Math.max(2,Math.min(4,parseInt(playerCountEl.value)||2));
+  playerNames=[]; for(let i=0;i<n;i++){playerNames.push((document.getElementById('pname'+i)?.value||'').trim()||('Игрок '+(i+1)));}
+  deck=makeDeck();
+  computeUniformSize([...new Set(deck.flatMap(t=>[t.a,t.b]))]);
 
-  playerNames.length=0; const c=Math.max(2,Math.min(4,parseInt(playerCountEl.value)||2)); for(let i=0;i<c;i++){playerNames.push((document.getElementById('pname'+i)?.value||'').trim()||('Игрок '+(i+1)));}
-  deck=buildDeckFromData(data);
-  if(!deck.length){ const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"]; for(let i=0;i<F.length;i++) for(let j=i;j<F.length;j++) deck.push({a:F[i],b:F[j],uid:uid('F'+i+'_'+j)}); }
-  shuffle(deck);
+  hands={}; passes={}; currentPlayer=0;
+  for(let i=0;i<n;i++){hands[i]=[]; passes[i]=0;}
+  // раздача 7
+  for(let r=0;r<7;r++){for(let i=0;i<n;i++){if(!deck.length) break; hands[i].push(deck.shift());}}
 
-  const allWords = [...new Set(deck.flatMap(t => [t.a, t.b, "Старт"]))];
-  let minFontSize = 30;
-  const tempHalf = document.createElement('div');
-  tempHalf.style.width = `${TILE_W / 2 - 24}px`;
-  tempHalf.style.position = 'fixed'; tempHalf.style.left = '-9999px';
-  const tempB = document.createElement('b');
-  tempB.style.fontFamily = 'Inter, system-ui, sans-serif';
-  tempB.style.fontWeight = '900';
-  tempB.style.whiteSpace = 'nowrap';
-  tempHalf.appendChild(tempB);
-  document.body.appendChild(tempHalf);
-  if (allWords.length > 0) {
-    for (const word of allWords) {
-      tempB.textContent = word; let s = 30; tempB.style.fontSize = s + 'px';
-      while (s > 10 && tempB.scrollWidth >= tempHalf.clientWidth) { s--; tempB.style.fontSize = s + 'px'; }
-      minFontSize = Math.min(minFontSize, s);
-    }
-    uniformTileFontSize = minFontSize;
-  }
-  document.body.removeChild(tempHalf);
-
-  scores={}; passes={}; currentPlayer=0; hands={}; for(let k=0;k<playerNames.length;k++){hands[k]=[]; scores[k]=0; passes[k]=0;}
-  // раздача по 7 (классика)
-  for(let r=0;r<7;r++){ for(let j=0;j<playerNames.length;j++){ if(!deck.length) break; hands[j].push(deck.shift()); } }
-
-  let start=deck.shift(); if(!start){const h=hands[0]||[]; start=h.length?h.shift():{a:"Старт",b:"Старт",uid:uid('S')}; hands[0]=h;}
-  chainZoom.innerHTML=''; const sx=Math.floor((br().w-TILE_W)/2), sy=Math.floor((br().h-TILE_H)/2);
-  const startTile = createTileEl(start.a,start.b,{left:sx,top:sy});
+  // стартовая
+  chainZoom.innerHTML='';
+  const sx=Math.floor((br().w-TILE_W)/2), sy=Math.floor((br().h-TILE_H)/2);
+  const start=deck.shift()||{a:'Старт',b:'Старт'};
+  const startTile=createTileEl(start.a,start.b,{left:sx,top:sy,orient:'h'});
   chainZoom.appendChild(startTile);
+
   openLeft=start.a; openRight=start.b;
-  endLeft={x:sx,y:sy,dir:-1, orient:'h', el: startTile};
-  endRight={x:sx,y:sy,dir:1, orient:'h', el: startTile};
-  fitChain();
-  renderPlayersBar(); renderHand(); updateControls(); updateSeats();
-  document.getElementById('title').textContent='Domino · Classic';
+  endLeft={x:sx,y:sy,orient:'h',dir:-1,el:startTile};
+  endRight={x:sx,y:sy,orient:'h',dir:1, el:startTile};
+
+  renderPlayersBar(); renderHand(); updateControls(); fitChain();
   menuEl.style.display='none';
+  document.getElementById('title').textContent='Domino · Classic';
 }
 
-/* ===== buttons & dnd ===== */
-drawBtn.addEventListener('click',()=>{ const hand=hands[currentPlayer]||[]; if(hasPlayable(hand)) return; if(!deck.length) return; hand.push(deck.splice(Math.floor(Math.random()*deck.length),1)[0]); hands[currentPlayer]=hand; renderHand(); updateControls(); });
-skipBtn.addEventListener('click',()=>{ const hand=hands[currentPlayer]||[]; if(hasPlayable(hand) && deck.length>0) return; passes[currentPlayer]=(passes[currentPlayer]||0)+1; if(everyonePassed()){endByPoints(); return;} nextPlayer(); });
+/* ===== Buttons & DnD ===== */
+drawBtn.addEventListener('click',()=>{const h=hands[currentPlayer]||[]; if(hasPlayable(h)) return; if(!deck.length) return; h.push(deck.shift()); hands[currentPlayer]=h; renderHand(); updateControls();});
+skipBtn.addEventListener('click',()=>{const h=hands[currentPlayer]||[]; if(hasPlayable(h)&&deck.length>0) return; passes[currentPlayer]=(passes[currentPlayer]||0)+1; if(everyonePassed()){endByPoints(); return;} nextPlayer();});
 restartBtn.addEventListener('click',()=>location.reload());
-startBtn.addEventListener('click',startGame); 
+startBtn.addEventListener('click',startGame);
 
-addEventListener('dragover',e=>{ if(dragging) e.preventDefault(); });
-addEventListener('drop',e=>{ const t=e.target; if(!dragging) return; if(t&&t.classList&&t.classList.contains('dz')){ e.preventDefault(); const ok=tryPlace(t,dragging); if(ok){ const arr=hands[dragging.owner]||[]; hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid); award(dragging.owner,1); renderHand(); if(hands[dragging.owner].length===0){ endByWinner(dragging.owner); dragging=null; clearZones(); return; } passes[currentPlayer]=0; nextPlayer(); } dragging=null; clearZones(); }});
+addEventListener('dragover',e=>{if(dragging) e.preventDefault();});
+addEventListener('drop',e=>{
+  const t=e.target;
+  if(!dragging) return;
+  if(t && t.classList && t.classList.contains('dz')){
+    e.preventDefault();
+    const ok=tryPlace(t,dragging);
+    if(ok){
+      const arr=hands[dragging.owner]||[];
+      hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid);
+      renderHand();
+      if(hands[dragging.owner].length===0){endByWinner(dragging.owner); dragging=null; clearZones(); return;}
+      passes[currentPlayer]=0;
+      nextPlayer();
+    }
+    dragging=null; clearZones();
+  }
+});
 
-/* safety init */
-(function(){ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',()=>{renderNameInputs();}); } else {renderNameInputs();} })();
+/* render DZ while dragging over board */
+addEventListener('mousemove',()=>{ if(dragging) renderDirectionalZones(); });
+
+/* Safety init */
+(function(){ if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',renderNameInputs);} else {renderNameInputs();} })();
 </script>
 </body>
 </html>
