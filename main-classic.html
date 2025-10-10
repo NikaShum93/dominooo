@@ -463,7 +463,7 @@ function showPreview(a, b) {
   const halfL = l.parentElement, halfR = r.parentElement;
 
   // Картинка или текст
-  ffunction renderHalf(el, value) {
+  function renderHalf(el, value) {
   el.innerHTML = '';
   if (/^https?:\/\//i.test(value)) {
     const img = document.createElement('img');
