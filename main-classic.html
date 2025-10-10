@@ -364,34 +364,10 @@ function endByWinner(i, extra=''){ const name = playerNames[i] + (extra?` ${extr
 function endByPoints(){ let best=Infinity, wi=0; for(let i=0;i<playerNames.length;i++){ const s=(hands[i]||[]).length; if(s<best){best=s; wi=i;} } endByWinner(wi,'(по остаткам)'); }
 
 /* ===== placing ===== */
-function placeAt(whichEnd, tileData, choice){
-  const end = (whichEnd==='left') ? endLeft : endRight;
-  const pos = getNextPos(end, choice);
-  if(!pos.orient || collidesWithExisting(rectOf(pos.orient,pos.x,pos.y))) return false;
- const newTile = createTileEl(
-  tileData.a,
-  tileData.b,
-  { orient: pos.orient, left: pos.x, top: pos.y }
-);
-
-// если был swap, визуально тоже разворачиваем
-if (tileData.swapped) {
-  const halves = newTile.querySelectorAll('.half b');
-  const tmp = halves[0].textContent;
-  halves[0].textContent = halves[1].textContent;
-  halves[1].textContent = tmp;
-}
-
-  chainZoom.appendChild(newTile);
-  applyPlaced(end, pos);
-  end.el = newTile;
-  return true;
-}
-function tryPlace(target, data) {
 function tryPlace(target, data) {
   if (!data || !target.classList.contains("dz")) return false;
   const isLeft = target.dataset.end === "L";
-  const choice = target.dataset.k; // up/down/left/right
+  const choice = target.dataset.k; // up / down / left / right
   const endOpen = isLeft ? openLeft : openRight;
 
   let p1, p2, ok = false;
@@ -407,12 +383,11 @@ function tryPlace(target, data) {
 
   if (!ok) return false;
 
-  let tileToPlace = { a:p1, b:p2 };
+  let tileToPlace = { a:p1, b:p2, choice:choice };
 
-  // 🔹 Автоповорот: если стыкуется «вверх» или «влево» —
-  // переворачиваем, чтобы текст совпадал со стыком
+  // 🔹 Автоповорот: для «up» и «left» половинки меняем местами
   if (choice === "up" || choice === "left") {
-    tileToPlace = { a: tileToPlace.b, b: tileToPlace.a };
+    tileToPlace = { a: tileToPlace.b, b: tileToPlace.a, choice:choice };
   }
 
   if (placeAt(isLeft ? "left" : "right", tileToPlace, choice)) {
