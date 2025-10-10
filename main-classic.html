@@ -443,22 +443,25 @@ function showPreview(a,b){
   const l=big.querySelector('.half:first-child b');
   const r=big.querySelector('.half:last-child b');
 
-  // текст на обеих половинках одинаковым крупным размером
   l.textContent=a;
   r.textContent=b;
 
-  let s=100; // стартуем с очень крупного
   const halfL=l.parentElement, halfR=r.parentElement;
 
-  while(s>20){
-    l.style.fontSize=s+'px';
-    r.style.fontSize=s+'px';
-    // проверяем, влезает ли и слева, и справа
-    if(l.scrollWidth<=halfL.clientWidth-20 &&
-       r.scrollWidth<=halfR.clientWidth-20){
-      break;
+  // начинаем с очень большого и уменьшаем, пока оба текста не помещаются
+  let s=150;
+  while(s>5){
+    l.style.fontSize = r.style.fontSize = s + 'px';
+    l.style.lineHeight = r.style.lineHeight = "1.1";
+    l.style.textAlign = r.style.textAlign = "center";
+
+    const fitsL = l.scrollWidth <= halfL.clientWidth-20 && l.scrollHeight <= halfL.clientHeight-10;
+    const fitsR = r.scrollWidth <= halfR.clientWidth-20 && r.scrollHeight <= halfR.clientHeight-10;
+
+    if(fitsL && fitsR){
+      break; // нашли максимальный возможный размер
     }
-    s--; // уменьшаем до тех пор, пока оба текста не влезут
+    s--;
   }
 
   previewWrap.style.display='flex';
