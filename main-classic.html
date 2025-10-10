@@ -179,7 +179,24 @@
     color:#1c1712;
     white-space:nowrap;
     max-width:100%;
-  }
+}
+
+/* ===== PREVIEW TILE ===== */
+#tilePreview .tile {
+  width: 680px !important;
+  height: 260px !important;
+}
+#tilePreview .tile b {
+  font-size: 10px; /* стартовое значение — JS потом увеличит */
+  text-align: center;
+  white-space: nowrap;
+}
+#tilePreview .half {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
   .tile.hand{
     transform:scale(.50);
     transform-origin:left center;
