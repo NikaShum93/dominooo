@@ -533,8 +533,23 @@ function createTileEl(a,b,opts={}){
   const leftEl = halves[0].firstElementChild;
   const rightEl = halves[1].firstElementChild;
 
-  leftEl.textContent = a;
-  rightEl.textContent = b;
+  function renderHalf(el, value) {
+  el.innerHTML = ""; // очистить
+  if (/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(value)) {
+    const img = document.createElement("img");
+    img.src = value;
+    img.style.maxWidth = "100%";
+    img.style.maxHeight = "100%";
+    img.style.objectFit = "contain";
+    el.appendChild(img);
+  } else {
+    el.textContent = value;
+  }
+}
+
+renderHalf(leftEl, a);
+renderHalf(rightEl, b);
+
 
   const leftSize  = fitToHalf(leftEl, halves[0]);
   const rightSize = fitToHalf(rightEl, halves[1]);
