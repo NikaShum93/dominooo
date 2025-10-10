@@ -447,21 +447,21 @@ renderNameInputs();
 /* ===========================================================================================
    Big Preview (крупный просмотр по клику)
 =========================================================================================== */
-function showPreview(a,b){
-  previewInner.innerHTML='';
-  const big=document.createElement('div');
-  big.className='tile';
-  big.style.position='static';
-  big.style.width='680px';
-  big.style.height='260px';
-  big.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
+function showPreview(a, b) {
+  previewInner.innerHTML = '';
+  const big = document.createElement('div');
+  big.className = 'tile';
+  big.style.position = 'static';
+  big.style.width = '680px';
+  big.style.height = '260px';
+  big.innerHTML = '<div class="half"><b></b></div><div class="half"><b></b></div>';
   previewInner.appendChild(big);
+  previewWrap.style.display = 'flex';
+  const l = big.querySelector('.half:first-child b'),
+        r = big.querySelector('.half:last-child b');
+  fitAndApplyUniformSize(l, r, a, b, 100, 220, 20);
+}
 
-  const l=big.querySelector('.half:first-child b');
-  const r=big.querySelector('.half:last-child b');
-
-  l.textContent=a;
-  r.textContent=b;
 
   const halfL=l.parentElement, halfR=r.parentElement;
 
