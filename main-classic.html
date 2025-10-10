@@ -309,8 +309,13 @@
      style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:999999; background:rgba(0,0,0,.6)">
   <div id="tilePreviewInner"></div>
 </div>
+  <!-- FIREWORKS + SOUND -->
+<canvas id="fireworksCanvas"
+        style="position:fixed; inset:0; z-index:1000000; pointer-events:none; display:none;"></canvas>
+<audio id="winSound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" preload="auto"></audio>
 
 <script>
+  
 /* ===========================================================================================
    Utils & State
 =========================================================================================== */
@@ -988,10 +993,5 @@ addEventListener('mousemove', ()=>{
   }
 })();
 </script>
-  <!-- FIREWORKS + SOUND -->
-<canvas id="fireworksCanvas"
-        style="position:fixed; inset:0; z-index:1000000; pointer-events:none; display:none;"></canvas>
-<audio id="winSound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" preload="auto"></audio>
-
 </body>
 </html>
