@@ -388,32 +388,44 @@ if (tileData.swapped) {
   return true;
 }
 function tryPlace(target, data) {
+function tryPlace(target, data) {
   if (!data || !target.classList.contains("dz")) return false;
   const isLeft = target.dataset.end === "L";
-  const choice = target.dataset.k;
+  const choice = target.dataset.k; // up/down/left/right
   const endOpen = isLeft ? openLeft : openRight;
 
-  let p1, p2, ok=false;
-  if (data.a===endOpen && data.a!==data.b){ p1=data.a; p2=data.b; ok=true; }
-  else if (data.b===endOpen && data.a!==data.b){ p1=data.b; p2=data.a; ok=true; }
-  else if (data.a===endOpen && data.b===endOpen){ p1=data.a; p2=data.b; ok=true; } // дубль
-
-  if(!ok) return false;
-// автоповорот: если нужная половина не совпадает с открытым концом — меняем местами
-let tileToPlace = { a:p1, b:p2, swapped:false };
-if (p2 === endOpen && p1 !== endOpen) {
-  tileToPlace = { a:p2, b:p1, swapped:true }; // swap
-}
-
-if (placeAt(isLeft ? "left" : "right", tileToPlace, choice)) {
-  if (isLeft) {
-    openLeft = (tileToPlace.a === endOpen) ? tileToPlace.b : tileToPlace.a;
-  } else {
-    openRight = (tileToPlace.a === endOpen) ? tileToPlace.b : tileToPlace.a;
+  let p1, p2, ok = false;
+  if (data.a === endOpen && data.a !== data.b) { 
+    p1 = data.a; p2 = data.b; ok = true; 
   }
-  fitChain();
-  return true;
-}
+  else if (data.b === endOpen && data.a !== data.b) { 
+    p1 = data.b; p2 = data.a; ok = true; 
+  }
+  else if (data.a === endOpen && data.b === endOpen) { 
+    p1 = data.a; p2 = data.b; ok = true; // дубль
+  }
+
+  if (!ok) return false;
+
+  let tileToPlace = { a:p1, b:p2 };
+
+  // 🔹 Автоповорот: если стыкуется «вверх» или «влево» —
+  // переворачиваем, чтобы текст совпадал со стыком
+  if (choice === "up" || choice === "left") {
+    tileToPlace = { a: tileToPlace.b, b: tileToPlace.a };
+  }
+
+  if (placeAt(isLeft ? "left" : "right", tileToPlace, choice)) {
+    // 🔹 Обновляем открытые концы
+    if (isLeft) {
+      openLeft = (tileToPlace.a === endOpen) ? tileToPlace.b : tileToPlace.a;
+    } else {
+      openRight = (tileToPlace.a === endOpen) ? tileToPlace.b : tileToPlace.a;
+    }
+    fitChain();
+    return true;
+  }
+
   return false;
 }
 
