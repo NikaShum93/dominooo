@@ -464,19 +464,21 @@ function showPreview(a, b) {
   l.textContent = a;
   r.textContent = b;
 
-  // функция подбора шрифта только для превью
+  // ищем максимально возможный размер (с переносами по словам)
   function maxFit(wordEl, container){
-    let best=10;
-    for(let s=200; s>=10; s--){
+    let best = 10;
+    for(let s=10; s<=200; s++){
       wordEl.style.fontSize = s + "px";
       wordEl.style.lineHeight = "1.2";
-      wordEl.style.whiteSpace = "nowrap";
+      wordEl.style.whiteSpace = "normal";   // ← перенос по пробелам
+      wordEl.style.wordBreak = "keep-all";  // ← не разрывать слово
       wordEl.style.textAlign = "center";
 
       const fits = wordEl.scrollWidth <= container.clientWidth-20 &&
                    wordEl.scrollHeight <= container.clientHeight-10;
       if(fits){
-        best=s;
+        best = s;
+      } else {
         break;
       }
     }
@@ -488,11 +490,10 @@ function showPreview(a, b) {
 
   const finalSize = Math.min(leftSize, rightSize);
   l.style.fontSize = r.style.fontSize = finalSize + "px";
+  r.style.fontSize = finalSize + "px";
 
   previewWrap.style.display='flex';
 }
-
-
 
 function hidePreview(){ previewWrap.style.display='none'; }
 previewWrap.addEventListener('click',hidePreview);
