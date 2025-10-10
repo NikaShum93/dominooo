@@ -449,22 +449,24 @@ function showPreview(a,b){
   const halfL=l.parentElement, halfR=r.parentElement;
 
   // функция — находит максимально возможный размер для слова в своей половине
-  function maxFit(wordEl, container){
-    let s=150; // стартовый размер
-    let best=10;
-    while(s>10){
-      wordEl.style.fontSize = s + "px";
-      wordEl.style.lineHeight = "1.2";
-      wordEl.style.whiteSpace = "nowrap";
-      wordEl.style.textAlign = "center";
+function maxFit(wordEl, container){
+  let best=10;
+  for(let s=150; s>=10; s--){
+    wordEl.style.fontSize = s + "px";
+    wordEl.style.lineHeight = "1.2";
+    wordEl.style.whiteSpace = "nowrap";
+    wordEl.style.textAlign = "center";
 
-      const fits = wordEl.scrollWidth <= container.clientWidth-20 &&
-                   wordEl.scrollHeight <= container.clientHeight-10;
-      if(fits){ best=s; break; }
-      s--;
+    const fits = wordEl.scrollWidth <= container.clientWidth-20 &&
+                 wordEl.scrollHeight <= container.clientHeight-10;
+    if(fits){ 
+      best = s; 
+      break;   // нашли самый большой подходящий
     }
-    return best;
   }
+  return best;
+}
+
 
   // ищем максимально возможный размер для каждой половинки
   const leftSize  = maxFit(l, halfL);
