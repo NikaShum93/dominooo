@@ -447,6 +447,9 @@ renderNameInputs();
 /* ===========================================================================================
    Big Preview (крупный просмотр по клику)
 =========================================================================================== */
+/* ===========================================================================================
+   Big Preview (крупный просмотр по клику)
+=========================================================================================== */
 function showPreview(a, b) {
   previewInner.innerHTML = '';
 
@@ -462,38 +465,39 @@ function showPreview(a, b) {
   const r = big.querySelector('.half:last-child b');
   const halfL = l.parentElement, halfR = r.parentElement;
 
-  // Картинка или текст
+  // Рендер половинок
   function renderHalf(el, value) {
-  el.innerHTML = '';
-  if (/^https?:\/\//i.test(value)) {
-    const img = document.createElement('img');
-    img.src = value;
-    img.style.maxWidth = '100%';
-    img.style.maxHeight = '100%';
-    img.style.objectFit = 'contain';   // вписать целиком
-    img.style.display = 'block';
-    img.style.margin = 'auto';
-    el.appendChild(img);
-  } else {
-    el.textContent = value;
-    el.style.whiteSpace = 'normal';
-    el.style.wordBreak = 'keep-all';
-    el.style.textAlign = 'center';
+    el.innerHTML = '';
+    if (/^https?:\/\//i.test(value)) {
+      const img = document.createElement('img');
+      img.src = value;
+      img.style.maxWidth = '100%';
+      img.style.maxHeight = '100%';
+      img.style.objectFit = 'contain';
+      img.style.display = 'block';
+      img.style.margin = 'auto';
+      el.appendChild(img);
+    } else {
+      el.textContent = value;
+      el.style.whiteSpace = 'normal';
+      el.style.wordBreak = 'keep-all';
+      el.style.textAlign = 'center';
+    }
   }
-}
+
   renderHalf(l, a);
   renderHalf(r, b);
 
-  // Подбор максимального шрифта для текстов (картинки не трогаем)
+  // Подбор максимально возможного размера текста
   function maxFit(wordEl, container) {
-    if (wordEl.querySelector('img')) return null; // это картинка
-    let best = 10;
-    for (let s = 10; s <= 200; s++) {
+    if (wordEl.querySelector('img')) return null; // если картинка
+    let best = 20;
+    for (let s = 20; s <= 150; s++) { // пробуем от 20 до 150px
       wordEl.style.fontSize = s + 'px';
       wordEl.style.lineHeight = '1.2';
       const fits =
         wordEl.scrollWidth <= container.clientWidth - 20 &&
-        wordEl.scrollHeight <= container.clientHeight - 10;
+        wordEl.scrollHeight <= container.clientHeight - 20;
       if (fits) best = s; else break;
     }
     return best;
@@ -501,7 +505,7 @@ function showPreview(a, b) {
 
   const sL = maxFit(l, halfL);
   const sR = maxFit(r, halfR);
-  // Если обе половинки — текст, делаем одинаковый размер
+
   if (sL && sR) {
     const finalSize = Math.min(sL, sR);
     l.style.fontSize = r.style.fontSize = finalSize + 'px';
@@ -513,6 +517,7 @@ function showPreview(a, b) {
 
   previewWrap.style.display = 'flex';
 }
+
 function hidePreview(){ previewWrap.style.display='none'; }
 previewWrap.addEventListener('click',hidePreview);
 addEventListener('keydown',e=>{ if(e.key==='Escape') hidePreview(); });
