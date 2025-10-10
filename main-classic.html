@@ -370,28 +370,23 @@ function tryPlace(target, data) {
   const choice = target.dataset.k; // up / down / left / right
   const endOpen = isLeft ? openLeft : openRight;
 
-  let p1, p2, ok = false;
-  if (data.a === endOpen && data.a !== data.b) { 
-    p1 = data.a; p2 = data.b; ok = true; 
-  }
-  else if (data.b === endOpen && data.a !== data.b) { 
-    p1 = data.b; p2 = data.a; ok = true; 
-  }
-  else if (data.a === endOpen && data.b === endOpen) { 
-    p1 = data.a; p2 = data.b; ok = true; // дубль
+  // Проверяем, совпадает ли хоть одна сторона
+  if (!(data.a === endOpen || data.b === endOpen)) return false;
+
+  let tileToPlace = { a: data.a, b: data.b, choice: choice };
+
+  // Автоповорот: если совпала не та сторона → свап
+  if (data.b === endOpen && data.a !== endOpen) {
+    tileToPlace = { a: data.b, b: data.a, choice: choice };
   }
 
-  if (!ok) return false;
-
-  let tileToPlace = { a:p1, b:p2, choice:choice };
-
-  // 🔹 Автоповорот: для «up» и «left» половинки меняем местами
+  // Доп. переворот для направлений up/left
   if (choice === "up" || choice === "left") {
-    tileToPlace = { a: tileToPlace.b, b: tileToPlace.a, choice:choice };
+    tileToPlace = { a: tileToPlace.b, b: tileToPlace.a, choice: choice };
   }
 
   if (placeAt(isLeft ? "left" : "right", tileToPlace, choice)) {
-    // 🔹 Обновляем открытые концы
+    // Обновляем открытые концы
     if (isLeft) {
       openLeft = (tileToPlace.a === endOpen) ? tileToPlace.b : tileToPlace.a;
     } else {
@@ -403,6 +398,7 @@ function tryPlace(target, data) {
 
   return false;
 }
+
 
 /* ===== deck ===== */
 function buildDeckFromData(d) {
