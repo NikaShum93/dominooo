@@ -754,6 +754,7 @@ function everyonePassed(){
 function endByWinner(i){
   document.getElementById('winnerName').textContent = playerNames[i];
   document.getElementById('finalOverlay').style.display = 'flex';
+  startFireworks(); // 🎆 запуск анимации и звука
 }
 
 function endByPoints(){
@@ -764,6 +765,62 @@ function endByPoints(){
   }
   endByWinner(wi);
 }
+  /* ===========================================================================================
+   Fireworks + Sound
+=========================================================================================== */
+const fwCanvas = document.getElementById('fireworksCanvas');
+const fwCtx = fwCanvas.getContext('2d');
+const winSound = document.getElementById('winSound');
+let fwParticles = [];
+let fwRunning = false;
+
+function resizeFW(){
+  fwCanvas.width = window.innerWidth;
+  fwCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeFW);
+resizeFW();
+
+function launchFirework(){
+  const colors = ["#ff4d6d","#ffd93d","#00f5d4","#9d4edd","#f72585","#4cc9f0"];
+  const x = Math.random() * fwCanvas.width;
+  const y = Math.random() * fwCanvas.height/2;
+  for(let i=0;i<100;i++){
+    fwParticles.push({
+      x, y,
+      angle: Math.random()*2*Math.PI,
+      speed: Math.random()*5+2,
+      life: 100,
+      color: colors[Math.floor(Math.random()*colors.length)]
+    });
+  }
+}
+
+function updateFW(){
+  fwCtx.clearRect(0,0,fwCanvas.width,fwCanvas.height);
+  fwParticles.forEach((p,i)=>{
+    p.x += Math.cos(p.angle)*p.speed;
+    p.y += Math.sin(p.angle)*p.speed;
+    p.life -= 2;
+    fwCtx.fillStyle = p.color;
+    fwCtx.globalAlpha = Math.max(p.life/100,0);
+    fwCtx.beginPath();
+    fwCtx.arc(p.x,p.y,2,0,Math.PI*2);
+    fwCtx.fill();
+  });
+  fwParticles = fwParticles.filter(p=>p.life>0);
+  if(fwRunning) requestAnimationFrame(updateFW);
+}
+
+function startFireworks(){
+  fwCanvas.style.display="block";
+  fwRunning=true;
+  winSound.currentTime=0;
+  winSound.play().catch(()=>{});
+  setInterval(launchFirework,600);
+  updateFW();
+}
+
 
 /* ===========================================================================================
    Deck (from data) + default
@@ -931,5 +988,10 @@ addEventListener('mousemove', ()=>{
   }
 })();
 </script>
+  <!-- FIREWORKS + SOUND -->
+<canvas id="fireworksCanvas"
+        style="position:fixed; inset:0; z-index:1000000; pointer-events:none; display:none;"></canvas>
+<audio id="winSound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" preload="auto"></audio>
+
 </body>
 </html>
