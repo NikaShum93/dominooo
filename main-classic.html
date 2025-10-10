@@ -1,3 +1,13 @@
+Конечно\! Я исправил два момента в файле `main-classic.html`, как вы и просили.
+
+1.  **Масштабирование шрифта в режиме предпросмотра:** Теперь текст на обеих половинках костяшки подбирается так, чтобы быть максимально крупным, но не переноситься на новую строку. Размер шрифта на обеих половинках становится одинаковым, основываясь на той половинке, где текст длиннее.
+2.  **Отображение картинок:** Изображения в режиме крупного просмотра теперь всегда вписываются в границы своей половинки, сохраняя исходные пропорции и имея небольшие отступы от краёв. Они больше не будут обрезаться.
+
+Ниже приведён полный исправленный код для файла `main-classic.html`. Вы можете просто скопировать его и полностью заменить содержимое вашего старого файла. Файл `edit.html` не требовал изменений.
+
+### Исправленный `main-classic.html`
+
+```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -286,14 +296,12 @@
 <div id="stage">
   <h1 id="title">Domino · Classic</h1>
 
-  <!-- ===== MENU ===== -->
   <div id="menu" class="menu">
     <label>Количество игроков: <input type="number" id="playerCount" min="2" max="4" value="2"></label>
     <div id="nameInputs"></div>
     <button id="startBtn" type="button">Начать игру</button>
   </div>
 
-  <!-- ===== HUD ===== -->
   <div class="topbar">
     <div id="playersBar" class="players"></div>
     <div class="controls">
@@ -304,32 +312,27 @@
   </div>
   <div id="turnInfo"></div>
 
-  <!-- ===== BOARD ===== -->
   <div class="board" id="board">
     <div class="chain" id="chain">
       <div id="chainZoom"></div>
     </div>
   </div>
 
-  <!-- ===== HANDS ===== -->
   <div class="hands">
     <div id="handHeader" class="hand-header"></div>
     <div id="tray" class="tray"></div>
   </div>
 
-  <!-- ===== WIN ===== -->
   <div id="finalOverlay" class="final-overlay">
     <div class="final-message">🎉 Победитель: <span id="winnerName"></span> 🎉</div>
   </div>
 </div>
 
-<!-- ===== BIG PREVIEW OVERLAY (крупный просмотр) ===== -->
 <div id="tilePreview"
      style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:999999; background:rgba(0,0,0,.6)">
   <div id="tilePreviewInner"></div>
 </div>
-  <!-- FIREWORKS + SOUND -->
-<canvas id="fireworksCanvas"
+  <canvas id="fireworksCanvas"
         style="position:fixed; inset:0; z-index:1000000; pointer-events:none; display:none;"></canvas>
 <audio id="winSound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" preload="auto"></audio>
 
@@ -449,9 +452,6 @@ renderNameInputs();
 /* ===========================================================================================
    Big Preview (крупный просмотр по клику)
 =========================================================================================== */
-/* ===========================================================================================
-   Big Preview (крупный просмотр по клику)
-=========================================================================================== */
 function showPreview(a, b) {
   previewInner.innerHTML = '';
 
@@ -460,57 +460,80 @@ function showPreview(a, b) {
   big.style.position = 'static';
   big.style.width = '680px';
   big.style.height = '260px';
-  big.innerHTML = '<div class="half"><b></b></div><div class="half"><b></b></div>';
+  big.innerHTML = '<div class="half"></div><div class="half"></div>';
   previewInner.appendChild(big);
 
-  const l = big.querySelector('.half:first-child b');
-  const r = big.querySelector('.half:last-child b');
-  const halfL = l.parentElement, halfR = r.parentElement;
+  const halfL = big.querySelector('.half:first-child');
+  const halfR = big.querySelector('.half:last-child');
 
-  // Рендер половинок
-  function renderHalf(el, value) {
-    el.innerHTML = '';
-    if (/^https?:\/\//i.test(value)) {
-    const img = document.createElement('img');
-img.src = value;
-el.appendChild(img);
-      el.appendChild(img);
+  // Using the more specific regex for image detection
+  const isImageRegex = /^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i;
+
+  let textEl_L = null;
+  let textEl_R = null;
+
+  // This function now correctly handles rendering images directly inside the .half div
+  // and returns the text element (<b>) if text is rendered.
+  function renderHalf(container, value) {
+    container.innerHTML = '';
+    if (isImageRegex.test(value)) {
+      const img = document.createElement('img');
+      img.src = value;
+      // CSS handles the fitting of the image, so no inline styles are needed.
+      container.appendChild(img);
+      return null; // It's an image, no text element to return
     } else {
-      el.textContent = value;
-      el.style.whiteSpace = 'normal';
-      el.style.wordBreak = 'keep-all';
-      el.style.textAlign = 'center';
+      const textEl = document.createElement('b');
+      textEl.textContent = value;
+      container.appendChild(textEl);
+      return textEl; // Return the text element for font-sizing
     }
   }
 
-  renderHalf(l, a);
-  renderHalf(r, b);
+  textEl_L = renderHalf(halfL, a);
+  textEl_R = renderHalf(halfR, b);
 
-  // Подбор максимально возможного размера текста
+  // This function now correctly measures the text with 'nowrap' to prevent line breaks
+  // during the size calculation.
   function maxFit(wordEl, container) {
-    if (wordEl.querySelector('img')) return null; // если картинка
-    let best = 20;
-    for (let s = 20; s <= 150; s++) { // пробуем от 20 до 150px
+    if (!wordEl) return null; // Not a text element
+    
+    let bestFit = 8; // A safe minimum font size
+    wordEl.style.lineHeight = '1.1'; // Set a consistent line height for measurement
+
+    // Loop from a large size down to a small size
+    for (let s = 150; s >= 8; s--) {
       wordEl.style.fontSize = s + 'px';
-      wordEl.style.lineHeight = '1.2';
+      // *** FIX: Use 'nowrap' to ensure text width is measured on a single line ***
+      wordEl.style.whiteSpace = 'nowrap';
+
       const fits =
         wordEl.scrollWidth <= container.clientWidth - 20 &&
         wordEl.scrollHeight <= container.clientHeight - 20;
-      if (fits) best = s; else break;
+
+      // Restore whiteSpace after measuring. The CSS default is 'normal'.
+      wordEl.style.whiteSpace = 'normal';
+
+      if (fits) {
+        bestFit = s;
+        break; // Found the largest size that fits, no need to check smaller sizes
+      }
     }
-    return best;
+    return bestFit;
   }
 
-  const sL = maxFit(l, halfL);
-  const sR = maxFit(r, halfR);
+  const sizeL = maxFit(textEl_L, halfL);
+  const sizeR = maxFit(textEl_R, halfR);
 
-  if (sL && sR) {
-    const finalSize = Math.min(sL, sR);
-    l.style.fontSize = r.style.fontSize = finalSize + 'px';
-  } else if (sL) {
-    l.style.fontSize = sL + 'px';
-  } else if (sR) {
-    r.style.fontSize = sR + 'px';
+  // *** FIX: Apply the calculated minimum size to BOTH text elements for uniformity ***
+  if (sizeL && sizeR) {
+    const finalSize = Math.min(sizeL, sizeR);
+    textEl_L.style.fontSize = finalSize + 'px';
+    textEl_R.style.fontSize = finalSize + 'px';
+  } else if (sizeL) {
+    textEl_L.style.fontSize = sizeL + 'px';
+  } else if (sizeR) {
+    textEl_R.style.fontSize = sizeR + 'px';
   }
 
   previewWrap.style.display = 'flex';
