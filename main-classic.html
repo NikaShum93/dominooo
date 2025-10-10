@@ -448,36 +448,35 @@ function showPreview(a,b){
 
   const halfL=l.parentElement, halfR=r.parentElement;
 
-  // функция — находит максимально возможный размер для слова в своей половине
-function maxFit(wordEl, container){
-  let best=10;
-  for(let s=150; s>=10; s--){
-    wordEl.style.fontSize = s + "px";
-    wordEl.style.lineHeight = "1.2";
-    wordEl.style.whiteSpace = "nowrap";
-    wordEl.style.textAlign = "center";
+  // новая версия подбора максимального шрифта
+  function maxFit(wordEl, container){
+    let best=10;
+    for(let s=150; s>=10; s--){
+      wordEl.style.fontSize = s + "px";
+      wordEl.style.lineHeight = "1.2";
+      wordEl.style.whiteSpace = "nowrap";
+      wordEl.style.textAlign = "center";
 
-    const fits = wordEl.scrollWidth <= container.clientWidth-20 &&
-                 wordEl.scrollHeight <= container.clientHeight-10;
-    if(fits){ 
-      best = s; 
-      break;   // нашли самый большой подходящий
+      const fits = wordEl.scrollWidth <= container.clientWidth-20 &&
+                   wordEl.scrollHeight <= container.clientHeight-10;
+      if(fits){
+        best=s;
+        break; // нашли максимально возможный
+      }
     }
+    return best;
   }
-  return best;
-}
 
-
-  // ищем максимально возможный размер для каждой половинки
   const leftSize  = maxFit(l, halfL);
   const rightSize = maxFit(r, halfR);
 
-  // берём минимальный — чтобы одинаково
+  // берём минимальный, чтобы одинаково на обеих половинках
   const finalSize = Math.min(leftSize, rightSize);
   l.style.fontSize = r.style.fontSize = finalSize + "px";
 
   previewWrap.style.display='flex';
 }
+
 function hidePreview(){ previewWrap.style.display='none'; }
 previewWrap.addEventListener('click',hidePreview);
 addEventListener('keydown',e=>{ if(e.key==='Escape') hidePreview(); });
