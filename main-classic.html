@@ -465,10 +465,10 @@ function showPreview(a,b){
 
   const halfL=l.parentElement, halfR=r.parentElement;
 
-  // новая версия подбора максимального шрифта
+  // функция подбора шрифта только для превью
   function maxFit(wordEl, container){
     let best=10;
-    for(let s=150; s>=10; s--){
+    for(let s=200; s>=10; s--){   // !!! увеличил потолок до 200
       wordEl.style.fontSize = s + "px";
       wordEl.style.lineHeight = "1.2";
       wordEl.style.whiteSpace = "nowrap";
@@ -478,7 +478,7 @@ function showPreview(a,b){
                    wordEl.scrollHeight <= container.clientHeight-10;
       if(fits){
         best=s;
-        break; // нашли максимально возможный
+        break;
       }
     }
     return best;
@@ -487,12 +487,13 @@ function showPreview(a,b){
   const leftSize  = maxFit(l, halfL);
   const rightSize = maxFit(r, halfR);
 
-  // берём минимальный, чтобы одинаково на обеих половинках
+  // одинаковый размер
   const finalSize = Math.min(leftSize, rightSize);
   l.style.fontSize = r.style.fontSize = finalSize + "px";
 
   previewWrap.style.display='flex';
 }
+
 
 function hidePreview(){ previewWrap.style.display='none'; }
 previewWrap.addEventListener('click',hidePreview);
