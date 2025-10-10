@@ -406,8 +406,11 @@ if (p2 === endOpen && p1 !== endOpen) {
 }
 
 if (placeAt(isLeft ? "left" : "right", tileToPlace, choice)) {
-  if(isLeft) openLeft = (tileToPlace.b===endOpen) ? tileToPlace.a : tileToPlace.b;
-  else       openRight= (tileToPlace.b===endOpen) ? tileToPlace.a : tileToPlace.b;
+  if (isLeft) {
+    openLeft = (tileToPlace.a === endOpen) ? tileToPlace.b : tileToPlace.a;
+  } else {
+    openRight = (tileToPlace.a === endOpen) ? tileToPlace.b : tileToPlace.a;
+  }
   fitChain();
   return true;
 }
