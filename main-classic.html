@@ -511,15 +511,37 @@ function createTileEl(a,b,opts={}){
   el.style.top=(opts.top||0)+'px';
   el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
 
-  const halves=el.getElementsByClassName('half');
-  const size = role==='hand'
-    ? Math.max(12, Math.floor(uniformTileFontSize * 0.9))  // рука — крупнее
-    : Math.max(10, Math.floor(uniformTileFontSize * 0.7)); // поле — меньше
+    const halves=el.getElementsByClassName('half');
 
-  halves[0].firstElementChild.textContent=a;
-  halves[1].firstElementChild.textContent=b;
-  halves[0].firstElementChild.style.fontSize=size+'px';
-  halves[1].firstElementChild.style.fontSize=size+'px';
+  function fitToHalf(wordEl, container){
+    let best=10;
+    for(let s=40; s>=8; s--){   // перебираем от крупного к мелкому
+      wordEl.style.fontSize = s + "px";
+      wordEl.style.lineHeight = "1.1";
+      wordEl.style.whiteSpace = "nowrap";
+      wordEl.style.textAlign = "center";
+      const fits = wordEl.scrollWidth <= container.clientWidth-6 &&
+                   wordEl.scrollHeight <= container.clientHeight-4;
+      if(fits){
+        best=s;
+        break;
+      }
+    }
+    return best;
+  }
+
+  const leftEl = halves[0].firstElementChild;
+  const rightEl = halves[1].firstElementChild;
+
+  leftEl.textContent = a;
+  rightEl.textContent = b;
+
+  const leftSize  = fitToHalf(leftEl, halves[0]);
+  const rightSize = fitToHalf(rightEl, halves[1]);
+  const finalSize = Math.min(leftSize, rightSize);
+
+  leftEl.style.fontSize = rightEl.style.fontSize = finalSize + "px";
+
 
   // крупный просмотр по клику — и на поле, и в руке
   el.addEventListener('click',()=>showPreview(a,b));
