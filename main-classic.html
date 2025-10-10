@@ -463,23 +463,24 @@ function showPreview(a, b) {
   const halfL = l.parentElement, halfR = r.parentElement;
 
   // Картинка или текст
-  function renderHalf(el, value) {
-    el.innerHTML = '';
-    if (/^https?:\/\/.+\.(png|jpe?g|gif|svg|webp)$/i.test(value)) {
-      const img = document.createElement('img');
-      img.src = value;
-      img.style.maxWidth = '100%';
-      img.style.maxHeight = '100%';
-      img.style.objectFit = 'contain';
-      el.appendChild(img);
-    } else {
-      el.textContent = value;
-      el.style.whiteSpace = 'normal';
-      el.style.wordBreak = 'keep-all';
-      el.style.textAlign = 'center';
-    }
+  ffunction renderHalf(el, value) {
+  el.innerHTML = '';
+  if (/^https?:\/\//i.test(value)) {
+    const img = document.createElement('img');
+    img.src = value;
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '100%';
+    img.style.objectFit = 'contain';   // вписать целиком
+    img.style.display = 'block';
+    img.style.margin = 'auto';
+    el.appendChild(img);
+  } else {
+    el.textContent = value;
+    el.style.whiteSpace = 'normal';
+    el.style.wordBreak = 'keep-all';
+    el.style.textAlign = 'center';
   }
-
+}
   renderHalf(l, a);
   renderHalf(r, b);
 
