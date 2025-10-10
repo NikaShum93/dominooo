@@ -438,26 +438,27 @@ function showPreview(a,b){
   const l=big.querySelector('.half:first-child b');
   const r=big.querySelector('.half:last-child b');
 
-  // подгоняем размер «крупно», но с проверкой влезания
-  function fitAndApplyUniformSize(elA, elB, textA, textB, start=100, min=14, pad=24){
-    elA.textContent=textA;
-    elB.textContent=textB;
-    let s=start;
-    const check=()=>{
-      elA.style.fontSize=s+'px';
-      elB.style.fontSize=s+'px';
-      const halfA=elA.parentElement, halfB=elB.parentElement;
-      return (elA.scrollWidth <= halfA.clientWidth - pad) &&
-             (elB.scrollWidth <= halfB.clientWidth - pad);
-    };
-    while(s>min && !check()) s--;
-    elA.style.fontSize=s+'px';
-    elB.style.fontSize=s+'px';
+  // текст на обеих половинках одинаковым крупным размером
+  l.textContent=a;
+  r.textContent=b;
+
+  let s=100; // стартуем с очень крупного
+  const halfL=l.parentElement, halfR=r.parentElement;
+
+  while(s>20){
+    l.style.fontSize=s+'px';
+    r.style.fontSize=s+'px';
+    // проверяем, влезает ли и слева, и справа
+    if(l.scrollWidth<=halfL.clientWidth-20 &&
+       r.scrollWidth<=halfR.clientWidth-20){
+      break;
+    }
+    s--; // уменьшаем до тех пор, пока оба текста не влезут
   }
-  fitAndApplyUniformSize(l,r,a,b,100,14,24);
 
   previewWrap.style.display='flex';
 }
+
 function hidePreview(){ previewWrap.style.display='none'; }
 previewWrap.addEventListener('click',hidePreview);
 addEventListener('keydown',e=>{ if(e.key==='Escape') hidePreview(); });
