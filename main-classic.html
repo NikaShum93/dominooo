@@ -448,25 +448,34 @@ function showPreview(a,b){
 
   const halfL=l.parentElement, halfR=r.parentElement;
 
-  // начинаем с очень большого и уменьшаем, пока оба текста не помещаются
-  let s=150;
-  while(s>5){
-    l.style.fontSize = r.style.fontSize = s + 'px';
-    l.style.lineHeight = r.style.lineHeight = "1.1";
-    l.style.textAlign = r.style.textAlign = "center";
+  // функция — находит максимально возможный размер для слова в своей половине
+  function maxFit(wordEl, container){
+    let s=150; // стартовый размер
+    let best=10;
+    while(s>10){
+      wordEl.style.fontSize = s + "px";
+      wordEl.style.lineHeight = "1.2";
+      wordEl.style.whiteSpace = "nowrap";
+      wordEl.style.textAlign = "center";
 
-    const fitsL = l.scrollWidth <= halfL.clientWidth-20 && l.scrollHeight <= halfL.clientHeight-10;
-    const fitsR = r.scrollWidth <= halfR.clientWidth-20 && r.scrollHeight <= halfR.clientHeight-10;
-
-    if(fitsL && fitsR){
-      break; // нашли максимальный возможный размер
+      const fits = wordEl.scrollWidth <= container.clientWidth-20 &&
+                   wordEl.scrollHeight <= container.clientHeight-10;
+      if(fits){ best=s; break; }
+      s--;
     }
-    s--;
+    return best;
   }
+
+  // ищем максимально возможный размер для каждой половинки
+  const leftSize  = maxFit(l, halfL);
+  const rightSize = maxFit(r, halfR);
+
+  // берём минимальный — чтобы одинаково
+  const finalSize = Math.min(leftSize, rightSize);
+  l.style.fontSize = r.style.fontSize = finalSize + "px";
 
   previewWrap.style.display='flex';
 }
-
 function hidePreview(){ previewWrap.style.display='none'; }
 previewWrap.addEventListener('click',hidePreview);
 addEventListener('keydown',e=>{ if(e.key==='Escape') hidePreview(); });
