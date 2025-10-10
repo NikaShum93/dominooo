@@ -456,17 +456,18 @@ function showPreview(a, b) {
   big.style.height = '260px';
   big.innerHTML = '<div class="half"><b></b></div><div class="half"><b></b></div>';
   previewInner.appendChild(big);
-  previewWrap.style.display = 'flex';
+
   const l = big.querySelector('.half:first-child b'),
         r = big.querySelector('.half:last-child b');
-  fitAndApplyUniformSize(l, r, a, b, 100, 220, 20);
+  const halfL = l.parentElement, halfR = r.parentElement;
 
-  const halfL=l.parentElement, halfR=r.parentElement;
+  l.textContent = a;
+  r.textContent = b;
 
   // функция подбора шрифта только для превью
   function maxFit(wordEl, container){
     let best=10;
-    for(let s=200; s>=10; s--){   // !!! увеличил потолок до 200
+    for(let s=200; s>=10; s--){
       wordEl.style.fontSize = s + "px";
       wordEl.style.lineHeight = "1.2";
       wordEl.style.whiteSpace = "nowrap";
@@ -485,12 +486,12 @@ function showPreview(a, b) {
   const leftSize  = maxFit(l, halfL);
   const rightSize = maxFit(r, halfR);
 
-  // одинаковый размер
   const finalSize = Math.min(leftSize, rightSize);
   l.style.fontSize = r.style.fontSize = finalSize + "px";
 
   previewWrap.style.display='flex';
 }
+
 
 
 function hidePreview(){ previewWrap.style.display='none'; }
