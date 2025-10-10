@@ -492,23 +492,20 @@ function showPreview(a, b) {
     wordEl.style.lineHeight = '1.1'; // Set a consistent line height for measurement
 
     // Loop from a large size down to a small size
-    for (let s = 150; s >= 8; s--) {
-      wordEl.style.fontSize = s + 'px';
-      // *** FIX: Use 'nowrap' to ensure text width is measured on a single line ***
-      wordEl.style.whiteSpace = 'nowrap';
+   for (let s = 150; s >= 8; s--) {
+  wordEl.style.fontSize = s + 'px';
+  wordEl.style.whiteSpace = 'nowrap'; // всегда без переносов
+  wordEl.style.lineHeight = '1.1';
 
-      const fits =
-        wordEl.scrollWidth <= container.clientWidth - 20 &&
-        wordEl.scrollHeight <= container.clientHeight - 20;
+  const fits =
+    wordEl.scrollWidth <= container.clientWidth - 20 &&
+    wordEl.scrollHeight <= container.clientHeight - 20;
 
-      // Restore whiteSpace after measuring. The CSS default is 'normal'.
-      wordEl.style.whiteSpace = 'normal';
-
-      if (fits) {
-        bestFit = s;
-        break; // Found the largest size that fits, no need to check smaller sizes
-      }
-    }
+  if (fits) {
+    bestFit = s;
+    break;
+  }
+}
     return bestFit;
   }
 
