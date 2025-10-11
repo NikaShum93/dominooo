@@ -825,11 +825,16 @@ function renderHand(){
 
 function updateControls(){
   const playable = hasPlayable(hands[currentPlayer]||[]);
-  drawBtn.disabled = playable || deck.length===0;
-  skipBtn.disabled = !playable && deck.length>0 ? true : false; 
-  // Разрешаем "Пропустить" только если и взять нечего, и сыграть нечем
+  
+  // "Взять" можно, если нет ходов и в колоде ещё есть кости
+  drawBtn.disabled = playable || deck.length === 0;
+  
+  // "Пропустить" можно, только если НЕТ ходов и колода пуста
+  skipBtn.disabled = playable || deck.length > 0;
+  
   turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
 }
+
 /* ===========================================================================================
    Game flow
 =========================================================================================== */
