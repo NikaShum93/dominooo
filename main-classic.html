@@ -1096,14 +1096,14 @@ function startGame(){
    Buttons & DnD
 =========================================================================================== */
 drawBtn.addEventListener('click', ()=>{
-  const hand=hands[currentPlayer]||[];
-  if(hasPlayable(hand)) return;
-  if(!deck.length) return;
+  const hand = hands[currentPlayer] || [];
+  if (!deck.length) return;  // проверка только на пустую колоду
   hand.push(deck.shift());
-  hands[currentPlayer]=hand;
+  hands[currentPlayer] = hand;
   renderHand();
   updateControls();
 });
+
 
 skipBtn.addEventListener('click', ()=>{
   passes[currentPlayer]=(passes[currentPlayer]||0)+1;
