@@ -200,7 +200,7 @@
   margin: auto;
 }
   .tile.hand{
-    transform:scale(.50);
+    transform:scale(.65);
     transform-origin:left center;
     cursor:grab;
     filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));
@@ -571,13 +571,16 @@ renderHalf(leftEl, a);
 renderHalf(rightEl, b);
 
 
-  const leftSize  = fitToHalf(leftEl, halves[0]);
-  const rightSize = fitToHalf(rightEl, halves[1]);
-  const finalSize = Math.min(leftSize, rightSize);
+const leftSize  = fitToHalf(leftEl, halves[0]);
+const rightSize = fitToHalf(rightEl, halves[1]);
+const finalSize = Math.min(leftSize, rightSize);
 
+if (role === 'hand') {
+  leftEl.style.fontSize  = (finalSize * 1.2) + "px";  // увеличиваем на 20%
+  rightEl.style.fontSize = (finalSize * 1.2) + "px";
+} else {
   leftEl.style.fontSize = rightEl.style.fontSize = finalSize + "px";
-
-
+}
   // крупный просмотр по клику — и на поле, и в руке
   el.addEventListener('click',()=>showPreview(a,b));
 
@@ -821,12 +824,12 @@ function renderHand(){
 }
 
 function updateControls(){
-  const playable=hasPlayable(hands[currentPlayer]||[]);
+  const playable = hasPlayable(hands[currentPlayer]||[]);
   drawBtn.disabled = playable || deck.length===0;
-  skipBtn.disabled = playable && deck.length>0;
+  skipBtn.disabled = !playable && deck.length>0 ? true : false; 
+  // Разрешаем "Пропустить" только если и взять нечего, и сыграть нечем
   turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
 }
-
 /* ===========================================================================================
    Game flow
 =========================================================================================== */
