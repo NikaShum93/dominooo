@@ -442,86 +442,77 @@ renderNameInputs();
 /* ===========================================================================================
    Big Preview (крупный просмотр по клику)
 =========================================================================================== */
-function showPreview(a, b) {
-  previewInner.innerHTML = '';
+function fitPreviewText(wordEl, container) {
+  if (!wordEl) return null;
+  let best = 20;
+  wordEl.style.lineHeight = "1.1";
+  wordEl.style.whiteSpace = "nowrap"; // фиксируем без переносов
 
-  const big = document.createElement('div');
-  big.className = 'tile';
-  big.style.position = 'static';
-  big.style.width = '680px';
-  big.style.height = '260px';
+  for (let s = 150; s >= 20; s--) {
+    wordEl.style.fontSize = s + "px";
+    const fits =
+      wordEl.scrollWidth <= container.clientWidth - 20 &&
+      wordEl.scrollHeight <= container.clientHeight - 20;
+    if (fits) {
+      best = s;
+      break;
+    }
+  }
+  return best;
+}
+
+function showPreview(a, b) {
+  previewInner.innerHTML = "";
+
+  const big = document.createElement("div");
+  big.className = "tile";
+  big.style.position = "static";
+  big.style.width = "680px";
+  big.style.height = "260px";
   big.innerHTML = '<div class="half"></div><div class="half"></div>';
   previewInner.appendChild(big);
 
-  const halfL = big.querySelector('.half:first-child');
-  const halfR = big.querySelector('.half:last-child');
+  const halfL = big.querySelector(".half:first-child");
+  const halfR = big.querySelector(".half:last-child");
 
-  // Using the more specific regex for image detection
   const isImageRegex = /^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i;
 
   let textEl_L = null;
   let textEl_R = null;
 
-  // This function now correctly handles rendering images directly inside the .half div
-  // and returns the text element (<b>) if text is rendered.
   function renderHalf(container, value) {
-    container.innerHTML = '';
+    container.innerHTML = "";
     if (isImageRegex.test(value)) {
-      const img = document.createElement('img');
+      const img = document.createElement("img");
       img.src = value;
-      // CSS handles the fitting of the image, so no inline styles are needed.
       container.appendChild(img);
-      return null; // It's an image, no text element to return
+      return null;
     } else {
-      const textEl = document.createElement('b');
+      const textEl = document.createElement("b");
       textEl.textContent = value;
       container.appendChild(textEl);
-      return textEl; // Return the text element for font-sizing
+      return textEl;
     }
   }
 
   textEl_L = renderHalf(halfL, a);
   textEl_R = renderHalf(halfR, b);
 
-  // This function now correctly measures the text with 'nowrap' to prevent line breaks
-  // during the size calculation.
- function maxFit(wordEl, container) {
-  if (!wordEl) return null; // Not a text element
-    
-  let bestFit = 8; // Минимальный размер
-  wordEl.style.lineHeight = '1.1';
+  // подбираем единый размер
+  const sizeL = fitPreviewText(textEl_L, halfL);
+  const sizeR = fitPreviewText(textEl_R, halfR);
 
-  // Перебор от большого к маленькому
-  for (let s = 150; s >= 8; s--) {
-    wordEl.style.fontSize = s + 'px';
-    wordEl.style.whiteSpace = 'nowrap'; // всегда одна строка
-
-    const fits =
-      wordEl.scrollWidth <= container.clientWidth - 20 &&
-      wordEl.scrollHeight <= container.clientHeight - 20;
-
-    if (fits) {
-      bestFit = s;
-      break; // нашли максимальный размер
-    }
-  }
-  return bestFit;
-}
-  const sizeL = maxFit(textEl_L, halfL);
-  const sizeR = maxFit(textEl_R, halfR);
-
-  // *** FIX: Apply the calculated minimum size to BOTH text elements for uniformity ***
   if (sizeL && sizeR) {
     const finalSize = Math.min(sizeL, sizeR);
-    textEl_L.style.fontSize = finalSize + 'px';
-    textEl_R.style.fontSize = finalSize + 'px';
+    textEl_L.style.fontSize = finalSize + "px";
+    textEl_R.style.fontSize = finalSize + "px";
   } else if (sizeL) {
-    textEl_L.style.fontSize = sizeL + 'px';
+    textEl_L.style.fontSize = sizeL + "px";
   } else if (sizeR) {
-    textEl_R.style.fontSize = sizeR + 'px';
+    textEl_R.style.fontSize = sizeR + "px";
   }
 
-  previewWrap.style.display = 'flex';
+  previewWrap.style.display = "flex";
 }
 
 function hidePreview(){ previewWrap.style.display='none'; }
