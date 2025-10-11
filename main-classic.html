@@ -602,9 +602,8 @@ function createTileEl(a,b,opts={}){
   }
 }
 
-renderHalf(leftEl, a);
-renderHalf(rightEl, b);
-
+renderHalf(leftEl, opts.displayA || a);
+renderHalf(rightEl, opts.displayB || b);
 
 const leftSize  = fitToHalf(leftEl, halves[0]);
 const rightSize = fitToHalf(rightEl, halves[1]);
@@ -1016,22 +1015,33 @@ function buildDeckFromData(d){
   if(A.length){
     for(let i=0;i<A.length;i++){
       for(let j=i;j<A.length;j++){
-        out.push({ a:A[i], b:A[j], uid:uid() });
+        // ключи = индексы (или basename картинки), отображение = исходная строка
+        out.push({
+          a: i, b: j,                  // логические ключи
+          displayA: A[i], displayB: A[j], // что показывать (текст/картинка)
+          uid: uid()
+        });
       }
     }
   }
   return out;
 }
+
 function makeDefaultDeck(){
   const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
   const out=[];
   for(let i=0;i<F.length;i++){
     for(let j=i;j<F.length;j++){
-      out.push({ a:F[i], b:F[j], uid:uid() });
+      out.push({
+        a: i, b: j,                       // ключи для логики
+        displayA: F[i], displayB: F[j],   // что показывать
+        uid: uid()
+      });
     }
   }
   return out;
 }
+
 
 /* оценка единого размера шрифта */
 function computeUniformSize(allWords){
