@@ -157,7 +157,7 @@
     align-items:center;
     justify-content:center;
     padding:0 8px;
-    overflow:hidden;
+    overflow:visible; 
     min-width:0;
     position:relative;
   }
@@ -824,21 +824,19 @@ function renderHand(){
 }
 
 function updateControls(){
-  const playable = hasPlayable(hands[currentPlayer]||[]);
-
-  if (playable) {
-    // есть куда походить → брать и пропускать нельзя
-    drawBtn.disabled = true;
-    skipBtn.disabled = true;
-  } else {
-    // хода нет → всегда можно пропустить
-    skipBtn.disabled = false;
-    // а брать можно только если колода не пуста
-    drawBtn.disabled = (deck.length === 0);
-  }
+  [...playersBarEl.getElementsByClassName('player')]
+    .forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer));
 
   turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
+  const playable = hasPlayable(hands[currentPlayer]||[]);
+
+  // ❌ отключаем только если есть ход или колода пуста
+  drawBtn.disabled = (!freeMode && playable) || deck.length===0;
+
+  // ❌ пропуск всегда активен, кроме случая "игра закончена"
+  skipBtn.disabled = false;
 }
+
 
 
 /* ===========================================================================================
