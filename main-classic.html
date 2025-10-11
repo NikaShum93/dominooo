@@ -485,30 +485,28 @@ function showPreview(a, b) {
 
   // This function now correctly measures the text with 'nowrap' to prevent line breaks
   // during the size calculation.
-  function maxFit(wordEl, container) {
-    if (!wordEl) return null; // Not a text element
+ function maxFit(wordEl, container) {
+  if (!wordEl) return null; // Not a text element
     
-    let bestFit = 8; // A safe minimum font size
-    wordEl.style.lineHeight = '1.1'; // Set a consistent line height for measurement
-
-    // Loop from a large size down to a small size
-   for (let s = 150; s >= 8; s--) {
-  wordEl.style.fontSize = s + 'px';
-  wordEl.style.whiteSpace = 'nowrap'; // всегда без переносов
+  let bestFit = 8; // Минимальный размер
   wordEl.style.lineHeight = '1.1';
 
-  const fits =
-    wordEl.scrollWidth <= container.clientWidth - 20 &&
-    wordEl.scrollHeight <= container.clientHeight - 20;
+  // Перебор от большого к маленькому
+  for (let s = 150; s >= 8; s--) {
+    wordEl.style.fontSize = s + 'px';
+    wordEl.style.whiteSpace = 'nowrap'; // всегда одна строка
 
-  if (fits) {
-    bestFit = s;
-    break;
+    const fits =
+      wordEl.scrollWidth <= container.clientWidth - 20 &&
+      wordEl.scrollHeight <= container.clientHeight - 20;
+
+    if (fits) {
+      bestFit = s;
+      break; // нашли максимальный размер
+    }
   }
+  return bestFit;
 }
-    return bestFit;
-  }
-
   const sizeL = maxFit(textEl_L, halfL);
   const sizeR = maxFit(textEl_R, halfR);
 
