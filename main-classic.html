@@ -876,6 +876,7 @@ function updateControls(){
     .forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer));
 
   turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
+    const hand = hands[currentPlayer] || [];
 const playable = hasLegalMove(hands[currentPlayer]||[]);
 
   // ✅ "Взять" активна, если нет хода и колода не пуста
