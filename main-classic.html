@@ -725,6 +725,46 @@ function hasPlayable(hand){
   return false;
 }
 
+// ================== НОВЫЕ ФУНКЦИИ ==================
+function canPlaceTileAtEnd(tile, end, choice, endOpen){
+  if(!end || !end.el) return false;
+  const pos = getNextPos(end, choice);
+  if(!pos.orient) return false;
+
+  const need = desiredHalfFor(choice); // 'a' | 'b'
+  let a = tile.a, b = tile.b;
+
+  if(!(a===endOpen || b===endOpen)) return false;
+
+  if(need==='a'){
+    if(a!==endOpen && b===endOpen){ [a,b] = [b,a]; }
+  } else {
+    if(b!==endOpen && a===endOpen){ [a,b] = [b,a]; }
+  }
+  if((need==='a' && a!==endOpen) || (need==='b' && b!==endOpen)) return false;
+
+  const r = rectOf(pos.orient, pos.x, pos.y);
+  return !collidesWithExisting(r);
+}
+
+function hasLegalMove(hand){
+  const ends = [
+    { e:endLeft,  open:openLeft  },
+    { e:endRight, open:openRight }
+  ];
+  const dirs = ['up','down','left','right'];
+
+  for(const t of hand){
+    for(const side of ends){
+      for(const k of dirs){
+        if(canPlaceTileAtEnd(t, side.e, k, side.open)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+
 // для направления определяем, какая половинка новой плитки должна «касаться» шва
 function desiredHalfFor(choice){
   // right/down — у шва должна оказаться 'a' (левая/верхняя половинка новой плитки)
@@ -836,9 +876,9 @@ function updateControls(){
     .forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer));
 
   turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
-  const playable = hasPlayable(hands[currentPlayer]||[]);
+const playable = hasLegalMove(hands[currentPlayer]||[]);
 
-  // ❌ отключаем только если есть ход или колода пуста
+// ❌ отключаем только если есть ход или колода пуста
 drawBtn.disabled = playable || deck.length===0;
 
 
@@ -1049,7 +1089,7 @@ drawBtn.addEventListener('click', ()=>{
 
 skipBtn.addEventListener('click', ()=>{
   const hand=hands[currentPlayer]||[];
-  if(hasPlayable(hand) && deck.length>0) return;
+  if(hasLegalMove(hand) && deck.length>0) return;
   passes[currentPlayer]=(passes[currentPlayer]||0)+1;
   if(everyonePassed()){ endByPoints(); return; }
   nextPlayer();
