@@ -732,10 +732,8 @@ function renderDirectionalZones(){
    Rules / helpers
 =========================================================================================== */
 function hasPlayable(hand){
-  for(const t of hand){
-    if(t.a===openLeft || t.b===openLeft || t.a===openRight || t.b===openRight) return true;
-  }
-  return false;
+  // теперь всегда используем реальную проверку
+  return hasLegalMove(hand);
 }
 
 // ================== НОВЫЕ ФУНКЦИИ ==================
@@ -890,13 +888,14 @@ function updateControls(){
 
   turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
   const currentHand = hands[currentPlayer] || [];
-  const playable = hasPlayable(currentHand);
+const playable = hasLegalMove(currentHand); // ← ключевое изменение
 
-  // ✅ Кнопка "Взять" активна, только если НЕТ подходящих костяшек И в колоде ЕСТЬ костяшки.
-  drawBtn.disabled = playable || deck.length === 0;
+// "Взять" можно, если нет хода и колода не пуста
+drawBtn.disabled = playable || deck.length === 0;
 
-  // ✅ Кнопка "Пропустить" активна, только если НЕТ подходящих костяшек И колода ПУСТА.
-  skipBtn.disabled = playable || deck.length > 0;
+// "Пропустить" можно, если нет хода и колода пуста
+skipBtn.disabled = playable || deck.length > 0;
+
 }
 /* ===========================================================================================
    Game flow
