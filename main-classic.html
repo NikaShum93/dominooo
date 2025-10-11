@@ -180,7 +180,15 @@
     white-space:nowrap;
     max-width:100%;
 }
-
+/* картинки внутри половинок тайла: поле, рука и превью */
+.tile .half img {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 1px;          /* ← ровный зазор */
+  object-fit: contain;   /* ← не обрезаем */
+  display: block;
+}
 /* ===== PREVIEW TILE ===== */
 #tilePreview .tile {
   width: 680px !important;
@@ -560,9 +568,7 @@ function createTileEl(a,b,opts={}){
   if (/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(value)) {
     const img = document.createElement("img");
     img.src = value;
-    img.style.maxWidth = "100%";
-    img.style.maxHeight = "100%";
-    img.style.objectFit = "contain";
+    // стили берутся из CSS (.tile .half img)
     el.appendChild(img);
   } else {
     el.textContent = value;
@@ -833,7 +839,8 @@ function updateControls(){
   const playable = hasPlayable(hands[currentPlayer]||[]);
 
   // ❌ отключаем только если есть ход или колода пуста
-  drawBtn.disabled = (!freeMode && playable) || deck.length===0;
+drawBtn.disabled = playable || deck.length===0;
+
 
   // ❌ пропуск всегда активен, кроме случая "игра закончена"
   skipBtn.disabled = false;
