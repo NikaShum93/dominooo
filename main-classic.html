@@ -805,7 +805,11 @@ function placeAt(whichEnd,tileData,choice){
   const r=rectOf(pos.orient,pos.x,pos.y);
   if(!pos.orient || collidesWithExisting(r)) return false;
 
-  const newTile = createTileEl(tileData.a, tileData.b, { orient:pos.orient, left:pos.x, top:pos.y });
+  const newTile = createTileEl(
+  tileData.a, tileData.b,
+  { orient:pos.orient, left:pos.x, top:pos.y, displayA:tileData.displayA, displayB:tileData.displayB }
+);
+
   chainZoom.appendChild(newTile);
 
   applyPlaced(end,pos);
@@ -835,7 +839,8 @@ function tryPlace(target,data){
 
   if((need==='a' && a!==endOpen) || (need==='b' && b!==endOpen)) return false;
 
-  if(placeAt(isLeft?'left':'right', {a,b}, choice)){
+  if(placeAt(isLeft?'left':'right', {a,b, displayA:data.displayA, displayB:data.displayB}, choice)){
+
     const newOpen = (need==='a') ? b : a;
     if(isLeft) openLeft = newOpen; else openRight = newOpen;
     return true;
@@ -1098,7 +1103,10 @@ function startGame(){
   const sx=Math.floor((br().w-TILE_W)/2);
   const sy=Math.floor((br().h-TILE_H)/2);
   const start=deck.shift() || {a:'Старт', b:'Старт'};
-  const startTile = createTileEl(start.a,start.b,{ left:sx, top:sy, orient:'h' });
+  const startTile = createTileEl(
+  start.a, start.b,
+  { left:sx, top:sy, orient:'h', displayA:start.displayA, displayB:start.displayB }
+);
   chainZoom.appendChild(startTile);
 
   openLeft = start.a;
