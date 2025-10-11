@@ -287,6 +287,20 @@
     font-weight:900;
     color:#ffe97f;
   }
+  body {
+  padding: 20px;         /* общий отступ от краёв */
+  background: #3b281b;   /* фон без чёрных полос */
+}
+
+#stage {
+  max-width: 1200px;     /* ограничиваем ширину интерфейса */
+  margin: 0 auto;        /* центрируем по горизонтали */
+}
+
+.board {
+  margin: 20px 0;        /* отступ сверху/снизу */
+  border-radius: 20px;   /* сглаженные углы */
+}
 </style>
 </head>
 <body>
@@ -871,18 +885,18 @@ function renderHand(){
 }
 
 function updateControls(){
-  [...playersBarEl.getElementsByClassName('player')]
-    .forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer));
+  [...playersBarEl.getElementsByClassName('player')]
+    .forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer));
 
-  turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
-    const hand = hands[currentPlayer] || [];
-const playable = hasLegalMove(hands[currentPlayer]||[]);
+  turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
+  const currentHand = hands[currentPlayer] || [];
+  const playable = hasPlayable(currentHand);
 
-  // ✅ "Взять" активна, если нет хода и колода не пуста
-  drawBtn.disabled = playable || deck.length === 0;
+  // ✅ Кнопка "Взять" активна, только если НЕТ подходящих костяшек И в колоде ЕСТЬ костяшки.
+  drawBtn.disabled = playable || deck.length === 0;
 
-  // ✅ "Пропустить" активна, если нет хода и колода пуста
-  skipBtn.disabled = playable || deck.length > 0;
+  // ✅ Кнопка "Пропустить" активна, только если НЕТ подходящих костяшек И колода ПУСТА.
+  skipBtn.disabled = playable || deck.length > 0;
 }
 /* ===========================================================================================
    Game flow
@@ -1092,8 +1106,6 @@ drawBtn.addEventListener('click', ()=>{
 });
 
 skipBtn.addEventListener('click', ()=>{
-  const hand=hands[currentPlayer]||[];
-  if(hasLegalMove(hand) && deck.length>0) return;
   passes[currentPlayer]=(passes[currentPlayer]||0)+1;
   if(everyonePassed()){ endByPoints(); return; }
   nextPlayer();
