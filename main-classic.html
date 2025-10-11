@@ -825,15 +825,21 @@ function renderHand(){
 
 function updateControls(){
   const playable = hasPlayable(hands[currentPlayer]||[]);
-  
-  // "Взять" можно, если нет ходов и в колоде ещё есть кости
-  drawBtn.disabled = playable || deck.length === 0;
-  
-  // "Пропустить" можно, только если НЕТ ходов и колода пуста
-  skipBtn.disabled = playable || deck.length > 0;
-  
+
+  if (playable) {
+    // есть куда походить → брать и пропускать нельзя
+    drawBtn.disabled = true;
+    skipBtn.disabled = true;
+  } else {
+    // хода нет → всегда можно пропустить
+    skipBtn.disabled = false;
+    // а брать можно только если колода не пуста
+    drawBtn.disabled = (deck.length === 0);
+  }
+
   turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
 }
+
 
 /* ===========================================================================================
    Game flow
