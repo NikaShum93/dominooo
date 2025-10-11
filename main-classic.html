@@ -878,16 +878,12 @@ function updateControls(){
   turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
 const playable = hasLegalMove(hands[currentPlayer]||[]);
 
-// ❌ отключаем только если есть ход или колода пуста
-drawBtn.disabled = playable || deck.length===0;
+  // ✅ "Взять" активна, если нет хода и колода не пуста
+  drawBtn.disabled = playable || deck.length === 0;
 
-
-  // ❌ пропуск всегда активен, кроме случая "игра закончена"
-  skipBtn.disabled = false;
+  // ✅ "Пропустить" активна, если нет хода и колода пуста
+  skipBtn.disabled = playable || deck.length > 0;
 }
-
-
-
 /* ===========================================================================================
    Game flow
 =========================================================================================== */
@@ -969,11 +965,19 @@ function updateFW(){
 function startFireworks(){
   fwCanvas.style.display="block";
   fwRunning=true;
-  winSound.currentTime=0;
-  winSound.play().catch(()=>{});
+
+  // гарантируем проигрывание
+  if (winSound) {
+    winSound.currentTime = 0;
+    winSound.play().catch(err => {
+      console.warn("Автоплей звука заблокирован:", err);
+    });
+  }
+
   setInterval(launchFirework,600);
   updateFW();
 }
+
 
 
 /* ===========================================================================================
