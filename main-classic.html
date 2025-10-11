@@ -1020,22 +1020,6 @@ function makeDefaultDeck(){
   for(let i=0;i<F.length;i++){
     for(let j=i;j<F.length;j++){
       out.push({
-        a: F[i],
-        b: F[j],
-        uid: uid()
-      });
-    }
-  }
-  return out;
-}
-
-
-function makeDefaultDeck(){
-  const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
-  const out=[];
-  for(let i=0;i<F.length;i++){
-    for(let j=i;j<F.length;j++){
-      out.push({
         a: i, b: j,                       // ключи для логики
         displayA: F[i], displayB: F[j],   // что показывать
         uid: uid()
