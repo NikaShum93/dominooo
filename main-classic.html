@@ -1014,23 +1014,21 @@ function startFireworks(){
 /* ===========================================================================================
    Deck (from data) + default
 =========================================================================================== */
-function buildDeckFromData(d){
+function makeDefaultDeck(){
+  const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
   const out=[];
-  const A = (d && Array.isArray(d.listA)) ? d.listA : [];
-  if(A.length){
-    for(let i=0;i<A.length;i++){
-      for(let j=i;j<A.length;j++){
-        // ключи = индексы (или basename картинки), отображение = исходная строка
-        out.push({
-          a: i, b: j,                  // логические ключи
-          displayA: A[i], displayB: A[j], // что показывать (текст/картинка)
-          uid: uid()
-        });
-      }
+  for(let i=0;i<F.length;i++){
+    for(let j=i;j<F.length;j++){
+      out.push({
+        a: F[i],
+        b: F[j],
+        uid: uid()
+      });
     }
   }
   return out;
 }
+
 
 function makeDefaultDeck(){
   const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
