@@ -58,9 +58,14 @@
     background:rgba(0,0,0,.8);
   }
   /* 🔥 скрытие меню при старте */
-  .menu.hidden { 
-    display:none !important; 
-   }
+    /* 🔥 скрытие меню при старте */
+  .menu.hidden {
+    display:none !important;
+    visibility:hidden !important;
+    opacity:0 !important;
+    pointer-events:none !important;
+  }
+
   .menu label{ color:#f2d39a; font-weight:800; }
   .menu input{
     padding:8px 12px; width:220px; border-radius:8px; border:2px solid #8c5c2f;
@@ -802,13 +807,21 @@ function startGame(){
   endLeft  = { x:sx, y:sy, orient:'h', dir:-1, el:startTile };
   endRight = { x:sx, y:sy, orient:'h', dir: 1, el:startTile };
 
-  renderPlayersBar();
+   renderPlayersBar();
   renderHand();
   updateControls();
   fitChain();
 
-menuEl.classList.add('hidden');
-document.getElementById('title').textContent='Domino · Classic';
+  // --- ЖЁСТКОЕ скрытие меню ---
+  menuEl.classList.add('hidden');
+  menuEl.setAttribute('aria-hidden', 'true');
+  menuEl.style.display = 'none';
+  menuEl.style.visibility = 'hidden';
+  menuEl.style.opacity = '0';
+  menuEl.style.pointerEvents = 'none';
+  // ----------------------------
+
+  document.getElementById('title').textContent = 'Domino · Classic';
 }
 
 /* ===========================================================================================
