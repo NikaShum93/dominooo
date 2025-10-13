@@ -578,6 +578,8 @@ function renderDirectionalZones(){
     z.style.top  = (sy + TILE_H/2 - DZ/2) + 'px';
     z.dataset.end = 'C';     // центр
     z.dataset.k   = 'right'; // старт горизонтально
+    z.dataset.dir = '●';
+
     chainZoom.appendChild(z);
 
     // подготовим концы (пока без el)
@@ -615,6 +617,7 @@ function renderDirectionalZones(){
       z.style.top  = (seam.y - DZ/2) + 'px';
       z.dataset.end = side.id; // L/R
       z.dataset.k   = k;       // направление
+      z.dataset.dir = k; // чтобы в бэйдже что-то было (up/down/left/right)
       chainZoom.appendChild(z);
     }
   }
@@ -825,6 +828,10 @@ const sx=Math.floor((br().w-TILE_W)/2);
 const sy=Math.floor((br().h-TILE_H)/2);
 // концы пока не заданы
 openLeft=null; openRight=null; endLeft=null; endRight=null;
+renderPlayersBar();
+renderHand();
+updateControls();
+fitChain();
 
   // --- ЖЁСТКОЕ скрытие меню ---
   menuEl.classList.add('hidden');
