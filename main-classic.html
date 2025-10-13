@@ -115,15 +115,17 @@
   .tile .half:first-child{ border-right:2px solid #d8c8aa; }
   .tile.vert{ width:70px; height:200px; grid-template-columns:1fr; grid-template-rows:1fr 1fr; }
   .tile.vert .half:first-child{ border-right:none; border-bottom:2px solid #d8c8aa; }
- .tile b {
+.tile b {
   display:block;
   font-weight:900;
   color:#1c1712;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  text-align:center;
+  white-space:normal;       /* ← переносы разрешены */
+  word-break:break-word;    /* ← переносим длинные слова */
+  overflow:visible;         /* ← ничего не режем */
+  text-align:center;        /* центрируем */
+  line-height:1.2;          /* адекватный интервал */
 }
+
 
 .tile .half img,
 #tilePreview .half img {
@@ -379,10 +381,10 @@ function fitToHalf(node, container) {
   for (let s = 40; s >= 8; s--) {
     node.style.fontSize = s + "px";
     node.style.lineHeight = "1.2";
-    node.style.whiteSpace = "nowrap";     // всегда одна строка
-    node.style.wordBreak = "normal";
-    node.style.overflow = "hidden";       // обрезаем лишнее
-    node.style.textOverflow = "ellipsis"; // многоточие, если не влезло
+    node.style.whiteSpace = "normal";     // ← разрешаем многострочность
+    node.style.wordBreak = "break-word";  // ← перенос слов если длинные
+    node.style.overflow = "visible";      
+    node.style.textOverflow = "clip";     
     node.style.textAlign = "center";
 
     const fits =
@@ -396,6 +398,7 @@ function fitToHalf(node, container) {
   }
   return best;
 }
+
   const leftEl = halves[0].firstElementChild;
   const rightEl = halves[1].firstElementChild;
   const isImg=v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
@@ -658,14 +661,15 @@ addEventListener('resize', ()=>{ fitChain(); if(dragging) renderDirectionalZones
 /* ===========================================================================================
    UI: players & hand
 =========================================================================================== */
-function renderPlayersBar(){
-  playersBarEl.innerHTML='';
-  for(let i=0;i<playerNames.length;i++){
-    const el=document.createElement('div');
-    el.className='player'+(i===currentPlayer?' active':'');
-    el.textContent=playerNames[i];
+function renderPlayersBar() {
+  playersBarEl.innerHTML = '';
+  for (let i = 0; i < playerNames.length; i++) {
+    const el = document.createElement('div');
+    el.className = 'player' + (i === currentPlayer ? ' active' : '');
+    el.textContent = playerNames[i] || `Игрок ${i+1}`;
     playersBarEl.appendChild(el);
   }
+  playersBarEl.style.display = "flex"; // гарантируем, что видно
 }
 
 function renderHand(){
@@ -796,7 +800,7 @@ function computeUniformSize(deck){
 /* ===========================================================================================
    Game flow
 =========================================================================================== */
-function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderPlayersBar(); renderHand(); updateControls(); }
+function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderPlayersBar(); renderHand(); updateControls(); } document.getElementById("playersBar").style.display = "flex";
 function everyonePassed(){ for(let i=0;i<playerNames.length;i++){ if(!passes[i]) return false; } return true; }
 function endByWinner(i){
   document.getElementById('winnerName').textContent = playerNames[i];
