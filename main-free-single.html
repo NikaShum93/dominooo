@@ -491,10 +491,9 @@ function fitToHalf(node, container) {
       };
       e.dataTransfer.setData('text/plain','domino');
       hidePreview();
-      renderDirectionalZones();
     });
     el.addEventListener('dragend',()=>{
-      dragging=null; clearZones();
+      dragging=null;
     });
   }
 
@@ -646,28 +645,7 @@ function renderHand(){
 function updateControls(){
   [...playersBarEl.getElementsByClassName('player')]
     .forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer));
-
   turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
-
-  const currentHand = hands[currentPlayer] || [];
-  const playable = hasLegalMove(currentHand); // проверка, есть ли ход
-
-  if (playable) {
-    // есть куда ходить → кнопки выключены
-    drawBtn.disabled = true;
-    skipBtn.disabled = true;
-  } else {
-    // ходов нет
-    if (deck.length > 0) {
-      // можно взять из колоды
-      drawBtn.disabled = false;
-      skipBtn.disabled = true;
-    } else {
-      // колода пуста → можно только пропустить
-      drawBtn.disabled = true;
-      skipBtn.disabled = false;
-    }
-  }
 }
 
 
@@ -890,8 +868,6 @@ addEventListener('drop', e=>{
 
   dragging=null;
 });
-
-addEventListener('mousemove', ()=>{ if(dragging) renderDirectionalZones(); });
 
 /* Safety init */
 (function(){
