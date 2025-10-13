@@ -320,20 +320,35 @@ renderNameInputs();
 /* ===========================================================================================
    Big Preview
 =========================================================================================== */
-function fitPreviewText(wordEl, container){
+function fitPreviewText(wordEl, container) {
   if (!wordEl) return null;
-  let best = 20;
+
   wordEl.style.lineHeight = "1.1";
-  wordEl.style.whiteSpace = "nowrap";
-  for (let s = 150; s >= 20; s--){
+  wordEl.style.whiteSpace = "nowrap"; // пробуем сначала в одну строку
+  let best = 20;
+
+  for (let s = 150; s >= 20; s--) {
     wordEl.style.fontSize = s + "px";
-    /* ===== ИЗМЕНЕНИЕ #1: Уменьшены отступы для подбора более крупного шрифта ===== */
     const fits = wordEl.scrollWidth <= container.clientWidth - 8 &&
                  wordEl.scrollHeight <= container.clientHeight - 8;
-    if (fits){ best = s; break; }
+    if (fits) {
+      best = s; // нашли минимальный подходящий размер
+    }
   }
+
+  // проверка: если даже на минимальном (20px) текст не влез
+  wordEl.style.fontSize = best + "px";
+  const stillTooBig = wordEl.scrollWidth > container.clientWidth - 8;
+
+  if (stillTooBig) {
+    // включаем перенос
+    wordEl.style.whiteSpace = "normal";
+    wordEl.style.wordBreak = "break-word";
+  }
+
   return best;
 }
+
 function showPreview(a, b){
   previewInner.innerHTML = "";
   const big = document.createElement("div");
