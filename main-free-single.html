@@ -832,8 +832,6 @@ startBtn.addEventListener('click', startGame);
 
 addEventListener('dragover', e=>{ if(dragging) e.preventDefault(); });
 
-let history = []; // стек для отмены
-
 addEventListener('drop', e=>{
   if(!dragging) return;
   e.preventDefault();
