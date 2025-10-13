@@ -115,7 +115,16 @@
   .tile .half:first-child{ border-right:2px solid #d8c8aa; }
   .tile.vert{ width:70px; height:200px; grid-template-columns:1fr; grid-template-rows:1fr 1fr; }
   .tile.vert .half:first-child{ border-right:none; border-bottom:2px solid #d8c8aa; }
-  .tile b{ display:block; line-height:1.05; font-weight:900; color:#1c1712; white-space:nowrap; max-width:100%; }
+ .tile b {
+  display:block;
+  font-weight:900;
+  color:#1c1712;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  text-align:center;
+}
+
 .tile .half img,
 #tilePreview .half img {
   max-width:90%;
@@ -363,22 +372,22 @@ function createTileEl(a,b,opts={}){
   el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
 
   const halves=el.getElementsByClassName('half');
- function fitToHalf(node, container) {
+function fitToHalf(node, container) {
   if (!node) return 12;
 
   let best = 10;
-  // начинаем с крупного размера и уменьшаем, пока весь текст помещается по высоте
   for (let s = 40; s >= 8; s--) {
     node.style.fontSize = s + "px";
     node.style.lineHeight = "1.2";
-    node.style.whiteSpace = "normal";     // многострочность разрешена
+    node.style.whiteSpace = "nowrap";     // всегда одна строка
     node.style.wordBreak = "normal";
-    node.style.overflowWrap = "break-word";
+    node.style.overflow = "hidden";       // обрезаем лишнее
+    node.style.textOverflow = "ellipsis"; // многоточие, если не влезло
     node.style.textAlign = "center";
 
     const fits =
-      node.scrollWidth <= container.clientWidth &&   // по ширине
-      node.scrollHeight <= container.clientHeight;   // и по высоте
+      node.scrollWidth <= container.clientWidth &&
+      node.scrollHeight <= container.clientHeight;
 
     if (fits) {
       best = s;
@@ -387,7 +396,6 @@ function createTileEl(a,b,opts={}){
   }
   return best;
 }
-
   const leftEl = halves[0].firstElementChild;
   const rightEl = halves[1].firstElementChild;
   const isImg=v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
