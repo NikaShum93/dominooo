@@ -563,11 +563,28 @@ function renderDirectionalZones(){
   clearZones();
   if(!dragging) return;
   const ends=[ {e:endLeft, id:'L', open:openLeft}, {e:endRight, id:'R', open:openRight} ];
-  for(const side of ends){
-    if(!side.e || !side.e.el) continue;
-    if(!(dragging.a===side.open || dragging.b===side.open)) continue;
+for(const side of ends){
+  if(!side.e || !side.e.el) continue;
 
-    const seam=getSeam(side.e);
+  // поддержка универсальных стартов A* / B*
+  const isA = v => typeof v==="string" && v.startsWith("A");
+  const isB = v => typeof v==="string" && v.startsWith("B");
+  const open = side.open;
+
+  let fits = false;
+  if(open === "A*"){
+    fits = isA(dragging.a) || isA(dragging.b);
+  } else if(open === "B*"){
+    fits = isB(dragging.a) || isB(dragging.b);
+  } else {
+    fits = (dragging.a===open || dragging.b===open);
+  }
+  if(!fits) continue;
+
+  const seam=getSeam(side.e);
+  ...
+}
+
     const zones={
       up:    { left:seam.x - DZ_SZ/2, top:seam.y - DZ_SZ*2, dir:'↑', k:'up'    },
       right: { left:seam.x + DZ_SZ,   top:seam.y - DZ_SZ/2, dir:'→', k:'right' },
@@ -603,36 +620,34 @@ function canPlaceTileAtEnd(tile, end, choice, endOpen){
   const pos = getNextPos(end, choice);
   if(!pos.orient) return false;
 
-  const need = desiredHalfFor(choice); // 'a' | 'b'
   let a = tile.a, b = tile.b;
-  if(!(a===endOpen || b===endOpen)) return false;
-  // Универсальные старты: A* стыкуется с любым A, B* стыкуется с любым B
-if(endOpen==="A*" && (a.startsWith("A") || b.startsWith("A"))) {
-  // пропускаем проверку несовместимости
-} else if(endOpen==="B*" && (a.startsWith("B") || b.startsWith("B"))) {
-  // пропускаем проверку несовместимости
-} else {
-  // обычное правило A↔B
-  const isA = v => typeof v==="string" && v.startsWith("A");
-  const isB = v => typeof v==="string" && v.startsWith("B");
-  if(isA(endOpen) && isA(a) && isA(b)) return false;
-  if(isB(endOpen) && isB(a) && isB(b)) return false;
-}
-// Дополнительное правило: A стыкуется только с B и наоборот
-const isA = v => typeof v==="string" && v.startsWith("A");
-const isB = v => typeof v==="string" && v.startsWith("B");
-if(isA(endOpen) && isA(a) && isA(b)) return false;
-if(isB(endOpen) && isB(a) && isB(b)) return false;
+
+  // 👉 сначала проверяем универсальные старты
+  if(endOpen==="A*" && (a.startsWith("A") || b.startsWith("A"))) {
+    // всё ок, можно стыковать
+  } else if(endOpen==="B*" && (a.startsWith("B") || b.startsWith("B"))) {
+    // всё ок
+  } else {
+    // обычное правило: должно совпасть значение
+    if(!(a===endOpen || b===endOpen)) return false;
+
+    const isA = v => typeof v==="string" && v.startsWith("A");
+    const isB = v => typeof v==="string" && v.startsWith("B");
+    if(isA(endOpen) && isA(a) && isA(b)) return false;
+    if(isB(endOpen) && isB(a) && isB(b)) return false;
+  }
+
+  const need = desiredHalfFor(choice);
   if(need==='a'){
     if(a!==endOpen && b===endOpen){ [a,b] = [b,a]; }
   } else {
     if(b!==endOpen && a===endOpen){ [a,b] = [b,a]; }
   }
-  if((need==='a' && a!==endOpen) || (need==='b' && b!==endOpen)) return false;
 
   const r = rectOf(pos.orient, pos.x, pos.y);
   return !collidesWithExisting(r);
 }
+
 
 function hasLegalMove(hand){
   const ends = [ { e:endLeft, open:openLeft }, { e:endRight, open:openRight } ];
@@ -673,33 +688,42 @@ function placeAt(whichEnd,tileData,choice){
 function tryPlace(target,data){
   if(!data || !target.classList.contains('dz')) return false;
 
-  const isLeft = target.dataset.end==='L';
-  const choice = target.dataset.k;
-  const endOpen = isLeft ? openLeft : openRight;
+ const isLeft = target.dataset.end==='L';
+const choice = target.dataset.k;
+const endOpen = isLeft ? openLeft : openRight;
 
-  if(!(data.a===endOpen || data.b===endOpen)) return false;
-// Доп. проверка: запрещаем A↔A и B↔B
 const isA = v => typeof v==="string" && v.startsWith("A");
 const isB = v => typeof v==="string" && v.startsWith("B");
-if(isA(endOpen) && isA(data.a) && isA(data.b)) return false;
-if(isB(endOpen) && isB(data.a) && isB(data.b)) return false;
-  const need = desiredHalfFor(choice);
-  let a=data.a, b=data.b, dA=data.displayA, dB=data.displayB;
 
-  if(need==='a'){
-    if(a!==endOpen && b===endOpen){ [a,b]=[b,a]; [dA,dB]=[dB,dA]; }
-  } else {
-    if(b!==endOpen && a===endOpen){ [a,b]=[b,a]; [dA,dB]=[dB,dA]; }
-  }
-  if((need==='a' && a!==endOpen) || (need==='b' && b!==endOpen)) return false;
-
-  if(placeAt(isLeft?'left':'right', {a,b, displayA:dA, displayB:dB}, choice)){
-    const newOpen = (need==='a') ? b : a;
-    if(isLeft) openLeft = newOpen; else openRight = newOpen;
-    return true;
-  }
-  return false;
+// 1) универсальные старты пропускаем без совпадения значения
+let allowed = false;
+if(endOpen === "A*"){
+  allowed = isA(data.a) || isA(data.b);
+} else if(endOpen === "B*"){
+  allowed = isB(data.a) || isB(data.b);
+} else {
+  allowed = (data.a===endOpen || data.b===endOpen) &&
+            !( (isA(endOpen) && isA(data.a) && isA(data.b)) ||
+               (isB(endOpen) && isB(data.a) && isB(data.b)) );
 }
+if(!allowed) return false;
+
+const need = desiredHalfFor(choice);
+let a=data.a, b=data.b, dA=data.displayA, dB=data.displayB;
+
+// 2) разворот только когда конец не универсальный
+if(need==='a'){
+  if(endOpen!=="A*" && endOpen!=="B*" && a!==endOpen && b===endOpen){ [a,b]=[b,a]; [dA,dB]=[dB,dA]; }
+} else {
+  if(endOpen!=="A*" && endOpen!=="B*" && b!==endOpen && a===endOpen){ [a,b]=[b,a]; [dA,dB]=[dB,dA]; }
+}
+
+if(placeAt(isLeft?'left':'right', {a,b, displayA:dA, displayB:dB}, choice)){
+  const newOpen = (need==='a') ? b : a;
+  if(isLeft) openLeft = newOpen; else openRight = newOpen;
+  return true;
+}
+return false;
 
 /* ===========================================================================================
    Fit chain
