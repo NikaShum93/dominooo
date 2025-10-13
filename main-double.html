@@ -581,34 +581,32 @@ for(const side of ends){
   }
   if(!fits) continue;
 
-  const seam=getSeam(side.e);
-  ...
-}
+  const seam = getSeam(side.e);
 
-    const zones={
-      up:    { left:seam.x - DZ_SZ/2, top:seam.y - DZ_SZ*2, dir:'↑', k:'up'    },
-      right: { left:seam.x + DZ_SZ,   top:seam.y - DZ_SZ/2, dir:'→', k:'right' },
-      down:  { left:seam.x - DZ_SZ/2, top:seam.y + DZ_SZ,   dir:'↓', k:'down'  },
-      left:  { left:seam.x - DZ_SZ*2, top:seam.y - DZ_SZ/2, dir:'←', k:'left'  }
-    };
+  const zones={
+    up:    { left:seam.x - DZ_SZ/2, top:seam.y - DZ_SZ*2, dir:'↑', k:'up'    },
+    right: { left:seam.x + DZ_SZ,   top:seam.y - DZ_SZ/2, dir:'→', k:'right' },
+    down:  { left:seam.x - DZ_SZ/2, top:seam.y + DZ_SZ,   dir:'↓', k:'down'  },
+    left:  { left:seam.x - DZ_SZ*2, top:seam.y - DZ_SZ/2, dir:'←', k:'left'  }
+  };
 
-    for(const k of Object.keys(zones)){
-      const pos=getNextPos(side.e,k);
-      if(!pos.orient) continue;
-      const r=rectOf(pos.orient,pos.x,pos.y);
-      if(collidesWithExisting(r)) continue;
+  for(const k of Object.keys(zones)){
+    const pos=getNextPos(side.e,k);
+    if(!pos.orient) continue;
+    const r=rectOf(pos.orient,pos.x,pos.y);
+    if(collidesWithExisting(r)) continue;
 
-      const z=document.createElement('div');
-      z.className='dz active';
-      z.style.left=zones[k].left+'px';
-      z.style.top=zones[k].top+'px';
-      z.dataset.dir=zones[k].dir;
-      z.dataset.end=side.id;
-      z.dataset.k=k;
-      chainZoom.appendChild(z);
-    }
+    const z=document.createElement('div');
+    z.className='dz active';
+    z.style.left=zones[k].left+'px';
+    z.style.top=zones[k].top+'px';
+    z.dataset.dir=zones[k].dir;
+    z.dataset.end=side.id;
+    z.dataset.k=k;
+    chainZoom.appendChild(z);
   }
 }
+
 
 /* ===========================================================================================
    Rules / helpers
