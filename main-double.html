@@ -606,6 +606,18 @@ function canPlaceTileAtEnd(tile, end, choice, endOpen){
   const need = desiredHalfFor(choice); // 'a' | 'b'
   let a = tile.a, b = tile.b;
   if(!(a===endOpen || b===endOpen)) return false;
+  // Универсальные старты: A* стыкуется с любым A, B* стыкуется с любым B
+if(endOpen==="A*" && (a.startsWith("A") || b.startsWith("A"))) {
+  // пропускаем проверку несовместимости
+} else if(endOpen==="B*" && (a.startsWith("B") || b.startsWith("B"))) {
+  // пропускаем проверку несовместимости
+} else {
+  // обычное правило A↔B
+  const isA = v => typeof v==="string" && v.startsWith("A");
+  const isB = v => typeof v==="string" && v.startsWith("B");
+  if(isA(endOpen) && isA(a) && isA(b)) return false;
+  if(isB(endOpen) && isB(a) && isB(b)) return false;
+}
 // Дополнительное правило: A стыкуется только с B и наоборот
 const isA = v => typeof v==="string" && v.startsWith("A");
 const isB = v => typeof v==="string" && v.startsWith("B");
@@ -918,15 +930,20 @@ function startGame(){
   chainZoom.innerHTML='';
   const sx=Math.floor((br().w-TILE_W)/2);
   const sy=Math.floor((br().h-TILE_H)/2);
-  const start=deck.shift() || {a:0, b:0, displayA:'Старт', displayB:'Старт', uid:uid()};
-  const startTile = createTileEl(start.a, start.b, { left:sx, top:sy, orient:'h', displayA:start.displayA, displayB:start.displayB });
-  chainZoom.appendChild(startTile);
+ // делаем специальную стартовую костяшку с универсальными концами
+const start = { a:"A*", b:"B*", displayA:"Старт", displayB:"Старт", uid:uid() };
+const startTile = createTileEl(start.a, start.b, {
+  left:sx, top:sy, orient:'h',
+  displayA:start.displayA, displayB:start.displayB
+});
+chainZoom.appendChild(startTile);
 
-  openLeft = start.a;
-  openRight = start.b;
-  endLeft  = { x:sx, y:sy, orient:'h', dir:-1, el:startTile };
-  endRight = { x:sx, y:sy, orient:'h', dir: 1, el:startTile };
-
+// универсальные концы
+openLeft = start.a;
+openRight = start.b;
+endLeft  = { x:sx, y:sy, orient:'h', dir:-1, el:startTile };
+endRight = { x:sx, y:sy, orient:'h', dir: 1, el:startTile };
+ 
    renderPlayersBar();
   renderHand();
   updateControls();
