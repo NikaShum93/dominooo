@@ -954,21 +954,27 @@ function startGame(){
   const sy=Math.floor((br().h-TILE_H)/2);
  // делаем специальную стартовую костяшку с универсальными концами
 // кладём первую настоящую пару
-const first = deck.shift(); // берём из колоды
-placeAt('center', first, 'right');
-openLeft = first.a;
-openRight = first.b;
-{
-  left:sx, top:sy, orient:'h',
-  displayA:start.displayA, displayB:start.displayB
-});
-chainZoom.appendChild(startTile);
+// стартовая костяшка теперь = первая из колоды
+chainZoom.innerHTML = '';
+const sx = Math.floor((br().w - TILE_W) / 2);
+const sy = Math.floor((br().h - TILE_H) / 2);
 
-// универсальные концы
-openLeft = start.a;
-openRight = start.b;
-endLeft  = { x:sx, y:sy, orient:'h', dir:-1, el:startTile };
-endRight = { x:sx, y:sy, orient:'h', dir: 1, el:startTile };
+const first = deck.shift();
+const firstTile = createTileEl(first.a, first.b, {
+  orient: 'h',
+  left: sx,
+  top: sy,
+  displayA: first.displayA,
+  displayB: first.displayB
+});
+chainZoom.appendChild(firstTile);
+
+// открытые концы = значения первой кости
+openLeft  = first.a;
+openRight = first.b;
+endLeft   = { x: sx, y: sy, orient: 'h', dir: -1, el: firstTile };
+endRight  = { x: sx, y: sy, orient: 'h', dir:  1, el: firstTile };
+
  
    renderPlayersBar();
   renderHand();
