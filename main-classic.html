@@ -363,20 +363,30 @@ function createTileEl(a,b,opts={}){
   el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
 
   const halves=el.getElementsByClassName('half');
-  function fitToHalf(node, container){
-    if(!node) return 12;
-    let best=10;
-    for(let s=40; s>=8; s--){
-      node.style.fontSize = s + "px";
-      node.style.lineHeight = "1.1";
-      node.style.whiteSpace = "nowrap";
-      node.style.textAlign = "center";
-      const fits = node.scrollWidth <= container.clientWidth-6 &&
-                   node.scrollHeight <= container.clientHeight-4;
-      if(fits){ best=s; break; }
+ function fitToHalf(node, container) {
+  if (!node) return 12;
+
+  let best = 10;
+  // начинаем с крупного размера и уменьшаем, пока весь текст помещается по высоте
+  for (let s = 40; s >= 8; s--) {
+    node.style.fontSize = s + "px";
+    node.style.lineHeight = "1.2";
+    node.style.whiteSpace = "normal";     // многострочность разрешена
+    node.style.wordBreak = "normal";
+    node.style.overflowWrap = "break-word";
+    node.style.textAlign = "center";
+
+    const fits =
+      node.scrollWidth <= container.clientWidth &&   // по ширине
+      node.scrollHeight <= container.clientHeight;   // и по высоте
+
+    if (fits) {
+      best = s;
+      break;
     }
-    return best;
   }
+  return best;
+}
 
   const leftEl = halves[0].firstElementChild;
   const rightEl = halves[1].firstElementChild;
