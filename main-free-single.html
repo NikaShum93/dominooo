@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Domino · Classic</title>
+<title>Domino · Free Game</title>
 
 <style>
   :root{
@@ -272,7 +272,8 @@ const previewInner=document.getElementById('tilePreviewInner');
 
 /* Game state */
 let playerNames=[], hands={}, deck=[], currentPlayer=0, passes={};
-
+let dragging = null;   // <— добавить
+let history = [];      // <— уже есть ниже, но безопаснее держать рядом и один раз
 /* ===========================================================================================
    Pan & Zoom
 =========================================================================================== */
@@ -557,18 +558,11 @@ function applyPlaced(end,pos){ end.x=pos.x; end.y=pos.y; end.orient=pos.orient; 
 =========================================================================================== */
 const DZ_SZ = DZ;
 function clearZones(){ chainZoom.querySelectorAll('.dz').forEach(n=>n.remove()); }
-  }
-}
 
 /* ===========================================================================================
    Rules / helpers
 =========================================================================================== */
-function desiredHalfFor(choice){ return (choice==='right' || choice==='down') ? 'a' : 'b'; }
 
-    }
-  }
-  return false;
-}
 /* 🔥 добавляем алиас, чтобы updateControls работал */
 function hasPlayable(hand){
   return hasLegalMove(hand);
@@ -614,7 +608,7 @@ function fitChain(){
   panY=(br().h - (maxY-minY)*s)/2 - minY*s;
   updateTransform();
 }
-addEventListener('resize', ()=>{ fitChain(); if(dragging) renderDirectionalZones(); });
+addEventListener('resize', ()=>{ fitChain(); });
 
 /* ===========================================================================================
    UI: players & hand
