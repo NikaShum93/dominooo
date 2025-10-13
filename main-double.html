@@ -953,8 +953,12 @@ function startGame(){
   const sx=Math.floor((br().w-TILE_W)/2);
   const sy=Math.floor((br().h-TILE_H)/2);
  // делаем специальную стартовую костяшку с универсальными концами
-const start = { a:"A*", b:"B*", displayA:"Старт", displayB:"Старт", uid:uid() };
-const startTile = createTileEl(start.a, start.b, {
+// кладём первую настоящую пару
+const first = deck.shift(); // берём из колоды
+placeAt('center', first, 'right');
+openLeft = first.a;
+openRight = first.b;
+{
   left:sx, top:sy, orient:'h',
   displayA:start.displayA, displayB:start.displayB
 });
