@@ -145,21 +145,22 @@
 
   /* ===== PREVIEW ===== */
   #tilePreview .tile{ width:680px!important; height:260px!important; }
-  #tilePreview .tile b {
+ #tilePreview .tile b {
   font-size: 40px;
   font-weight: 900;
   color: #1c1712;
   text-align: center;
   line-height: 1.2;
-  white-space: normal;   /* разрешаем перенос */
-  word-break: break-word; /* переносим по словам */
-  overflow: auto;        /* если не влезло — скролл */
+  white-space: normal;    /* перенос */
+  word-break: break-word; /* перенос по словам */
+  overflow: auto;         /* скролл если не влезло */
   max-height: 100%;
   padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
 
 #tilePreview .half {
   display:flex;
@@ -368,29 +369,34 @@ function showPreview(a, b){
   const big = document.createElement("div");
   big.className = "tile";
   big.style.position = "static";
-  big.style.width = "680px"; big.style.height = "260px";
+  big.style.width = "680px"; 
+  big.style.height = "260px";
   big.innerHTML = '<div class="half"></div><div class="half"></div>';
   previewInner.appendChild(big);
+
   const halfL = big.querySelector(".half:first-child");
   const halfR = big.querySelector(".half:last-child");
   const isImg = v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
+
   function renderHalf(container, value){
     container.innerHTML="";
-    if(isImg(value)){ const img=document.createElement('img'); img.src=value; container.appendChild(img); return null; }
-    const textEl=document.createElement('b'); textEl.textContent=value; container.appendChild(textEl); return textEl;
+    if(isImg(value)){ 
+      const img=document.createElement('img'); 
+      img.src=value; 
+      container.appendChild(img); 
+    } else {
+      const textEl=document.createElement('b'); 
+      textEl.textContent=value; 
+      container.appendChild(textEl); 
+    }
   }
-  const textEl_L = renderHalf(halfL, a);
-  const textEl_R = renderHalf(halfR, b);
-  const sizeL = fitPreviewText(textEl_L, halfL);
-  const sizeR = fitPreviewText(textEl_R, halfR);
-  if(sizeL && sizeR){
-    const finalSize=Math.min(sizeL,sizeR);
-    textEl_L && (textEl_L.style.fontSize=finalSize+'px');
-    textEl_R && (textEl_R.style.fontSize=finalSize+'px');
-  } else if(sizeL){ textEl_L.style.fontSize=sizeL+'px'; }
-    else if(sizeR){ textEl_R.style.fontSize=sizeR+'px'; }
+
+  renderHalf(halfL, a);
+  renderHalf(halfR, b);
+
   previewWrap.style.display='flex';
 }
+
 function hidePreview(){ previewWrap.style.display='none'; }
 previewWrap.addEventListener('click',hidePreview);
 addEventListener('keydown',e=>{ if(e.key==='Escape') hidePreview(); });
