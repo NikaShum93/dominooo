@@ -124,14 +124,21 @@
   text-align:center;
   line-height:1.1;
 }
-.tile .half img,
-#tilePreview .half img {
+.tile .half img {
   max-width:90%;
   max-height:90%;
   object-fit:contain;
   margin:auto;
   display:block;
   padding:4px; /* можно подогнать отдельно */
+}
+/* ===== ИЗМЕНЕНИЕ #2: Стили изображения ТОЛЬКО для превью ===== */
+#tilePreview .half img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain; /* Не искажать, вписывать целиком */
+  box-sizing: border-box;
+  padding: 8px; /* Отступ от краев */
 }
 
   .tile.hand{ transform:scale(.65); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
@@ -320,8 +327,9 @@ function fitPreviewText(wordEl, container){
   wordEl.style.whiteSpace = "nowrap";
   for (let s = 150; s >= 20; s--){
     wordEl.style.fontSize = s + "px";
-    const fits = wordEl.scrollWidth <= container.clientWidth - 20 &&
-                 wordEl.scrollHeight <= container.clientHeight - 20;
+    /* ===== ИЗМЕНЕНИЕ #1: Уменьшены отступы для подбора более крупного шрифта ===== */
+    const fits = wordEl.scrollWidth <= container.clientWidth - 8 &&
+                 wordEl.scrollHeight <= container.clientHeight - 8;
     if (fits){ best = s; break; }
   }
   return best;
