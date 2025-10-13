@@ -378,18 +378,26 @@ function showPreview(a, b){
   const halfR = big.querySelector(".half:last-child");
   const isImg = v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
 
-  function renderHalf(container, value){
-    container.innerHTML="";
-    if(isImg(value)){ 
-      const img=document.createElement('img'); 
-      img.src=value; 
-      container.appendChild(img); 
-    } else {
-      const textEl=document.createElement('b'); 
-      textEl.textContent=value; 
-      container.appendChild(textEl); 
-    }
+ function renderHalf(container, value){
+  container.innerHTML="";
+  if(isImg(value)){ 
+    const img=document.createElement('img'); 
+    img.src=value; 
+    container.appendChild(img); 
+  } else {
+    const textEl=document.createElement('b'); 
+    textEl.textContent=value; 
+    textEl.style.fontSize = "40px"; 
+    textEl.style.wordBreak = "break-word"; 
+    textEl.style.whiteSpace = "normal"; 
+    textEl.style.overflow = "auto"; 
+    textEl.style.display = "flex";
+    textEl.style.alignItems = "center";
+    textEl.style.justifyContent = "center";
+    container.appendChild(textEl); 
   }
+}
+
 
   renderHalf(halfL, a);
   renderHalf(halfR, b);
