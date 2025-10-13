@@ -1,153 +1,906 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Domino • Free One List</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Domino · Classic</title>
+
 <style>
   :root{
-    --accent:#e6a8ff; --accent2:#ffda8b;
-    --tile:#fffaf5; --tile-edge:#e2c0ff; --tile-shadow:rgba(0,0,0,.25);
+    --accent:#e6a8ff;
+    --accent2:#ffda8b;
+    --tile:#fffaf5;
+    --tile-edge:#e2c0ff;
+    --tile-shadow:rgba(0,0,0,.25);
     --seat-fs:14px;
-    --wood:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%232b1d12'/><stop offset='100%' stop-color='%2354321e'/></linearGradient><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0.2'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.08'/></feComponentTransfer></filter></defs><rect width='512' height='512' fill='url(%23g)'/><rect width='512' height='512' filter='url(%23n)' opacity='.25'/><g opacity='.35' stroke='%2329160d' stroke-width='6'><path d='M0 80h512M0 160h512M0 240h512M0 320h512M0 400h512'/></g></svg>");
   }
-  *{box-sizing:border-box} html,body{height:100%}
-  body{margin:0; font:500 16px Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif; color:#fdf4ff; background:#3b281b; overflow:hidden; display:flex; align-items:center; justify-content:center;}
-  #stage{position:relative; width:960px; height:540px; display:flex; flex-direction:column; align-items:center; background-image:var(--wood); background-repeat:no-repeat; background-size:cover; background-position:center; box-shadow:inset 0 0 80px rgba(0,0,0,.45), inset 0 0 140px rgba(0,0,0,.35); border-radius:12px;}
-  h1{margin:8px 0 6px; font-size:24px; font-weight:900; color:#f2d39a; text-shadow:0 1px 0 #402b16,0 0 18px rgba(0,0,0,.45)}
-  .menu{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:30px; z-index:100000; background:linear-gradient(rgba(32,21,12,.92), rgba(32,21,12,.94)), var(--wood); background-repeat:no-repeat; background-size:cover; background-position:center; box-shadow:inset 0 0 80px rgba(0,0,0,.55); border-radius:12px;}
-  .menu label{color:#f2d39a; font-weight:800} .menu input{padding:8px 12px; width:220px; border-radius:8px; border:2px solid #8c5c2f; background:#fff6e7; color:#2b1a10}
-  .menu button{padding:10px 16px; border-radius:10px; border:2px solid #7a5525; font-weight:900; cursor:pointer; background:linear-gradient(#f1c97a,#e7b85f); color:#2b1a10}
-  .topbar{width:95%; display:flex; align-items:center; justify-content:space-between; gap:10px}
-  .players{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-  .player{padding:6px 12px; border-radius:14px; background:rgba(230,168,255,.15); font-size:12px}
-  .player.active{background:#f2c56a; color:#2b1a10; font-weight:900; box-shadow:0 0 14px #f2c56a}
-  .score{margin-left:4px; font-weight:900}
-  .controls{display:flex; gap:8px}
-  .btn{padding:8px 14px; border-radius:10px; border:2px solid #7a5525; background:linear-gradient(#f1c97a,#e7b85f); color:#2c1a32; font-weight:800}
-  .btn:disabled{opacity:.6; cursor:not-allowed}
-  .board{position:relative; width:95%; height:68%; margin:6px 0; background:radial-gradient(120% 100% at 50% 50%, #3c2a3e, #2e2130 70%) padding-box; border:10px solid transparent; border-radius:18px; border-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><rect width='20' height='20' fill='%2354321e'/><rect x='1' y='1' width='18' height='18' fill='none' stroke='%238c5c2f' stroke-width='1.5'/></svg>") 30 round; box-shadow:0 8px 24px rgba(0,0,0,.45), inset 0 0 18px rgba(0,0,0,.35); overflow:hidden;}
-  .chain{position:relative; width:100%; height:100%}
-  #chainZoom{position:absolute; inset:0; transform-origin:0 0;}
-  .tile{width:200px; height:70px; background:radial-gradient(120% 120% at 20% 20%, rgba(0,0,0,.08), transparent 60%), linear-gradient(#fffdf8,#fff6e7); border:2px solid #e7dbc9; border-radius:12px; display:grid; grid-template-columns:1fr 1fr; position:absolute; box-shadow:0 2px 6px rgba(0,0,0,.35), inset 0 0 0 2px #e0d3bd, inset 0 -10px 20px rgba(0,0,0,.06); overflow:hidden; user-select:none; transition:transform .12s; -webkit-user-drag:element;}
-  .tile:hover{transform:scale(1.04)}
-  .tile .half{display:flex; align-items:center; justify-content:center; padding:0 8px; overflow:hidden; min-width:0;}
-  .tile .half:first-child { border-right: 2px solid #d8c8aa; }
-  .tile b{display:block; line-height:1.05; font-weight:900; color:#1c1712; white-space:nowrap; max-width:100%}
-  .tile.hand{transform:scale(.50); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
-  .dz{position:absolute; width:38px; height:38px; border:2px dashed #b68a3e; border-radius:10px; display:none; background:rgba(255,215,120,.08)}
-  .dz.active{display:block; background:rgba(255,215,120,.28); box-shadow:0 0 16px rgba(255,215,120,.7)}
-  .dz::after{content:attr(data-dir); font-size:11px; color:#2c1a32; font-weight:900; background:#f2c56a; padding:2px 6px; border-radius:8px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%)}
-  .final-overlay{position:absolute; inset:0; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:100000;}
-  .final-message{font-size:48px; font-weight:900; color:#ffe97f; text-shadow:0 0 20px #ff0000, 0 0 40px #ff9900, 0 0 60px #fff; animation:pop 1s ease-out;}
-  @keyframes pop{0%{transform:scale(0.2); opacity:0;}60%{transform:scale(1.2); opacity:1;}100%{transform:scale(1);} }
+
+  *{ box-sizing:border-box; }
+  html, body{ height:100%; margin:0; padding:0; }
+
+  body{
+    font:500 16px Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+    color:#fdf4ff;
+    background:#3b281b;
+    padding:20px;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+  }
+
+  /* ===== STAGE ===== */
+  #stage{
+    background:#2e2130;
+    border-radius:20px;
+    padding:20px;
+    max-width:1200px;
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    box-shadow:0 0 20px rgba(0,0,0,.5);
+  }
+  h1{ margin:8px 0 6px; font-size:24px; font-weight:900; color:#f2d39a; }
+
+  /* ===== MENU ===== */
+  .menu{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    padding:30px;
+    z-index:100000;
+    background:rgba(0,0,0,.8);
+  }
+  /* 🔥 скрытие меню при старте */
+    /* 🔥 скрытие меню при старте */
+  .menu.hidden {
+    display:none !important;
+    visibility:hidden !important;
+    opacity:0 !important;
+    pointer-events:none !important;
+  }
+
+  .menu label{ color:#f2d39a; font-weight:800; }
+  .menu input{
+    padding:8px 12px; width:220px; border-radius:8px; border:2px solid #8c5c2f;
+    background:#fff6e7; color:#2b1a10; margin-top:4px;
+  }
+  .menu button{
+    padding:10px 16px; border-radius:10px; border:2px solid #7a5525;
+    font-weight:900; cursor:pointer; background:linear-gradient(#f1c97a,#e7b85f); color:#2b1a10;
+  }
+  /* имена в столбик */
+  #nameInputs{ display:flex; flex-direction:column; gap:8px; width:260px; align-items:stretch; }
+  .name-row{ display:flex; flex-direction:column; gap:4px; }
+  .name-row label{ color:#f2d39a; font-weight:800; font-size:14px; }
+  .name-row input{ width:100%; }
+
+  /* ===== HUD ===== */
+  .topbar{ width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 20px; }
+  .players{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .player{ padding:6px 12px; border-radius:14px; background:rgba(230,168,255,.15); font-size:12px; }
+  .player.active{ background:#f2c56a; color:#2b1a10; font-weight:900; box-shadow:0 0 14px #f2c56a; }
+  .controls{ display:flex; gap:8px; }
+  .btn{ padding:8px 14px; border-radius:10px; border:2px solid #7a5525; background:linear-gradient(#f1c97a,#e7b85f); color:#2c1a32; font-weight:800; }
+  .btn:disabled{ opacity:.6; cursor:not-allowed; }
+  #turnInfo{ margin:4px 0 6px; color:#ffda8b; font-weight:800; }
+
+  /* ===== BOARD ===== */
+  .board{
+    position:relative; width:100%; flex:1; margin:20px 0; border-radius:16px; background:#1f1521;
+    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 0 18px rgba(0,0,0,.35);
+    overflow:hidden; cursor:grab;
+  }
+  .board.grabbing{ cursor:grabbing; }
+  .chain{ position:relative; width:100%; height:100%; }
+  #chainZoom{ position:absolute; inset:0; transform-origin:0 0; }
+
+  /* ===== TILES ===== */
+  .tile{
+    width:200px; height:70px;
+    background:linear-gradient(#fffdf8,#fff6e7);
+    border:2px solid #e7dbc9; border-radius:12px;
+    display:grid; grid-template-columns:1fr 1fr; position:absolute;
+    box-shadow:0 2px 6px rgba(0,0,0,.35), inset 0 0 0 2px #e0d3bd;
+    overflow:hidden; user-select:none; -webkit-user-drag:element; transition:transform .12s;
+  }
+  .tile:hover{ transform:scale(1.04); }
+  .tile .half{ display:flex; align-items:center; justify-content:center; padding:0 8px; overflow:visible; min-width:0; position:relative; }
+  .tile .half:first-child{ border-right:2px solid #d8c8aa; }
+  .tile.vert{ width:70px; height:200px; grid-template-columns:1fr; grid-template-rows:1fr 1fr; }
+  .tile.vert .half:first-child{ border-right:none; border-bottom:2px solid #d8c8aa; }
+.tile b {
+  display:block;
+  font-weight:900;
+  color:#1c1712;
+  white-space:nowrap;      /* одна строка */
+  overflow:hidden;
+  text-align:center;
+  line-height:1.1;
+}
+.tile .half img {
+  max-width:90%;
+  max-height:90%;
+  object-fit:contain;
+  margin:auto;
+  display:block;
+  padding:4px; /* можно подогнать отдельно */
+}
+/* ===== ИЗМЕНЕНИЕ #2: Стили изображения ТОЛЬКО для превью ===== */
+#tilePreview .half img {
+  width: 250px;
+  height: 250px;
+  object-fit: contain;
+  display: block;
+}
+
+  .tile.hand{ transform:scale(.65); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
+  .tile.hand *{ pointer-events:none; }
+
+  /* ===== PREVIEW ===== */
+  #tilePreview .tile{ width:680px!important; height:260px!important; }
+ #tilePreview .tile b {
+  font-size: 40px;
+  font-weight: 900;
+  color: #1c1712;
+  text-align: center;
+  line-height: 1.2;
+  white-space: normal;    /* перенос */
+  word-break: break-word; /* перенос по словам */
+  overflow: auto;         /* скролл если не влезло */
+  max-height: 100%;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+#tilePreview .half {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+  /* ===== HAND ===== */
+  .hands{ width:100%; display:flex; flex-direction:column; gap:10px; padding:10px 0 20px; }
+  .hand-header{ width:100%; text-align:center; font-weight:900; color:#e9d2a2; }
+  .tray{ width:100%; height:60px; display:flex; gap:8px; align-items:center; overflow-x:auto; padding:8px 10px; border:2px solid #8c5c2f; background:#5a3b21; border-radius:12px; }
+  .tray>.tile{ position:static; }
+
+  /* ===== DROP ZONES ===== */
+  .dz{ position:absolute; width:38px; height:38px; border:2px dashed #b68a3e; border-radius:10px; display:none; background:rgba(255,215,120,.08); }
+  .dz.active{ display:block; background:rgba(255,215,120,.28); box-shadow:0 0 16px rgba(255,215,120,.7); }
+  .dz::after{ content:attr(data-dir); font-size:11px; color:#2c1a32; font-weight:900; background:#f2c56a; padding:2px 6px; border-radius:8px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
+
+  /* ===== WIN OVERLAY ===== */
+  .final-overlay{ position:absolute; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:100000; }
+  .final-message{ font-size:42px; font-weight:900; color:#ffe97f; }
 </style>
 </head>
 <body>
-  <div id="menu">
-    <h1>Domino • Free One List</h1>
-    <label>Игроков: <input type="number" id="playerCount" value="2" min="2" max="4"></label>
-    <div>
-      <input type="text" id="pname0" placeholder="Имя игрока 1">
-      <input type="text" id="pname1" placeholder="Имя игрока 2">
-      <input type="text" id="pname2" placeholder="Имя игрока 3">
-      <input type="text" id="pname3" placeholder="Имя игрока 4">
+
+<div id="stage">
+  <h1 id="title">Domino · Classic</h1>
+
+  <div id="menu" class="menu">
+    <label>Количество игроков:
+      <input type="number" id="playerCount" min="2" max="4" value="2">
+    </label>
+    <div id="nameInputs"></div>
+    <button id="startBtn" type="button">Начать игру</button>
+  </div>
+
+  <div class="topbar">
+    <div id="playersBar" class="players"></div>
+ <div class="controls">
+  <button id="drawBtn" class="btn">Взять</button>
+  <button id="undoBtn" class="btn">Отмена</button>
+  <button id="endBtn" class="btn">Завершить</button>
+  <button id="restartBtn" class="btn">Перезапустить</button>
+</div>
+  </div>
+  <div id="turnInfo"></div>
+
+  <div class="board" id="board">
+    <div class="chain" id="chain">
+      <div id="chainZoom"></div>
     </div>
-    <button onclick="startGame()">Начать игру</button>
   </div>
 
-  <div id="chainZoom"></div>
-  <div id="playersBar"></div>
-  <div id="handBar"></div>
-
-  <div id="finalOverlay" class="final-overlay">
-    <div class="final-message">🎉 Победитель: <span id="winnerName"></span> 🎉</div>
+  <div class="hands">
+    <div id="handHeader" class="hand-header"></div>
+    <div id="tray" class="tray"></div>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+ <div id="finalOverlay" class="final-overlay">
+  <div class="final-message">🎉 Победила дружба! 🎉</div>
+</div>
+</div>
+
+<div id="tilePreview"
+     style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:999999; background:rgba(0,0,0,.6)">
+  <div id="tilePreviewInner"></div>
+</div>
+<canvas id="fireworksCanvas" style="position:fixed; inset:0; z-index:1000000; pointer-events:none; display:none;"></canvas>
+<audio id="winSound" src="win.mp3" preload="auto"></audio>
+
 <script>
-const TILE_W=100, TILE_H=50;
-let deck=[],hands={},scores={},passes={},playerNames=[],currentPlayer=0;
-let openLeft, openRight,endLeft,endRight;
-let freeMode=true; // 🟢 свободная игра
+/* ===========================================================================================
+   Utils & State
+=========================================================================================== */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function br(){ return { w:chainEl.clientWidth, h:chainEl.clientHeight }; }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function getQueryData(){
+  const raw=new URLSearchParams(location.search).get('data');
+  if(!raw) return null;
+  try{ return JSON.parse(decodeURIComponent(raw)); }
+  catch(e){ return null; }
+}
 
-function uid(s){return s+'_'+Math.random().toString(36).substr(2,9);}
-function getQueryData(){ try{const url=new URL(window.location.href); return JSON.parse(decodeURIComponent(url.searchParams.get("data")));}catch(e){return {};} }
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+/* constants */
+const TILE_W=200, TILE_H=70, VERT_W=70, VERT_H=200, GAP=4, DZ=38;
 
-// === Колода (1 список) ===
+/* DOM refs */
+const menuEl=document.getElementById('menu');
+const nameInputsEl=document.getElementById('nameInputs');
+const playerCountEl=document.getElementById('playerCount');
+const startBtn=document.getElementById('startBtn');
+
+const playersBarEl=document.getElementById('playersBar');
+const boardEl=document.getElementById('board');
+const chainEl=document.getElementById('chain');
+const chainZoom=document.getElementById('chainZoom');
+
+const handHeader=document.getElementById('handHeader');
+const trayEl=document.getElementById('tray');
+
+const drawBtn=document.getElementById('drawBtn');
+const restartBtn=document.getElementById('restartBtn');
+const turnInfo=document.getElementById('turnInfo');
+
+const previewWrap=document.getElementById('tilePreview');
+const previewInner=document.getElementById('tilePreviewInner');
+
+/* Game state */
+let playerNames=[], hands={}, deck=[], currentPlayer=0, passes={};
+
+/* ===========================================================================================
+   Pan & Zoom
+=========================================================================================== */
+let scale=1, panX=0, panY=0, isPanning=false, startPanX=0, startPanY=0;
+function updateTransform(){ chainZoom.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`; }
+
+boardEl.addEventListener('mousedown', e=>{
+  if(e.button!==0 || e.target.closest('.dz, .tile')) return;
+  e.preventDefault();
+  isPanning=true;
+  startPanX=e.clientX - panX;
+  startPanY=e.clientY - panY;
+  boardEl.classList.add('grabbing');
+});
+window.addEventListener('mousemove', e=>{
+  if(!isPanning) return;
+  e.preventDefault();
+  panX = e.clientX - startPanX;
+  panY = e.clientY - startPanY;
+  updateTransform();
+});
+window.addEventListener('mouseup', ()=>{
+  if(isPanning){ isPanning=false; boardEl.classList.remove('grabbing'); }
+});
+boardEl.addEventListener('wheel', e=>{
+  e.preventDefault();
+  const rect=boardEl.getBoundingClientRect();
+  const mouseX=e.clientX - rect.left;
+  const mouseY=e.clientY - rect.top;
+  const newScale = clamp(scale * (1 - e.deltaY * 0.001), 0.2, 2.5);
+  panX = mouseX - (mouseX - panX) * (newScale / scale);
+  panY = mouseY - (mouseY - panY) * (newScale / scale);
+  scale = newScale;
+  updateTransform();
+});
+
+/* ===========================================================================================
+   Menu inputs (players)
+=========================================================================================== */
+function renderNameInputs(){
+  nameInputsEl.innerHTML='';
+  const c=parseInt(playerCountEl.value,10)||2;
+  for(let i=0;i<c;i++){
+    const row=document.createElement('div');
+    row.className='name-row';
+    const lab=document.createElement('label');
+    lab.textContent='Имя игрока '+(i+1);
+    const inp=document.createElement('input');
+    inp.placeholder='Имя игрока '+(i+1);
+    inp.id='pname'+i;
+    row.appendChild(lab);
+    row.appendChild(inp);
+    nameInputsEl.appendChild(row);
+  }
+}
+playerCountEl.addEventListener('input',renderNameInputs);
+renderNameInputs();
+
+/* ===========================================================================================
+   Big Preview
+=========================================================================================== */
+function fitPreviewText(wordEl, container) {
+  if (!wordEl) return null;
+
+  wordEl.style.lineHeight = "1.1";
+  wordEl.style.whiteSpace = "nowrap"; // пробуем сначала в одну строку
+  let best = 20;
+
+  for (let s = 150; s >= 20; s--) {
+    wordEl.style.fontSize = s + "px";
+    const fits = wordEl.scrollWidth <= container.clientWidth - 8 &&
+                 wordEl.scrollHeight <= container.clientHeight - 8;
+    if (fits) {
+      best = s; // нашли минимальный подходящий размер
+    }
+  }
+
+  // проверка: если даже на минимальном (20px) текст не влез
+  wordEl.style.fontSize = best + "px";
+  const stillTooBig = wordEl.scrollWidth > container.clientWidth - 8;
+
+  if (stillTooBig) {
+    // включаем перенос
+    wordEl.style.whiteSpace = "normal";
+    wordEl.style.wordBreak = "break-word";
+  }
+
+  return best;
+}
+
+function showPreview(a, b){
+  previewInner.innerHTML = "";
+  const big = document.createElement("div");
+  big.className = "tile";
+  big.style.position = "static";
+  big.style.width = "680px"; 
+  big.style.height = "260px";
+  big.innerHTML = '<div class="half"></div><div class="half"></div>';
+  previewInner.appendChild(big);
+
+  const halfL = big.querySelector(".half:first-child");
+  const halfR = big.querySelector(".half:last-child");
+  const isImg = v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
+
+ function renderHalf(container, value){
+  container.innerHTML="";
+  if(isImg(value)){ 
+    const img=document.createElement('img'); 
+    img.src=value; 
+    container.appendChild(img); 
+  } else {
+    const textEl=document.createElement('b'); 
+    textEl.textContent=value; 
+    textEl.style.fontSize = "40px"; 
+    textEl.style.wordBreak = "break-word"; 
+    textEl.style.whiteSpace = "normal"; 
+    textEl.style.overflow = "auto"; 
+    textEl.style.display = "flex";
+    textEl.style.alignItems = "center";
+    textEl.style.justifyContent = "center";
+    container.appendChild(textEl); 
+  }
+}
+
+
+  renderHalf(halfL, a);
+  renderHalf(halfR, b);
+
+  previewWrap.style.display='flex';
+}
+
+function hidePreview(){ previewWrap.style.display='none'; }
+previewWrap.addEventListener('click',hidePreview);
+addEventListener('keydown',e=>{ if(e.key==='Escape') hidePreview(); });
+
+/* ===========================================================================================
+   Tile factory (DOM)
+=========================================================================================== */
+function createTileEl(a,b,opts={}){
+  const role=opts.role||'chain';
+  const orient=opts.orient||'h';
+  const el=document.createElement('div');
+  el.className='tile '+(orient==='v'?'vert ':'')+(role==='hand'?'hand':'');
+  el.style.left=(opts.left||0)+'px';
+  el.style.top=(opts.top||0)+'px';
+  el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
+
+  const halves=el.getElementsByClassName('half');
+function fitToHalf(node, container) {
+  if (!node) return 12;
+
+  let best = 12;
+  node.style.whiteSpace = "nowrap";  // всегда в одну строку
+  node.style.overflow = "hidden";
+  node.style.textAlign = "center";
+
+  // уменьшаем размер шрифта до тех пор, пока ВЕСЬ текст не влезет
+  for (let s = 40; s >= 8; s--) {
+    node.style.fontSize = s + "px";
+    const fits =
+      node.scrollWidth <= container.clientWidth - 4 &&
+      node.scrollHeight <= container.clientHeight - 4;
+    if (fits) {
+      best = s;
+      break;
+    }
+  }
+  return best;
+}
+
+
+  const leftEl = halves[0].firstElementChild;
+  const rightEl = halves[1].firstElementChild;
+  const isImg=v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
+
+  function renderHalf(containerEl, value){
+    containerEl.innerHTML="";
+    if(isImg(value)){
+      const img=document.createElement('img'); img.src=value; containerEl.appendChild(img);
+      return null;
+    }else{
+      const b=document.createElement('b'); b.textContent=value; containerEl.appendChild(b); return b;
+    }
+  }
+
+  const dispA = opts.displayA ?? a;
+  const dispB = opts.displayB ?? b;
+
+  const leftNode  = renderHalf(halves[0], dispA);
+  const rightNode = renderHalf(halves[1], dispB);
+
+  const leftSize  = leftNode  ? fitToHalf(leftNode,  halves[0]) : 12;
+  const rightSize = rightNode ? fitToHalf(rightNode, halves[1]) : 12;
+  const finalSize = Math.min(leftSize, rightSize);
+
+  if(role === 'hand'){
+    if(leftNode)  leftNode.style.fontSize  = (finalSize * 1.2) + "px";
+    if(rightNode) rightNode.style.fontSize = (finalSize * 1.2) + "px";
+  } else {
+    if(leftNode)  leftNode.style.fontSize  = finalSize + "px";
+    if(rightNode) rightNode.style.fontSize = finalSize + "px";
+  }
+
+  el.addEventListener('click',()=>showPreview(dispA,dispB));
+
+  if(role==='hand'){
+    el.draggable=true;
+    el.addEventListener('dragstart',e=>{
+      dragging={
+        a:opts.aKey ?? a,
+        b:opts.bKey ?? b,
+        displayA: dispA,
+        displayB: dispB,
+        owner:opts.owner,
+        uid:opts.uid
+      };
+      e.dataTransfer.setData('text/plain','domino');
+      hidePreview();
+      renderDirectionalZones();
+    });
+    el.addEventListener('dragend',()=>{
+      dragging=null; clearZones();
+    });
+  }
+
+  return el;
+}
+
+/* ===========================================================================================
+   Collisions
+=========================================================================================== */
+function rectOf(o,x,y){ return { x, y, w:(o==='v'?VERT_W:TILE_W), h:(o==='v'?VERT_H:TILE_H) }; }
+function intersects(r1,r2){ return !(r2.x>=r1.x+r1.w || r2.x+r2.w<=r1.x || r2.y>=r1.y+r1.h || r2.y+r2.h<=r1.y); }
+function collidesWithExisting(r){
+  for(const t of chainZoom.querySelectorAll('.tile:not(.hand)')){
+    const w=t.classList.contains('vert')?VERT_W:TILE_W;
+    const h=t.classList.contains('vert')?VERT_H:TILE_H;
+    const r2={ x:parseInt(t.style.left||0), y:parseInt(t.style.top||0), w, h };
+    if(intersects(r,r2)) return true;
+  }
+  return false;
+}
+
+/* ===========================================================================================
+   Ends & positioning
+=========================================================================================== */
+function getSeam(end){
+  if(end.orient==='h'){
+    return end.dir===1
+      ? {x:end.x + TILE_W,     y:end.y + TILE_H/2}
+      : {x:end.x,              y:end.y + TILE_H/2};
+  } else {
+    return end.dir===1
+      ? {x:end.x + VERT_W/2,   y:end.y + VERT_H}
+      : {x:end.x + VERT_W/2,   y:end.y};
+  }
+}
+function getNextPos(end, choice){
+  let x,y,orient,nextDir;
+  if(end.orient==='h'){
+    const seamX = end.dir===1 ? end.x + TILE_W : end.x;
+    switch(choice){
+      case 'right': x=seamX + GAP;           y=end.y;                 orient='h'; nextDir= 1; break;
+      case 'left':  x=seamX - TILE_W - GAP;  y=end.y;                 orient='h'; nextDir=-1; break;
+      case 'down':  x=seamX - VERT_W/2;      y=end.y + TILE_H + GAP;  orient='v'; nextDir= 1; break;
+      case 'up':    x=seamX - VERT_W/2;      y=end.y - VERT_H - GAP;  orient='v'; nextDir=-1; break;
+    }
+  } else {
+    const seamY = end.dir===1 ? end.y + VERT_H : end.y;
+    switch(choice){
+      case 'up':    x=end.x;                 y=seamY - VERT_H - GAP;  orient='v'; nextDir=-1; break;
+      case 'down':  x=end.x;                 y=seamY + GAP;           orient='v'; nextDir= 1; break;
+      case 'right': x=end.x + VERT_W + GAP;  y=seamY - TILE_H/2;      orient='h'; nextDir= 1; break;
+      case 'left':  x=end.x - TILE_W - GAP;  y=seamY - TILE_H/2;      orient='h'; nextDir=-1; break;
+    }
+  }
+  return { x,y,orient,nextDir };
+}
+function applyPlaced(end,pos){ end.x=pos.x; end.y=pos.y; end.orient=pos.orient; end.dir=pos.nextDir; }
+
+/* ===========================================================================================
+   Drop zones
+=========================================================================================== */
+const DZ_SZ = DZ;
+function clearZones(){ chainZoom.querySelectorAll('.dz').forEach(n=>n.remove()); }
+  }
+}
+
+/* ===========================================================================================
+   Rules / helpers
+=========================================================================================== */
+function desiredHalfFor(choice){ return (choice==='right' || choice==='down') ? 'a' : 'b'; }
+
+    }
+  }
+  return false;
+}
+/* 🔥 добавляем алиас, чтобы updateControls работал */
+function hasPlayable(hand){
+  return hasLegalMove(hand);
+}
+/* ===========================================================================================
+   Placing / autorotate
+=========================================================================================== */
+function placeAt(whichEnd,tileData,choice){
+  const end=(whichEnd==='left')?endLeft:endRight;
+  const pos=getNextPos(end,choice);
+  const r=rectOf(pos.orient,pos.x,pos.y);
+  if(!pos.orient || collidesWithExisting(r)) return false;
+
+  const newTile = createTileEl(
+    tileData.a, tileData.b,
+    { orient:pos.orient, left:pos.x, top:pos.y, displayA:tileData.displayA, displayB:tileData.displayB }
+  );
+  chainZoom.appendChild(newTile);
+
+  applyPlaced(end,pos);
+  end.el = newTile;
+  return true;
+}
+
+/* ===========================================================================================
+   Fit chain
+=========================================================================================== */
+function fitChain(){
+  const tiles=[...chainZoom.querySelectorAll('.tile:not(.hand)')];
+  if(!tiles.length){ scale=1; panX=0; panY=0; updateTransform(); return; }
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+  for(const t of tiles){
+    const x=parseInt(t.style.left||0), y=parseInt(t.style.top||0);
+    const w=t.classList.contains('vert')?VERT_W:TILE_W;
+    const h=t.classList.contains('vert')?VERT_H:TILE_H;
+    minX=Math.min(minX,x); minY=Math.min(minY,y);
+    maxX=Math.max(maxX,x+w); maxY=Math.max(maxY,y+h);
+  }
+  const pad=20;
+  const s=Math.min(1,(br().w-pad)/(maxX-minX),(br().h-pad)/(maxY-minY));
+  scale=s;
+  panX=(br().w - (maxX-minX)*s)/2 - minX*s;
+  panY=(br().h - (maxY-minY)*s)/2 - minY*s;
+  updateTransform();
+}
+addEventListener('resize', ()=>{ fitChain(); if(dragging) renderDirectionalZones(); });
+
+/* ===========================================================================================
+   UI: players & hand
+=========================================================================================== */
+function renderPlayersBar() {
+  playersBarEl.innerHTML = '';
+  for (let i = 0; i < playerNames.length; i++) {
+    const el = document.createElement('div');
+    el.className = 'player' + (i === currentPlayer ? ' active' : '');
+    el.textContent = playerNames[i] || `Игрок ${i+1}`;
+    playersBarEl.appendChild(el);
+  }
+  playersBarEl.style.display = "flex"; // гарантируем, что видно
+}
+
+function renderHand(){
+  handHeader.textContent = `${playerNames[currentPlayer]}: (${(hands[currentPlayer]||[]).length} костяшек)`;
+  trayEl.innerHTML='';
+  for(const t of (hands[currentPlayer]||[])){
+    const el=createTileEl(
+      t.a, t.b,
+      { role:'hand', owner:currentPlayer, uid:t.uid, orient:'h', draggable:true, displayA:t.displayA, displayB:t.displayB, aKey:t.a, bKey:t.b }
+    );
+    trayEl.appendChild(el);
+  }
+}
+
+function updateControls(){
+  [...playersBarEl.getElementsByClassName('player')]
+    .forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer));
+
+  turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
+
+  const currentHand = hands[currentPlayer] || [];
+  const playable = hasLegalMove(currentHand); // проверка, есть ли ход
+
+  if (playable) {
+    // есть куда ходить → кнопки выключены
+    drawBtn.disabled = true;
+    skipBtn.disabled = true;
+  } else {
+    // ходов нет
+    if (deck.length > 0) {
+      // можно взять из колоды
+      drawBtn.disabled = false;
+      skipBtn.disabled = true;
+    } else {
+      // колода пуста → можно только пропустить
+      drawBtn.disabled = true;
+      skipBtn.disabled = false;
+    }
+  }
+}
+
+
+/* ===========================================================================================
+   Fireworks + Sound
+=========================================================================================== */
+const fwCanvas = document.getElementById('fireworksCanvas');
+const fwCtx = fwCanvas.getContext('2d');
+const winSound = document.getElementById('winSound');
+let fwParticles = []; let fwRunning = false;
+function resizeFW(){ fwCanvas.width = window.innerWidth; fwCanvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeFW); resizeFW();
+function launchFirework(){
+  const colors = ["#ff4d6d","#ffd93d","#00f5d4","#9d4edd","#f72585","#4cc9f0"];
+  const x = Math.random() * fwCanvas.width; const y = Math.random() * fwCanvas.height/2;
+  for(let i=0;i<100;i++){
+    fwParticles.push({ x, y, angle: Math.random()*2*Math.PI, speed: Math.random()*5+2, life: 100, color: colors[Math.floor(Math.random()*colors.length)] });
+  }
+}
+function updateFW(){
+  fwCtx.clearRect(0,0,fwCanvas.width,fwCanvas.height);
+  fwParticles.forEach(p=>{
+    p.x += Math.cos(p.angle)*p.speed; p.y += Math.sin(p.angle)*p.speed; p.life -= 2;
+    fwCtx.fillStyle = p.color; fwCtx.globalAlpha = Math.max(p.life/100,0);
+    fwCtx.beginPath(); fwCtx.arc(p.x,p.y,2,0,Math.PI*2); fwCtx.fill();
+  });
+  fwParticles = fwParticles.filter(p=>p.life>0);
+  if(fwRunning) requestAnimationFrame(updateFW);
+}
+function startFireworks(){
+  fwCanvas.style.display="block"; fwRunning=true;
+  if (winSound){ winSound.currentTime = 0; winSound.play().catch(()=>{}); }
+  setInterval(launchFirework,600); updateFW();
+}
+
+/* ===========================================================================================
+   Deck (from data) + default
+=========================================================================================== */
 function buildDeckFromData(d){
-  const out=[], A=(d&&Array.isArray(d.listA))?d.listA:[];
+  const out=[];
+  const A = (d && Array.isArray(d.listA)) ? d.listA : [];
   if(A.length){
-    for(let i=0;i<A.length;i++)
-      for(let j=i;j<A.length;j++)
-        out.push({a:A[i], b:A[j], uid:uid("A"+i+"_"+j)});
+    for(let i=0;i<A.length;i++){
+      out.push({
+        a: i, b: i,
+        displayA: A[i], displayB: A[i],
+        uid: uid()
+      });
+    }
   }
   return out;
 }
 
-// === Игра ===
+
+function makeDefaultDeck(){
+  const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
+  const out=[];
+  for(let i=0;i<F.length;i++){
+    for(let j=i;j<F.length;j++){
+      out.push({ a:i, b:j, displayA:F[i], displayB:F[j], uid:uid() });
+    }
+  }
+  return out;
+}
+
+/* оценка единого размера шрифта — по отображаемым словам/картинкам (только текст) */
+function computeUniformSize(deck){
+  const words=[];
+  for(const t of deck){
+    if(typeof t.displayA==='string' && !/^https?:\/\//i.test(t.displayA)) words.push(t.displayA);
+    if(typeof t.displayB==='string' && !/^https?:\/\//i.test(t.displayB)) words.push(t.displayB);
+  }
+  if(!words.length) return;
+
+  const meas=document.createElement('div');
+  meas.style.cssText=`position:fixed;left:-9999px;top:-9999px;width:${TILE_W/2-24}px;white-space:nowrap;font-weight:900;font-family:Inter,system-ui,sans-serif;`;
+  document.body.appendChild(meas);
+  let min=30;
+  for(const w of words){
+    let s=30; meas.style.fontSize=s+'px'; meas.textContent=w;
+    while(s>10 && meas.scrollWidth>meas.clientWidth){ s--; meas.style.fontSize=s+'px'; }
+    min=Math.min(min,s);
+  }
+  document.body.removeChild(meas);
+  // если хочешь использовать min где-то глобально — можно сохранить
+}
+
+/* ===========================================================================================
+   Game flow
+=========================================================================================== */
+function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderPlayersBar(); renderHand(); updateControls(); } document.getElementById("playersBar").style.display = "flex";
+
+/* ===========================================================================================
+   Start game
+=========================================================================================== */
 function startGame(){
-  const data=getQueryData()||{};
-  playerNames.length=0;
-  const c=Math.max(2,Math.min(4,parseInt(document.getElementById("playerCount").value)||2));
-  for(let i=0;i<c;i++){playerNames.push((document.getElementById("pname"+i)?.value||"").trim()||("Игрок "+(i+1)));}
-  deck=buildDeckFromData(data); shuffle(deck);
+  const n=Math.max(2,Math.min(4,parseInt(playerCountEl.value)||2));
 
-  scores={}; passes={}; hands={}; currentPlayer=0;
-  for(let k=0;k<c;k++){hands[k]=[];scores[k]=0;passes[k]=0;}
-  for(let r=0;r<5;r++)for(let j=0;j<c;j++)if(deck.length)hands[j].push(deck.shift());
-
-  let start=deck.shift(); if(!start)start={a:"Старт",b:"Старт",uid:uid("S")};
-  chainZoom.innerHTML="";
-  const sx=300,sy=200;
-  const tile=createTileEl(start.a,start.b,{left:sx,top:sy});
-  chainZoom.appendChild(tile);
-
-  openLeft=start.a; openRight=start.b;
-  endLeft={x:sx,y:sy,dir:-1,orient:"h",el:tile};
-  endRight={x:sx,y:sy,dir:1,orient:"h",el:tile};
-
-  renderPlayersBar(); renderHand();
-  document.getElementById("menu").style.display="none";
-}
-
-function createTileEl(a,b,pos){
-  const d=document.createElement("div");
-  d.className="tile"; d.style.left=pos.left+"px"; d.style.top=pos.top+"px";
-  d.innerHTML=`<span>${a}</span>|<span>${b}</span>`;
-  return d;
-}
-
-// === Отображение ===
-function renderPlayersBar(){
-  let h=""; for(let i=0;i<playerNames.length;i++){
-    h+=`<b>${playerNames[i]}</b> (${hands[i].length} кост.) `;
+  // names
+  playerNames=[];
+  for(let i=0;i<n;i++){
+    playerNames.push((document.getElementById('pname'+i)?.value||'').trim()||('Игрок '+(i+1)));
   }
-  document.getElementById("playersBar").innerHTML=h;
-}
-function renderHand(){
-  let h=""; const arr=hands[currentPlayer]||[];
-  for(const t of arr){
-    h+=`<button>${t.a}|${t.b}</button>`;
+
+  // deck — сначала из ?data=listA, иначе дефолт
+  const data = getQueryData() || {};
+  deck = buildDeckFromData(data);
+  if(!deck.length){ deck = makeDefaultDeck(); }
+  shuffle(deck);
+
+  // шрифт под все слова (опционально)
+  computeUniformSize(deck);
+
+  // reset hands/pass
+  hands={}; passes={}; currentPlayer=0;
+  for(let i=0;i<n;i++){ hands[i]=[]; passes[i]=0; }
+
+  // раздача 7 костяшек
+  for(let r=0;r<7;r++){
+    for(let i=0;i<n;i++){
+      if(!deck.length) break;
+      hands[i].push(deck.shift());
+    }
   }
-  document.getElementById("handBar").innerHTML=h;
+
+  // стартовая на поле
+  chainZoom.innerHTML='';
+  const sx=Math.floor((br().w-TILE_W)/2);
+  const sy=Math.floor((br().h-TILE_H)/2);
+  const start=deck.shift() || {a:0, b:0, displayA:'Старт', displayB:'Старт', uid:uid()};
+  const startTile = createTileEl(start.a, start.b, { left:sx, top:sy, orient:'h', displayA:start.displayA, displayB:start.displayB });
+  chainZoom.appendChild(startTile);
+
+  openLeft = start.a;
+  openRight = start.b;
+  endLeft  = { x:sx, y:sy, orient:'h', dir:-1, el:startTile };
+  endRight = { x:sx, y:sy, orient:'h', dir: 1, el:startTile };
+
+   renderPlayersBar();
+  renderHand();
+  updateControls();
+  fitChain();
+
+  // --- ЖЁСТКОЕ скрытие меню ---
+  menuEl.classList.add('hidden');
+  menuEl.setAttribute('aria-hidden', 'true');
+  menuEl.style.display = 'none';
+  menuEl.style.visibility = 'hidden';
+  menuEl.style.opacity = '0';
+  menuEl.style.pointerEvents = 'none';
+  // ----------------------------
+
+  document.getElementById('title').textContent = 'Domino · Classic';
 }
 
-// === Завершение ===
-function endByWinner(i){
-  const name=playerNames[i];
-  document.getElementById("winnerName").textContent=name;
-  document.getElementById("finalOverlay").style.display="flex";
-  const winSound=new Audio("win.mp3"); winSound.play();
-  if(window.confetti){
-    const duration=3*1000,end=Date.now()+duration;
-    (function frame(){
-      confetti({particleCount:5,angle:60,spread:55,origin:{x:0}});
-      confetti({particleCount:5,angle:120,spread:55,origin:{x:1}});
-      if(Date.now()<end)requestAnimationFrame(frame);
-    })();
+/* ===========================================================================================
+   Buttons & DnD
+=========================================================================================== */
+drawBtn.addEventListener('click', ()=>{
+  const hand = hands[currentPlayer] || [];
+  if (!deck.length) return;
+  hand.push(deck.shift());
+  hands[currentPlayer] = hand;
+  renderHand();
+  updateControls();
+});
+
+document.getElementById("undoBtn").addEventListener("click", ()=>{
+  const last = history.pop();
+  if(!last) return;
+
+  if(last.el && last.el.parentNode){
+    last.el.parentNode.removeChild(last.el);
   }
-}
+
+  hands[last.player].push(last.tile);
+  currentPlayer = last.player;
+
+  renderPlayersBar();
+  renderHand();
+  updateControls();
+});
+
+document.getElementById("endBtn").addEventListener("click", ()=>{
+  document.getElementById("finalOverlay").style.display = "flex";
+});
+
+restartBtn.addEventListener('click', ()=>location.reload());
+startBtn.addEventListener('click', startGame);
+
+addEventListener('dragover', e=>{ if(dragging) e.preventDefault(); });
+
+let history = []; // стек для отмены
+
+addEventListener('drop', e=>{
+  if(!dragging) return;
+  e.preventDefault();
+
+  const rect = boardEl.getBoundingClientRect();
+  const x = e.clientX - rect.left - TILE_W/2;
+  const y = e.clientY - rect.top - TILE_H/2;
+
+  const newTile = createTileEl(
+    dragging.a, dragging.b,
+    { left:x, top:y, orient:'h', displayA:dragging.displayA, displayB:dragging.displayB }
+  );
+  chainZoom.appendChild(newTile);
+
+  // сохранить в историю
+  history.push({
+    player: dragging.owner,
+    tile: dragging,
+    el: newTile
+  });
+
+  // убрать из руки
+  const arr=hands[dragging.owner]||[];
+  hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid);
+  renderHand();
+
+  dragging=null;
+});
+
+addEventListener('mousemove', ()=>{ if(dragging) renderDirectionalZones(); });
+
+/* Safety init */
+(function(){
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', ()=>{ renderNameInputs(); });
+  } else {
+    renderNameInputs();
+  }
+})();
 </script>
 </body>
 </html>
