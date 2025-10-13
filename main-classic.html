@@ -119,14 +119,11 @@
   display:block;
   font-weight:900;
   color:#1c1712;
-  white-space:normal;       /* ← переносы разрешены */
-  word-break:break-word;    /* ← переносим длинные слова */
-  overflow:visible;         /* ← ничего не режем */
-  text-align:center;        /* центрируем */
-  line-height:1.2;          /* адекватный интервал */
+  white-space:nowrap;      /* одна строка */
+  overflow:hidden;
+  text-align:center;
+  line-height:1.1;
 }
-
-
 .tile .half img,
 #tilePreview .half img {
   max-width:90%;
@@ -377,20 +374,17 @@ function createTileEl(a,b,opts={}){
 function fitToHalf(node, container) {
   if (!node) return 12;
 
-  let best = 10;
+  let best = 12;
+  node.style.whiteSpace = "nowrap";  // всегда в одну строку
+  node.style.overflow = "hidden";
+  node.style.textAlign = "center";
+
+  // уменьшаем размер шрифта до тех пор, пока ВЕСЬ текст не влезет
   for (let s = 40; s >= 8; s--) {
     node.style.fontSize = s + "px";
-    node.style.lineHeight = "1.2";
-    node.style.whiteSpace = "normal";     // ← разрешаем многострочность
-    node.style.wordBreak = "break-word";  // ← перенос слов если длинные
-    node.style.overflow = "visible";      
-    node.style.textOverflow = "clip";     
-    node.style.textAlign = "center";
-
     const fits =
-      node.scrollWidth <= container.clientWidth &&
-      node.scrollHeight <= container.clientHeight;
-
+      node.scrollWidth <= container.clientWidth - 4 &&
+      node.scrollHeight <= container.clientHeight - 4;
     if (fits) {
       best = s;
       break;
@@ -398,6 +392,7 @@ function fitToHalf(node, container) {
   }
   return best;
 }
+
 
   const leftEl = halves[0].firstElementChild;
   const rightEl = halves[1].firstElementChild;
