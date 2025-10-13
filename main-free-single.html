@@ -680,30 +680,28 @@ function startFireworks(){
 =========================================================================================== */
 function buildDeckFromData(d){
   const out=[];
-  const A = (d && Array.isArray(d.listA)) ? d.listA : [];
-  if(A.length){
-    for(let i=0;i<A.length;i++){
-      out.push({
-        a: i, b: i,
-        displayA: A[i], displayB: A[i],
-        uid: uid()
-      });
-    }
+  const raw = (d && Array.isArray(d.listA)) ? d.listA : [];
+  const A = [...new Set(raw)]; // ✅ только уникальные значения
+  for(let i=0;i<A.length;i++){
+    out.push({
+      a:i, b:i,
+      displayA:A[i], displayB:A[i],
+      uid:uid()
+    });
   }
   return out;
 }
-
 
 function makeDefaultDeck(){
   const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
+  const uniq=[...new Set(F)]; // ✅ только уникальные
   const out=[];
-  for(let i=0;i<F.length;i++){
-    for(let j=i;j<F.length;j++){
-      out.push({ a:i, b:j, displayA:F[i], displayB:F[j], uid:uid() });
-    }
+  for(let i=0;i<uniq.length;i++){
+    out.push({ a:i, b:i, displayA:uniq[i], displayB:uniq[i], uid:uid() }); // по ОДНОМУ тайлу на значение
   }
   return out;
 }
+
 
 /* оценка единого размера шрифта — по отображаемым словам/картинкам (только текст) */
 function computeUniformSize(deck){
@@ -767,18 +765,7 @@ function startGame(){
 
   // стартовая на поле
   chainZoom.innerHTML='';
-  const sx=Math.floor((br().w-TILE_W)/2);
-  const sy=Math.floor((br().h-TILE_H)/2);
-  const start=deck.shift() || {a:0, b:0, displayA:'Старт', displayB:'Старт', uid:uid()};
-  const startTile = createTileEl(start.a, start.b, { left:sx, top:sy, orient:'h', displayA:start.displayA, displayB:start.displayB });
-  chainZoom.appendChild(startTile);
-
-  openLeft = start.a;
-  openRight = start.b;
-  endLeft  = { x:sx, y:sy, orient:'h', dir:-1, el:startTile };
-  endRight = { x:sx, y:sy, orient:'h', dir: 1, el:startTile };
-
-   renderPlayersBar();
+    renderPlayersBar();
   renderHand();
   updateControls();
   fitChain();
