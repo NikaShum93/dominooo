@@ -276,6 +276,7 @@ let dragging = null;   // <— добавить
 let history = [];      // <— уже есть ниже, но безопаснее держать рядом и один раз
   let endLeft = null, endRight = null;   // концы цепочки
 const DZ_SZ = DZ;                      // размер зоны (используем DZ из констант)
+  let openLeft = null, openRight = null;  // открытые значения концов (на будущее)
 /* ===========================================================================================
    Pan & Zoom
 =========================================================================================== */
@@ -559,7 +560,7 @@ function applyPlaced(end,pos){ end.x=pos.x; end.y=pos.y; end.orient=pos.orient; 
 /* ===========================================================================================
    Drop zones
 =========================================================================================== */
-const DZ_SZ = DZ;
+
 function clearZones(){ chainZoom.querySelectorAll('.dz').forEach(n=>n.remove()); }
 function renderDirectionalZones(){
   clearZones();
@@ -623,10 +624,7 @@ function renderDirectionalZones(){
    Rules / helpers
 =========================================================================================== */
 
-/* 🔥 добавляем алиас, чтобы updateControls работал */
-function hasPlayable(hand){
-  return hasLegalMove(hand);
-}
+
 /* ===========================================================================================
    Placing / autorotate
 =========================================================================================== */
@@ -924,7 +922,7 @@ addEventListener('drop', e=>{
   renderDirectionalZones(); // показать свежие зоны
 });
 
-
+addEventListener('mousemove', ()=>{ if(dragging) renderDirectionalZones(); });
 /* Safety init */
 (function(){
   if(document.readyState==='loading'){
