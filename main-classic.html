@@ -134,11 +134,10 @@
 }
 /* ===== ИЗМЕНЕНИЕ #2: Стили изображения ТОЛЬКО для превью ===== */
 #tilePreview .half img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain; /* Не искажать, вписывать целиком */
-  box-sizing: border-box;
-  padding: 8px; /* Отступ от краев */
+  width: 250px;
+  height: 250px;
+  object-fit: contain;
+  display: block;
 }
 
   .tile.hand{ transform:scale(.65); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
