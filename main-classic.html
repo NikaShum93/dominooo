@@ -145,7 +145,22 @@
 
   /* ===== PREVIEW ===== */
   #tilePreview .tile{ width:680px!important; height:260px!important; }
-  #tilePreview .tile b{ font-size:inherit; text-align:center; white-space:normal; word-break:keep-all; }
+  #tilePreview .tile b {
+  font-size: 40px;
+  font-weight: 900;
+  color: #1c1712;
+  text-align: center;
+  line-height: 1.2;
+  white-space: normal;   /* разрешаем перенос */
+  word-break: break-word; /* переносим по словам */
+  overflow: auto;        /* если не влезло — скролл */
+  max-height: 100%;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 #tilePreview .half {
   display:flex;
   justify-content:center;
