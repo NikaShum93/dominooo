@@ -886,17 +886,42 @@ document.getElementById("undoBtn").addEventListener("click", ()=>{
   const last = history.pop();
   if(!last) return;
 
+  // 1) убрать с поля выложенную плитку
   if(last.el && last.el.parentNode){
     last.el.parentNode.removeChild(last.el);
   }
 
-  hands[last.player].push(last.tile);
+  // 2) вернуть состояние концов, как было ДО хода
+  // (если это была первая плитка — prevEnds.left/right будут null)
+  if (last.prevEnds) {
+    endLeft  = last.prevEnds.left  ? { ...last.prevEnds.left  } : null;
+    endRight = last.prevEnds.right ? { ...last.prevEnds.right } : null;
+  } else {
+    endLeft = endRight = null;
+  }
+
+  // 3) вернуть плитку в руку того игрока, кто ходил
+  hands[last.player].push({
+    a: last.tile.a,
+    b: last.tile.b,
+    displayA: last.tile.displayA,
+    displayB: last.tile.displayB,
+    uid: last.tile.uid
+  });
+
+  // 4) вернуть ход этому игроку (важно!)
   currentPlayer = last.player;
 
+  // 5) перерисовать всё и обновить доступность кнопок
   renderPlayersBar();
   renderHand();
   updateControls();
+
+  // 6) перерисовать зоны (если игрок держит плитку — зон не будет; просто очистим)
+  clearZones();
+  renderDirectionalZones();
 });
+
 
 document.getElementById("endBtn").addEventListener("click", ()=>{
   document.getElementById("finalOverlay").style.display = "flex";
@@ -947,7 +972,23 @@ addEventListener('drop', e=>{
   renderHand();
 
   // история (для Undo при желании)
-  history.push({ player: dragging.owner, tile: dragging, el: placedEl });
+  // история (для корректного Undo)
+function cloneEnd(e){
+  if(!e) return null;
+  return { x:e.x, y:e.y, orient:e.orient, dir:e.dir, el:e.el };
+}
+history.push({
+  type: 'place',
+  player: dragging.owner,
+  tile: { ...dragging },   // сохраняем значения плитки
+  el: placedEl,
+  // снимок концов до размещения этой костяшки
+  prevEnds: {
+    left:  cloneEnd(endLeft),
+    right: cloneEnd(endRight)
+  }
+});
+
 
   dragging = null;
   updateControls();
