@@ -266,6 +266,11 @@ const trayEl=document.getElementById('tray');
 const drawBtn=document.getElementById('drawBtn');
 const restartBtn=document.getElementById('restartBtn');
 const turnInfo=document.getElementById('turnInfo');
+const deckInfo = document.createElement('div');
+deckInfo.style.marginLeft = 'auto';
+deckInfo.style.fontWeight = '800';
+deckInfo.style.color = '#ffda8b';
+document.querySelector('.topbar').appendChild(deckInfo);
 
 const previewWrap=document.getElementById('tilePreview');
 const previewInner=document.getElementById('tilePreviewInner');
@@ -579,7 +584,7 @@ function renderDirectionalZones(){
     z.dataset.end = 'C';     // центр
     z.dataset.k   = 'right'; // старт горизонтально
     z.dataset.dir = '●';
-
+z.dataset.dir = '●'; 
     chainZoom.appendChild(z);
 
     // подготовим концы (пока без el)
@@ -603,23 +608,28 @@ function renderDirectionalZones(){
     const e = side.e; if(!e) continue;
 
     const seam = getSeam(e); // точка «шва»
-    for(const k of ['up','down','left','right']){
-      const pos = getNextPos(e, k);
-      if(!pos.orient) continue;
+  for (const k of ['up','down','left','right']) {
+  const pos = getNextPos(e, k);
+  if (!pos.orient) continue;
 
-      // не рисуем зону, если там пересечение
-      const r = rectOf(pos.orient, pos.x, pos.y);
-      if(collidesWithExisting(r)) continue;
+  const r = rectOf(pos.orient, pos.x, pos.y);
+  if (collidesWithExisting(r)) continue;
 
-      const z = document.createElement('div');
-      z.className = 'dz active';
-      z.style.left = (seam.x - DZ/2) + 'px';
-      z.style.top  = (seam.y - DZ/2) + 'px';
-      z.dataset.end = side.id; // L/R
-      z.dataset.k   = k;       // направление
-      z.dataset.dir = k; // чтобы в бэйдже что-то было (up/down/left/right)
-      chainZoom.appendChild(z);
-    }
+  const z = document.createElement('div');
+  z.className = 'dz active';
+
+  // Разносим зоны вокруг шва, чтобы они не накладывались
+  if (k === 'up')    { z.style.left = (seam.x - DZ/2) + 'px'; z.style.top = (seam.y - DZ*2) + 'px'; }
+  if (k === 'down')  { z.style.left = (seam.x - DZ/2) + 'px'; z.style.top = (seam.y + DZ)   + 'px'; }
+  if (k === 'left')  { z.style.left = (seam.x - DZ*2) + 'px'; z.style.top = (seam.y - DZ/2) + 'px'; }
+  if (k === 'right') { z.style.left = (seam.x + DZ)   + 'px'; z.style.top = (seam.y - DZ/2) + 'px'; }
+
+  z.dataset.end = side.id; // L/R
+  z.dataset.k   = k;
+  z.dataset.dir = ({up:'↑',down:'↓',left:'←',right:'→'})[k]; // красивый бейдж
+
+  chainZoom.appendChild(z);
+}
   }
 }
 
@@ -700,8 +710,16 @@ function renderHand(){
 function updateControls(){
   [...playersBarEl.getElementsByClassName('player')]
     .forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer));
+
   turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
+
+  // остаток колоды
+  deckInfo.textContent = `Колода: ${deck.length}`;
+
+  // включаем/выключаем только по факту наличия карт
+  drawBtn.disabled = deck.length === 0;
 }
+
 
 
 /* ===========================================================================================
@@ -815,12 +833,19 @@ function startGame(){
   for(let i=0;i<n;i++){ hands[i]=[]; passes[i]=0; }
 
   // раздача 7 костяшек
-  for(let r=0;r<7;r++){
-    for(let i=0;i<n;i++){
-      if(!deck.length) break;
-      hands[i].push(deck.shift());
-    }
+ // раздача: не больше, чем позволяет колода
+const MAX_HAND = 7;
+const perPlayer = Math.min(
+  MAX_HAND,
+  Math.floor(deck.length / n)  // честно делим колоду между игроками
+);
+for (let r = 0; r < perPlayer; r++) {
+  for (let i = 0; i < n; i++) {
+    if (!deck.length) break;
+    hands[i].push(deck.shift());
   }
+}
+
 
   // стартовая на поле
 chainZoom.innerHTML='';
@@ -925,10 +950,12 @@ addEventListener('drop', e=>{
   history.push({ player: dragging.owner, tile: dragging, el: placedEl });
 
   dragging = null;
+  updateControls();
   clearZones();
   renderDirectionalZones(); // показать свежие зоны
+  nextPlayer();
 });
-
+nextPlayer();
 addEventListener('mousemove', ()=>{ if(dragging) renderDirectionalZones(); });
 /* Safety init */
 (function(){
