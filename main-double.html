@@ -963,10 +963,6 @@ if (!first) {
 }
 
 // кладём на центр **реальную** первую костяшку (никаких «Старт/Старт»)
-const startTile = createTileEl(
-  first.a, first.b,
-  { left:sx, top:sy, orient:'h', displayA:first.displayA, displayB:first.displayB }
-);
 chainZoom.appendChild(startTile);
 
 // актуальные открытые концы и «хвосты» цепи
