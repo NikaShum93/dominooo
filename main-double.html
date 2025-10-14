@@ -948,27 +948,34 @@ function startGame(){
     }
   }
 
-  // стартовая на поле
-  chainZoom.innerHTML='';
-    const sx = Math.floor((br().w - TILE_W) / 2);
-  const sy = Math.floor((br().h - TILE_H) / 2);
+ // стартовая на поле
+chainZoom.innerHTML='';
+const sx = Math.floor((br().w - TILE_W) / 2);
+const sy = Math.floor((br().h - TILE_H) / 2);
 
-  // берём первую фишку и кладём в центр
-  const first = deck.shift();
-  const startTile = createTileEl(first.a, first.b, {
-    orient: "h",
-    left: sx,
-    top: sy,
-    displayA: first.displayA,
-    displayB: first.displayB
-  });
-  chainZoom.appendChild(startTile);
+// берём первую костяшку из колоды
+const first = deck.shift();
+if (!first) {
+  console.error("Deck is empty, cannot start");
+  return;
+}
 
-  // выставляем открытые концы
-  openLeft = first.a;
-  openRight = first.b;
-  endLeft  = { x: sx, y: sy, orient: "h", dir: -1, el: startTile };
-  endRight = { x: sx, y: sy, orient: "h", dir:  1, el: startTile };
+// создаём элемент и кладём его в центр
+const startTile = createTileEl(first.a, first.b, {
+  orient: 'h',
+  left: sx,
+  top: sy,
+  displayA: first.displayA,
+  displayB: first.displayB
+});
+chainZoom.appendChild(startTile);
+
+// задаём открытые концы
+openLeft  = first.a;
+openRight = first.b;
+endLeft   = { x: sx, y: sy, orient: 'h', dir: -1, el: startTile };
+endRight  = { x: sx, y: sy, orient: 'h', dir:  1, el: startTile };
+
 
  
    renderPlayersBar();
