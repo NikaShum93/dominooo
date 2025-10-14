@@ -928,37 +928,52 @@ function startGame(){
   }
 
   // deck — сначала из ?data=listA, иначе дефолт
-  const data = getQueryData() || {};
-  deck = buildDeckFromData(data);
-  if(!deck.length){ deck = makeDefaultDeck(); }
-  shuffle(deck);
+ // deck — сначала из ?data=listA, иначе дефолт
+const data = getQueryData() || {};
+deck = buildDeckFromData(data);
+if(!deck.length){ deck = makeDefaultDeck(); }
+shuffle(deck);
 
-  // шрифт под все слова (опционально)
-  computeUniformSize(deck);
+// шрифт под все слова (опционально)
+computeUniformSize(deck);
 
-  // reset hands/pass
-  hands={}; passes={}; currentPlayer=0;
-  for(let i=0;i<n;i++){ hands[i]=[]; passes[i]=0; }
+// reset hands/pass
+hands={}; passes={}; currentPlayer=0;
+for(let i=0;i<n;i++){ hands[i]=[]; passes[i]=0; }
 
-  // раздача 7 костяшек
-  for(let r=0;r<7;r++){
-    for(let i=0;i<n;i++){
-      if(!deck.length) break;
-      hands[i].push(deck.shift());
-    }
+// раздача 7 костяшек
+for(let r=0;r<7;r++){
+  for(let i=0;i<n;i++){
+    if(!deck.length) break;
+    hands[i].push(deck.shift());
   }
-
- // стартовая на поле
-chainZoom.innerHTML='';
-const sx = Math.floor((br().w - TILE_W) / 2);
-const sy = Math.floor((br().h - TILE_H) / 2);
-
-// берём первую костяшку из колоды
-const first = deck.shift();
-if (!first) {
-  console.error("Deck is empty, cannot start");
-  return;
 }
+
+// стартовая на поле
+chainZoom.innerHTML='';
+const sx=Math.floor((br().w-TILE_W)/2);
+const sy=Math.floor((br().h-TILE_H)/2);
+
+// берём первую костяшку из колоды (без жёсткого return)
+let first = deck.shift();
+if (!first) {
+  console.warn("Deck is empty after deal — using fallback tile");
+  // простой фолбэк на случай пустой колоды
+  first = { a:"A0", b:"B0", displayA:"sleep", displayB:"go", uid:uid() };
+}
+
+// кладём на центр **реальную** первую костяшку (никаких «Старт/Старт»)
+const startTile = createTileEl(
+  first.a, first.b,
+  { left:sx, top:sy, orient:'h', displayA:first.displayA, displayB:first.displayB }
+);
+chainZoom.appendChild(startTile);
+
+// актуальные открытые концы и «хвосты» цепи
+openLeft  = first.a;
+openRight = first.b;
+endLeft   = { x:sx, y:sy, orient:'h', dir:-1, el:startTile };
+endRight  = { x:sx, y:sy, orient:'h', dir: 1, el:startTile };
 
 // создаём элемент и кладём его в центр
 const startTile = createTileEl(first.a, first.b, {
