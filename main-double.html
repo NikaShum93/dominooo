@@ -717,17 +717,25 @@ let dispB = flip ? tileData.displayA : tileData.displayB;
 let keyA  = flip ? tileData.b : tileData.a;
 let keyB  = flip ? tileData.a : tileData.b;
 
+let a = tileData.a, b = tileData.b;
+let dispA = tileData.displayA, dispB = tileData.displayB;
+
+// 🔥 поворот делаем только по совпадению ключа
+if (endOpen === b) {
+  [a, b] = [b, a];
+  [dispA, dispB] = [dispB, dispA];
+}
+
 const newTile = createTileEl(
-  keyA, keyB,
+  a, b,
   { orient:pos.orient, left:pos.x, top:pos.y, displayA:dispA, displayB:dispB }
 );
+chainZoom.appendChild(newTile);
 
-  chainZoom.appendChild(newTile);
+applyPlaced(end,pos);
+end.el = newTile;
+return true;
 
-  applyPlaced(end,pos);
-  end.el = newTile;
-  return true;
-}
 
 function tryPlace(target, data){
   if(!data || !target.classList.contains('dz')) return false;
