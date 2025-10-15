@@ -706,43 +706,39 @@ function placeAt(whichEnd, tileData, choice, endOpen){
   const pos = getNextPos(end, choice);
   if (!pos.orient) return false;
 
-  // Какая сторона новой фишки соприкасается со швом (см. правило 4)
-  function touchingHalf(end, choice, orient){
+  // Какая половина новой фишки соприкасается со швом
+  function touchingHalf(choice, orient){
     if (orient === 'h'){
-      return (choice === 'right') ? 0 /*левая*/ : 1 /*правая*/;
+      return (choice === 'right') ? 0 : 1; // left=правая, right=левая
     } else {
-      return (choice === 'down')  ? 0 /*верх*/  : 1 /*низ*/;
+      return (choice === 'down') ? 0 : 1; // down=верх, up=низ
     }
   }
-  const touchIdx = touchingHalf(end, choice, pos.orient);
+  const touchIdx = touchingHalf(choice, pos.orient);
 
-  // Какая сторона фишки должна совпасть по ключу (expected)
+  // Какая сторона у фишки совпадает с endOpen
   const expected = endOpen.startsWith('A')
     ? endOpen.replace('A','B')
     : endOpen.replace('B','A');
 
-  // Где сейчас находится expected у фишки: 0 = левая/верхняя, 1 = правая/нижняя
   let curMatchIdx = (tileData.a === expected) ? 0
                   : (tileData.b === expected) ? 1
                   : -1;
-  if (curMatchIdx === -1) return false; // подстраховка, не подходит
+  if (curMatchIdx === -1) return false;
 
-  // Нужно ли флипать (менять местами половинки), чтобы совпадающая сторона оказалась со стороны шва?
+  // Нужно ли флипать
   const needFlip = (curMatchIdx !== touchIdx);
 
-  // Подготавливаем ключи и отображение с учётом возможного флипа
   let a = tileData.a, b = tileData.b;
   let dispA = tileData.displayA, dispB = tileData.displayB;
   if (needFlip){
-    [a, b] = [b, a];
-    [dispA, dispB] = [dispB, dispA];
+    [a,b] = [b,a];
+    [dispA,dispB] = [dispB,dispA];
   }
 
-  // проверка столкновений
-  const r = rectOf(pos.orient, pos.x, pos.y);
+  const r = rectOf(pos.orient,pos.x,pos.y);
   if (collidesWithExisting(r)) return false;
 
-  // создаём фишку
   const newTile = createTileEl(a, b, {
     orient: pos.orient,
     left: pos.x,
@@ -756,8 +752,6 @@ function placeAt(whichEnd, tileData, choice, endOpen){
   end.el = newTile;
   return true;
 }
-
-
 
 
 function tryPlace(target, data){
