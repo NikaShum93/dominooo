@@ -247,6 +247,10 @@
 </div>
 <canvas id="fireworksCanvas" style="position:fixed; inset:0; z-index:1000000; pointer-events:none; display:none;"></canvas>
 <audio id="winSound" src="win.mp3" preload="auto"></audio>
+<audio id="sDraw"  src="draw.mp3"  preload="auto"></audio>
+<audio id="sPick"  src="pick.mp3"  preload="auto"></audio>
+<audio id="sPlace" src="place.mp3" preload="auto"></audio>
+  <audio id="sClick" src="click.mp3" preload="auto"></audio>
 
 <script>
 /* ===========================================================================================
@@ -291,6 +295,13 @@ document.querySelector('.topbar').appendChild(deckInfo);
 
 const previewWrap=document.getElementById('tilePreview');
 const previewInner=document.getElementById('tilePreviewInner');
+  // sounds
+const sDraw  = document.getElementById('sDraw');
+const sPick  = document.getElementById('sPick');
+const sPlace = document.getElementById('sPlace');
+  const sClick = document.getElementById('sClick');
+
+function play(a){ if(a){ a.currentTime = 0; a.play().catch(()=>{}); } }
 // Центр-хинт (подсказка «точки» без драга)
 const centerHint = document.createElement('div');
 centerHint.className = 'center-hint';
@@ -534,6 +545,7 @@ if(role==='hand'){
       owner:opts.owner,
       uid:opts.uid
     };
+        play(sPick); // ← звук «подняли плитку»
     e.dataTransfer.setData('text/plain','domino');
     hidePreview();
     renderDirectionalZones();   // ← Показать зоны
@@ -949,6 +961,7 @@ drawBtn.addEventListener('click', ()=>{
   const hand = hands[currentPlayer] || [];
   if (!deck.length) return;
   hand.push(deck.shift());
+   play(sDraw); // ← звук «взяли из колоды»
   hands[currentPlayer] = hand;
   renderHand();
   updateControls();
@@ -1002,11 +1015,19 @@ if (!chainZoom.querySelector('.tile:not(.hand)')) {
 
 document.getElementById("endBtn").addEventListener("click", ()=>{
   document.getElementById("finalOverlay").style.display = "flex";
+  startFireworks(); // ← запуск фейерверка и win.mp3
 });
+
 
 restartBtn.addEventListener('click', ()=>location.reload());
 startBtn.addEventListener('click', startGame);
-
+// Единый клик-звук для всех кнопок, кроме "Взять" (у неё свой звук sDraw)
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  if(btn.id === 'drawBtn') return; // у этой кнопки отдельный звук
+  play(sClick);
+});
 addEventListener('dragover', e=>{ if(dragging) e.preventDefault(); });
 
 addEventListener('drop', e=>{
@@ -1043,13 +1064,16 @@ endRight = { x:sx, y:sy, orient:'h', dir: 1, el:placedEl };
     applyPlaced(end, pos);
     end.el = placedEl;
   }
-
+play(sPlace); // ← звук «положили плитку на стол»
   // убрать из руки
   const arr = hands[dragging.owner] || [];
   hands[dragging.owner] = arr.filter(x=>x.uid !== dragging.uid);
   renderHand();
-
-  // история (для Undo при желании)
+// если у игрока закончились костяшки — победа
+if ((hands[dragging.owner] || []).length === 0) {
+  document.getElementById("finalOverlay").style.display = "flex";
+  startFireworks(); // звук + фейерверк по реальному событию победы
+}
   // история (для корректного Undo)
 function cloneEnd(e){
   if(!e) return null;
