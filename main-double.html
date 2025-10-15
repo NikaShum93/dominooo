@@ -586,27 +586,19 @@ const isB = v => typeof v==="string" && v.startsWith("B");
 const open = side.open;
 
 let matches = false;
-if (open === "A*") {
-  matches = isA(dragging.a) || isA(dragging.b);
-  if (matches) {
-    const other = isA(dragging.a) ? dragging.b : dragging.a;
-    matches = isB(other);
-  }
-} else if (open === "B*") {
-  matches = isB(dragging.a) || isB(dragging.b);
-  if (matches) {
-    const other = isB(dragging.a) ? dragging.b : dragging.a;
-    matches = isA(other);
-  }
-} else if (isA(open)) {
-  matches = (dragging.a === open && isB(dragging.b)) ||
-            (dragging.b === open && isB(dragging.a));
-} else if (isB(open)) {
-  matches = (dragging.a === open && isA(dragging.b)) ||
-            (dragging.b === open && isA(dragging.a));
+if(isA(open)){
+  const expected = open.replace("A","B");
+  matches = (dragging.a === expected && isA(dragging.b)) ||
+            (dragging.b === expected && isA(dragging.a));
+}
+else if(isB(open)){
+  const expected = open.replace("B","A");
+  matches = (dragging.a === expected && isB(dragging.b)) ||
+            (dragging.b === expected && isB(dragging.a));
 }
 
-if (!matches) continue;
+if(!matches) continue;
+
 
 
 
@@ -720,46 +712,35 @@ function placeAt(whichEnd,tileData,choice){
 function tryPlace(target, data){
   if(!data || !target.classList.contains('dz')) return false;
 
-  const isLeft  = target.dataset.end === 'L';
-  const choice  = target.dataset.k;
+  const isLeft = target.dataset.end==='L';
+  const choice = target.dataset.k;
   const endOpen = isLeft ? openLeft : openRight;
-
-  const isA = v => typeof v === "string" && v.startsWith("A");
-  const isB = v => typeof v === "string" && v.startsWith("B");
 
   let newOpen = null;
 
-  // --- Универсальные старты ---
-  if (endOpen === "A*") {
-    if (!(isA(data.a) || isA(data.b))) return false;
-    newOpen = isA(data.a) ? data.b : data.a;
-    if (!isB(newOpen)) return false;
+  // конец A → ищем B с тем же индексом
+  if(endOpen.startsWith("A")){
+    const expected = endOpen.replace("A","B");
+    if(data.a === expected) newOpen = data.b;
+    else if(data.b === expected) newOpen = data.a;
+    else return false;
   }
-  else if (endOpen === "B*") {
-    if (!(isB(data.a) || isB(data.b))) return false;
-    newOpen = isB(data.a) ? data.b : data.a;
-    if (!isA(newOpen)) return false;
-  }
-  // --- Обычные стыки ---
-  else if (isA(endOpen)) {
-    if (!(data.a === endOpen || data.b === endOpen)) return false;
-    newOpen = (data.a === endOpen) ? data.b : data.a;
-    if (!isB(newOpen)) return false;
-  }
-  else if (isB(endOpen)) {
-    if (!(data.a === endOpen || data.b === endOpen)) return false;
-    newOpen = (data.a === endOpen) ? data.b : data.a;
-    if (!isA(newOpen)) return false;
-  } else {
-    return false;
+  // конец B → ищем A с тем же индексом
+  else if(endOpen.startsWith("B")){
+    const expected = endOpen.replace("B","A");
+    if(data.a === expected) newOpen = data.b;
+    else if(data.b === expected) newOpen = data.a;
+    else return false;
   }
 
-  if (placeAt(isLeft ? 'left' : 'right', data, choice)) {
-    if (isLeft) openLeft = newOpen; else openRight = newOpen;
+  if(placeAt(isLeft?'left':'right', data, choice)){
+    if(isLeft) openLeft = newOpen; else openRight = newOpen;
     return true;
   }
+
   return false;
 }
+
 
 
 /* ===========================================================================================
