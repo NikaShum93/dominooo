@@ -229,7 +229,6 @@
 </div>
 <canvas id="fireworksCanvas" style="position:fixed; inset:0; z-index:1000000; pointer-events:none; display:none;"></canvas>
 <audio id="winSound" src="win.mp3" preload="auto"></audio>
-<audio id="winSound" src="win.mp3" preload="auto"></audio>
 <audio id="sDraw" src="draw.mp3" preload="auto"></audio>
 <audio id="sPick" src="pick.mp3" preload="auto"></audio>
 <audio id="sPlace" src="place.mp3" preload="auto"></audio>
@@ -247,10 +246,6 @@ function getQueryData(){
   if(!raw) return null;
   try{ return JSON.parse(decodeURIComponent(raw)); }
   catch(e){ return null; }
-}
-function getQueryData(){
-  const raw=new URLSearchParams(location.search).get('data');
-  ...
 }
 
 // 🔥 универсальный проигрыватель звуков
