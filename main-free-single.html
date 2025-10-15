@@ -175,6 +175,23 @@
   .tray>.tile{ position:static; }
 
   /* ===== DROP ZONES ===== */
+  /* Подсказка центра при пустом поле (без драга) */
+.center-hint{
+  position:absolute;
+  width:38px; height:38px;
+  border:2px dashed #b68a3e;
+  border-radius:10px;
+  background:rgba(255,215,120,.08);
+  display:none;
+  z-index:5000;
+}
+.center-hint::after{
+  content:'●';
+  font-size:11px; color:#2c1a32; font-weight:900;
+  background:#f2c56a; padding:2px 6px; border-radius:8px;
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+}
+
   .dz{ position:absolute; width:38px; height:38px; border:2px dashed #b68a3e; border-radius:10px; display:none; background:rgba(255,215,120,.08); }
   .dz.active{ display:block; background:rgba(255,215,120,.28); box-shadow:0 0 16px rgba(255,215,120,.7); }
   .dz::after{ content:attr(data-dir); font-size:11px; color:#2c1a32; font-weight:900; background:#f2c56a; padding:2px 6px; border-radius:8px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
@@ -274,6 +291,21 @@ document.querySelector('.topbar').appendChild(deckInfo);
 
 const previewWrap=document.getElementById('tilePreview');
 const previewInner=document.getElementById('tilePreviewInner');
+// Центр-хинт (подсказка «точки» без драга)
+const centerHint = document.createElement('div');
+centerHint.className = 'center-hint';
+chainZoom.appendChild(centerHint);
+
+function showCenterHintIfEmpty(){
+  const placed = chainZoom.querySelector('.tile:not(.hand)');
+  if(placed){ centerHint.style.display='none'; return; }
+  const sx = Math.floor((br().w - TILE_W)/2);
+  const sy = Math.floor((br().h - TILE_H)/2);
+  centerHint.style.left = (sx + TILE_W/2 - 38/2) + 'px';
+  centerHint.style.top  = (sy + TILE_H/2 - 38/2) + 'px';
+  centerHint.style.display = 'block';
+}
+function hideCenterHint(){ centerHint.style.display='none'; }
 
 /* Game state */
 let playerNames=[], hands={}, deck=[], currentPlayer=0, passes={};
@@ -317,7 +349,10 @@ boardEl.addEventListener('wheel', e=>{
   scale = newScale;
   updateTransform();
 });
-
+// Подсказка центра при наведении на пустую доску
+boardEl.addEventListener('mouseenter', showCenterHintIfEmpty);
+boardEl.addEventListener('mouseleave', hideCenterHint);
+window.addEventListener('resize', showCenterHintIfEmpty);
 /* ===========================================================================================
    Menu inputs (players)
 =========================================================================================== */
@@ -490,6 +525,7 @@ function fitToHalf(node, container) {
 if(role==='hand'){
   el.draggable=true;
   el.addEventListener('dragstart',e=>{
+    hideCenterHint(); // спрятать подсказку центра
     dragging={
       a:opts.aKey ?? a,
       b:opts.bKey ?? b,
@@ -879,6 +915,9 @@ for (let r = 0; r < perPlayer; r++) {
 chainZoom.innerHTML='';
 const sx=Math.floor((br().w-TILE_W)/2);
 const sy=Math.floor((br().h-TILE_H)/2);
+  // вернуть и показать подсказку центра на пустом поле
+chainZoom.appendChild(centerHint);
+showCenterHintIfEmpty();
 // концы пока не заданы
 openLeft=null; openRight=null; endLeft=null; endRight=null;
 renderPlayersBar();
@@ -980,6 +1019,7 @@ addEventListener('drop', e=>{
     placedEl = createTileEl(dragging.a, dragging.b,
       { left:sx, top:sy, orient:'h', displayA:dragging.displayA, displayB:dragging.displayB });
     chainZoom.appendChild(placedEl);
+    hideCenterHint();
     endLeft.el = placedEl;
     endRight.el = placedEl;
   } else {
