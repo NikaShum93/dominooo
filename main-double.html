@@ -678,22 +678,21 @@ function hasLegalMove(hand){
     { e:endLeft, open:openLeft },
     { e:endRight, open:openRight }
   ];
-  const dirs = ['up','down','left','right'];
 
   for(const t of hand){
     for(const side of ends){
       const endOpen = side.open;
       if(!endOpen) continue;
 
-      // проверяем: A ↔ B и индексы совпадают
-      if ((t.a.startsWith("A") && t.b.startsWith("B") && t.a.slice(1) === endOpen.slice(1)) ||
-          (t.b.startsWith("A") && t.a.startsWith("B") && t.b.slice(1) === endOpen.slice(1))) {
+      // 🔥 обычное совпадение текста
+      if (t.a === endOpen || t.b === endOpen) {
         return true;
       }
     }
   }
   return false;
 }
+
 
 /* 🔥 добавляем алиас, чтобы updateControls работал */
 function hasPlayable(hand){
@@ -821,25 +820,24 @@ function updateControls(){
   turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
 
   const currentHand = hands[currentPlayer] || [];
-  const playable = hasLegalMove(currentHand); // проверка, есть ли ход
+  
+  // 🔥 исправлено: проверяем не только A/B, но и обычные слова
+  const playable = hasLegalMove(currentHand);
 
   if (playable) {
-    // есть куда ходить → кнопки выключены
     drawBtn.disabled = true;
     skipBtn.disabled = true;
   } else {
-    // ходов нет
     if (deck.length > 0) {
-      // можно взять из колоды
-      drawBtn.disabled = false;
+      drawBtn.disabled = false;   // можно взять
       skipBtn.disabled = true;
     } else {
-      // колода пуста → можно только пропустить
       drawBtn.disabled = true;
-      skipBtn.disabled = false;
+      skipBtn.disabled = false;   // можно пропустить
     }
   }
 }
+
 
 
 /* ===========================================================================================
