@@ -701,26 +701,55 @@ function hasPlayable(hand){
 /* ===========================================================================================
    Placing / autorotate
 =========================================================================================== */
-function placeAt(whichEnd, tileData, choice) {
+function placeAt(whichEnd, tileData, choice, endOpen){
   const end = (whichEnd === 'left') ? endLeft : endRight;
   const pos = getNextPos(end, choice);
-  const r   = rectOf(pos.orient, pos.x, pos.y);
-  if (!pos.orient || collidesWithExisting(r)) return false;
+  if (!pos.orient) return false;
 
+  // Какая сторона новой фишки соприкасается со швом (см. правило 4)
+  function touchingHalf(end, choice, orient){
+    if (orient === 'h'){
+      return (choice === 'right') ? 0 /*левая*/ : 1 /*правая*/;
+    } else {
+      return (choice === 'down')  ? 0 /*верх*/  : 1 /*низ*/;
+    }
+  }
+  const touchIdx = touchingHalf(end, choice, pos.orient);
+
+  // Какая сторона фишки должна совпасть по ключу (expected)
+  const expected = endOpen.startsWith('A')
+    ? endOpen.replace('A','B')
+    : endOpen.replace('B','A');
+
+  // Где сейчас находится expected у фишки: 0 = левая/верхняя, 1 = правая/нижняя
+  let curMatchIdx = (tileData.a === expected) ? 0
+                  : (tileData.b === expected) ? 1
+                  : -1;
+  if (curMatchIdx === -1) return false; // подстраховка, не подходит
+
+  // Нужно ли флипать (менять местами половинки), чтобы совпадающая сторона оказалась со стороны шва?
+  const needFlip = (curMatchIdx !== touchIdx);
+
+  // Подготавливаем ключи и отображение с учётом возможного флипа
   let a = tileData.a, b = tileData.b;
   let dispA = tileData.displayA, dispB = tileData.displayB;
-
-  // 🔥 корректный поворот: если конец совпадает с b — меняем местами
-  const endOpen = (whichEnd === 'left') ? openLeft : openRight;
-  if (endOpen === b) {
+  if (needFlip){
     [a, b] = [b, a];
     [dispA, dispB] = [dispB, dispA];
   }
 
-  const newTile = createTileEl(
-    a, b,
-    { orient: pos.orient, left: pos.x, top: pos.y, displayA: dispA, displayB: dispB }
-  );
+  // проверка столкновений
+  const r = rectOf(pos.orient, pos.x, pos.y);
+  if (collidesWithExisting(r)) return false;
+
+  // создаём фишку
+  const newTile = createTileEl(a, b, {
+    orient: pos.orient,
+    left: pos.x,
+    top: pos.y,
+    displayA: dispA,
+    displayB: dispB
+  });
   chainZoom.appendChild(newTile);
 
   applyPlaced(end, pos);
@@ -730,37 +759,33 @@ function placeAt(whichEnd, tileData, choice) {
 
 
 
+
 function tryPlace(target, data){
   if(!data || !target.classList.contains('dz')) return false;
 
-  const isLeft = target.dataset.end==='L';
-  const choice = target.dataset.k;
+  const isLeft  = target.dataset.end === 'L';
+  const choice  = target.dataset.k;
   const endOpen = isLeft ? openLeft : openRight;
 
+  // ожидаемая сторона на фишке, чтобы стыковаться с endOpen
+  const expected = endOpen.startsWith('A')
+    ? endOpen.replace('A','B')   // Aᵢ ждёт Bᵢ
+    : endOpen.replace('B','A');  // Bᵢ ждёт Aᵢ
+
+  // у фишки должен быть expected
   let newOpen = null;
+  if (data.a === expected) newOpen = data.b;
+  else if (data.b === expected) newOpen = data.a;
+  else return false; // фишка не подходит по индексу
 
-  // конец A → ищем B с тем же индексом
-  if(endOpen.startsWith("A")){
-    const expected = endOpen.replace("A","B");
-    if(data.a === expected) newOpen = data.b;
-    else if(data.b === expected) newOpen = data.a;
-    else return false;
-  }
-  // конец B → ищем A с тем же индексом
-  else if(endOpen.startsWith("B")){
-    const expected = endOpen.replace("B","A");
-    if(data.a === expected) newOpen = data.b;
-    else if(data.b === expected) newOpen = data.a;
-    else return false;
-  }
-
-  if(placeAt(isLeft?'left':'right', data, choice)){
-    if(isLeft) openLeft = newOpen; else openRight = newOpen;
+  // ставим
+  if (placeAt(isLeft ? 'left' : 'right', data, choice, endOpen)){
+    if (isLeft) openLeft = newOpen; else openRight = newOpen;
     return true;
   }
-
   return false;
 }
+
 
 
 
