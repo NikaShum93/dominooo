@@ -836,33 +836,21 @@ function startFireworks(){
    Deck (from data) + default
 =========================================================================================== */
 function buildDeckFromData(d){
-  const out=[];
+  const out = [];
   const A = (d && Array.isArray(d.listA)) ? d.listA : [];
   const B = (d && Array.isArray(d.listB)) ? d.listB : [];
 
-  if(A.length && B.length && A.length === B.length){
-    // 👉 режим пар: всегда слева B, справа A
-    for(let i=0;i<A.length;i++){
-      out.push({
-        a: "A"+i,   // ключ для половинки A
-        b: "B"+i,   // ключ для половинки B
-        displayA: B[i],  // левая половинка = список B
-        displayB: A[i],  // правая половинка = список A
-        uid: uid()
-      });
-    }
-  } else if(A.length){
-    // fallback: классика, если список B пустой
-    for(let i=0;i<A.length;i++){
-      for(let j=i;j<A.length;j++){
-        out.push({
-          a: i, b: j,
-          displayA: A[i], displayB: A[j],
-          uid: uid()
-        });
-      }
-    }
+  const m = Math.min(A.length, B.length);
+  for (let i = 0; i < m; i++){
+    out.push({
+      a: "A"+i,            // ключ для совпадений
+      b: "B"+i,
+      displayA: B[i],      // СЛЕВА -> B (картинка или что-то ещё)
+      displayB: A[i],      // СПРАВА -> A (слово)
+      uid: uid()
+    });
   }
+
   return out;
 }
 
