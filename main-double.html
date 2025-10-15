@@ -643,12 +643,16 @@ function canPlaceTileAtEnd(tile, end, choice, endOpen){
     // обычное правило: должно совпасть значение
     if(!(a===endOpen || b===endOpen)) return false;
 
-    const isA = v => typeof v==="string" && v.startsWith("A");
-    const isB = v => typeof v==="string" && v.startsWith("B");
-    if(isA(endOpen) && isA(a) && isA(b)) return false;
-    if(isB(endOpen) && isB(a) && isB(b)) return false;
-  }
+   const isA = v => v.startsWith("A");
+const isB = v => v.startsWith("B");
 
+// стык только между A и B
+if (isA(endOpen)) {
+  if (!(isB(a) || isB(b))) return false;
+}
+if (isB(endOpen)) {
+  if (!(isA(a) || isA(b))) return false;
+}
   const need = desiredHalfFor(choice);
   if(need==='a'){
     if(a!==endOpen && b===endOpen){ [a,b] = [b,a]; }
