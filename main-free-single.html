@@ -637,7 +637,9 @@ function ensureEndsValid(){
 /* ===========================================================================================
    Drop zones
 =========================================================================================== */
-
+function clearZones(){
+  chainZoom.querySelectorAll('.dz').forEach(n=>n.remove());
+}
 function renderDirectionalZones(){
   clearZones();
   if(!dragging) return;
@@ -656,7 +658,6 @@ function renderDirectionalZones(){
     z.style.top  = (sy + TILE_H/2 - DZ/2) + 'px';
     z.dataset.end = 'C';     // центр
     z.dataset.k   = 'right'; // старт горизонтально
-    z.dataset.dir = '●';
 z.dataset.dir = '●'; 
     chainZoom.appendChild(z);
 
@@ -869,8 +870,12 @@ function computeUniformSize(deck){
 /* ===========================================================================================
    Game flow
 =========================================================================================== */
-function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderPlayersBar(); renderHand(); updateControls(); } document.getElementById("playersBar").style.display = "flex";
-
+function nextPlayer(){
+  currentPlayer = (currentPlayer + 1) % playerNames.length;
+  renderPlayersBar();
+  renderHand();
+  updateControls();
+}
 /* ===========================================================================================
    Start game
 =========================================================================================== */
@@ -895,7 +900,7 @@ function startGame(){
   // reset hands/pass
   hands={}; passes={}; currentPlayer=0;
   for(let i=0;i<n;i++){ hands[i]=[]; passes[i]=0; }
-
+history = []; // сбросить историю предыдущих партий
   // раздача 7 костяшек
  // раздача: не больше, чем позволяет колода
 const MAX_HAND = 7;
@@ -957,7 +962,11 @@ document.getElementById("undoBtn").addEventListener("click", ()=>{
   if(last.el && last.el.parentNode){
     last.el.parentNode.removeChild(last.el);
   }
-
+// Если после удаления на поле не осталось плиток — показать подсказку центра
+if (!chainZoom.querySelector('.tile:not(.hand)')) {
+  endLeft = endRight = null;
+  showCenterHintIfEmpty();
+}
   // 2) вернуть состояние концов, как было ДО хода
   // (если это была первая плитка — prevEnds.left/right будут null)
   if (last.prevEnds) {
@@ -1020,8 +1029,8 @@ addEventListener('drop', e=>{
       { left:sx, top:sy, orient:'h', displayA:dragging.displayA, displayB:dragging.displayB });
     chainZoom.appendChild(placedEl);
     hideCenterHint();
-    endLeft.el = placedEl;
-    endRight.el = placedEl;
+    endLeft  = { x:sx, y:sy, orient:'h', dir:-1, el:placedEl };
+endRight = { x:sx, y:sy, orient:'h', dir: 1, el:placedEl };
   } else {
     const end = isLeft ? endLeft : endRight;
     const pos = getNextPos(end, choice);
@@ -1065,7 +1074,6 @@ history.push({
   renderDirectionalZones(); // показать свежие зоны
   nextPlayer();
 });
-nextPlayer();
 addEventListener('mousemove', ()=>{ if(dragging) renderDirectionalZones(); });
 /* Safety init */
 (function(){
