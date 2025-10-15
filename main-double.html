@@ -903,30 +903,28 @@ shuffle(deck);
 // шрифт под все слова (опционально)
 computeUniformSize(deck);
 
-// reset hands/pass
-hands={}; passes={}; currentPlayer=0;
-for(let i=0;i<n;i++){ hands[i]=[]; passes[i]=0; }
-
-// раздача 7 костяшек
-for(let r=0;r<7;r++){
-  for(let i=0;i<n;i++){
-    if(!deck.length) break;
-    hands[i].push(deck.shift());
-  }
-}
-
-// стартовая на поле
-// стартовая на поле
 // стартовая на поле
 chainZoom.innerHTML='';
-const sx=Math.floor((br().w-TILE_W)/2);
-const sy=Math.floor((br().h-TILE_H)/2);
+const sx = Math.floor((br().w - TILE_W) / 2);
+const sy = Math.floor((br().h - TILE_H) / 2);
 
-// берём первую костяшку из колоды
+// ⚡️ Сначала берём стартовую костяшку из колоды
 let first = deck.shift();
 if (!first) {
-  console.warn("Deck is empty after deal — using fallback tile");
-  first = { a:"A0", b:"B0", displayA:"sleep", displayB:"go", uid:uid() };
+  console.error("Deck is empty before deal — cannot start game");
+  return; // выходим, если вообще нет колоды
+}
+
+// reset hands/pass
+hands = {}; passes = {}; currentPlayer = 0;
+for (let i = 0; i < n; i++) { hands[i] = []; passes[i] = 0; }
+
+// теперь раздаём по 7 костяшек из остатка колоды
+for (let r = 0; r < 7; r++) {
+  for (let i = 0; i < n; i++) {
+    if (!deck.length) break;
+    hands[i].push(deck.shift());
+  }
 }
 
 // создаём элемент и кладём его в центр
@@ -934,8 +932,8 @@ const startTile = createTileEl(first.a, first.b, {
   orient: 'h',
   left: sx,
   top: sy,
-  displayA: first.displayA, // 👈 вот тут и будут твои пары B (слева) и A (справа)
-  displayB: first.displayB
+  displayA: first.displayA, // Слева B
+  displayB: first.displayB  // Справа A
 });
 chainZoom.appendChild(startTile);
 
