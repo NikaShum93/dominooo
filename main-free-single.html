@@ -561,18 +561,55 @@ function getNextPos(end, choice){
   return { x,y,orient,nextDir };
 }
 function applyPlaced(end,pos){ end.x=pos.x; end.y=pos.y; end.orient=pos.orient; end.dir=pos.nextDir; }
+// ===== Recompute ends from DOM (robust after UNDO) =====
+function ensureEndsValid(){
+  const tiles = [...chainZoom.querySelectorAll('.tile:not(.hand)')];
+  if (tiles.length === 0){ endLeft=null; endRight=null; return; }
+
+  // если концы валидны и их el присутствует — оставляем
+  function isValidEnd(e){
+    return e && e.el && e.el.isConnected && typeof e.x==='number' && typeof e.y==='number' && e.orient && (e.dir===1 || e.dir===-1);
+  }
+  if (isValidEnd(endLeft) && isValidEnd(endRight)) return;
+
+  // иначе: берём крайние «швы» всех плиток и выбираем самую левую и правую точки
+  let candidates = [];
+  for (const t of tiles){
+    const x = parseInt(t.style.left||0);
+    const y = parseInt(t.style.top||0);
+    const o = t.classList.contains('vert') ? 'v' : 'h';
+
+    // два возможных конца у плитки
+    const ends = [
+      { x, y, orient:o, dir:-1, el:t },                                           // левый/верхний конец
+      { x, y, orient:o, dir: 1, el:t },                                           // правый/нижний конец
+    ];
+    for(const e of ends){
+      const s = getSeam(e);
+      candidates.push({ seamX:s.x, seamY:s.y, end:e });
+    }
+  }
+  // крайняя слева и крайняя справа точки
+  candidates.sort((a,b)=>a.seamX-b.seamX);
+  const leftMost  = candidates[0].end;
+  const rightMost = candidates[candidates.length-1].end;
+
+  endLeft  = { ...leftMost  };
+  endRight = { ...rightMost };
+}
 
 /* ===========================================================================================
    Drop zones
 =========================================================================================== */
 
-function clearZones(){ chainZoom.querySelectorAll('.dz').forEach(n=>n.remove()); }
 function renderDirectionalZones(){
   clearZones();
   if(!dragging) return;
 
-  // если на поле нет ни одной плитки — показываем центральную зону
+  ensureEndsValid(); // ← ключевое: актуализируем концы перед расчётом зон
+
   const placed = [...chainZoom.querySelectorAll('.tile:not(.hand)')];
+  // если на поле нет ни одной плитки — показываем центральную зону
   if(placed.length===0){
     const sx = Math.floor((br().w - TILE_W)/2);
     const sy = Math.floor((br().h - TILE_H)/2);
@@ -594,15 +631,6 @@ z.dataset.dir = '●';
   }
 
   // если концы ещё не определены — возьмём первую плитку на поле
-  if(!endLeft || !endRight){
-    const t = placed[0];
-    const x = parseInt(t.style.left||0);
-    const y = parseInt(t.style.top||0);
-    const o = t.classList.contains('vert') ? 'v' : 'h';
-    endLeft  = { x, y, orient:o, dir:-1, el:t };
-    endRight = { x, y, orient:o, dir: 1, el:t };
-  }
-
   const ends = [{e:endLeft,id:'L'}, {e:endRight,id:'R'}];
   for(const side of ends){
     const e = side.e; if(!e) continue;
@@ -917,11 +945,12 @@ document.getElementById("undoBtn").addEventListener("click", ()=>{
   renderHand();
   updateControls();
 
-  // 6) перерисовать зоны (если игрок держит плитку — зон не будет; просто очистим)
+  // после восстановления истории — переинициализируем концы по DOM
+  ensureEndsValid();
+
   clearZones();
   renderDirectionalZones();
 });
-
 
 document.getElementById("endBtn").addEventListener("click", ()=>{
   document.getElementById("finalOverlay").style.display = "flex";
