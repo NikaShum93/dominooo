@@ -698,10 +698,20 @@ function placeAt(whichEnd,tileData,choice){
   const r=rectOf(pos.orient,pos.x,pos.y);
   if(!pos.orient || collidesWithExisting(r)) return false;
 
-  const newTile = createTileEl(
-    tileData.a, tileData.b,
-    { orient:pos.orient, left:pos.x, top:pos.y, displayA:tileData.displayA, displayB:tileData.displayB }
-  );
+  // определяем, нужен ли поворот
+let flip = (choice === "left" || choice === "up");
+
+// если flip → меняем местами половинки
+let dispA = flip ? tileData.displayB : tileData.displayA;
+let dispB = flip ? tileData.displayA : tileData.displayB;
+let keyA  = flip ? tileData.b : tileData.a;
+let keyB  = flip ? tileData.a : tileData.b;
+
+const newTile = createTileEl(
+  keyA, keyB,
+  { orient:pos.orient, left:pos.x, top:pos.y, displayA:dispA, displayB:dispB }
+);
+
   chainZoom.appendChild(newTile);
 
   applyPlaced(end,pos);
