@@ -640,30 +640,30 @@ function canPlaceTileAtEnd(tile, end, choice, endOpen){
   } else if(endOpen==="B*" && (a.startsWith("B") || b.startsWith("B"))) {
     // всё ок
   } else {
-    // обычное правило: должно совпасть значение
     if(!(a===endOpen || b===endOpen)) return false;
 
-   const isA = v => v.startsWith("A");
-const isB = v => v.startsWith("B");
+    const isA = v => v.startsWith("A");
+    const isB = v => v.startsWith("B");
 
-// стык только между A и B
-if (isA(endOpen)) {
-  if (!(isB(a) || isB(b))) return false;
-}
-if (isB(endOpen)) {
-  if (!(isA(a) || isA(b))) return false;
-}
-  const need = desiredHalfFor(choice);
-  if(need==='a'){
-    if(a!==endOpen && b===endOpen){ [a,b] = [b,a]; }
-  } else {
-    if(b!==endOpen && a===endOpen){ [a,b] = [b,a]; }
+    // стык только между A и B
+    if (isA(endOpen)) {
+      if (!(isB(a) || isB(b))) return false;
+    }
+    if (isB(endOpen)) {
+      if (!(isA(a) || isA(b))) return false;
+    }
+
+    const need = desiredHalfFor(choice);
+    if(need==='a'){
+      if(a!==endOpen && b===endOpen){ [a,b] = [b,a]; }
+    } else {
+      if(b!==endOpen && a===endOpen){ [a,b] = [b,a]; }
+    }
+
+    const r = rectOf(pos.orient, pos.x, pos.y);
+    return !collidesWithExisting(r);
   }
-
-  const r = rectOf(pos.orient, pos.x, pos.y);
-  return !collidesWithExisting(r);
 }
-
 
 function hasLegalMove(hand){
   const ends = [ { e:endLeft, open:openLeft }, { e:endRight, open:openRight } ];
