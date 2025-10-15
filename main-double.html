@@ -585,19 +585,13 @@ const isA = v => typeof v==="string" && v.startsWith("A");
 const isB = v => typeof v==="string" && v.startsWith("B");
 const open = side.open;
 
-let matches = false;
-if(isA(open)){
-  const expected = open.replace("A","B");
-  matches = (dragging.a === expected && isA(dragging.b)) ||
-            (dragging.b === expected && isA(dragging.a));
-}
-else if(isB(open)){
-  const expected = open.replace("B","A");
-  matches = (dragging.a === expected && isB(dragging.b)) ||
-            (dragging.b === expected && isB(dragging.a));
+if (!canPlaceTileAtEnd(dragging, side.e, "right", side.open) &&
+    !canPlaceTileAtEnd(dragging, side.e, "left", side.open) &&
+    !canPlaceTileAtEnd(dragging, side.e, "up", side.open) &&
+    !canPlaceTileAtEnd(dragging, side.e, "down", side.open)) {
+  continue;
 }
 
-if(!matches) continue;
 
 
 
@@ -635,64 +629,34 @@ if(!matches) continue;
 function desiredHalfFor(choice){ return (choice==='right' || choice==='down') ? 'a' : 'b'; }
 
 function canPlaceTileAtEnd(tile, end, choice, endOpen){
-  if(!end || !end.el) return false;
   const pos = getNextPos(end, choice);
-  if(!pos.orient) return false;
+  if (!pos.orient) return false;
 
-  let a = tile.a, b = tile.b;
+  const expected = endOpen.startsWith("A")
+    ? endOpen.replace("A","B")
+    : endOpen.replace("B","A");
 
-  // 👉 сначала проверяем универсальные старты
-  if(endOpen==="A*" && (a.startsWith("A") || b.startsWith("A"))) {
-    // всё ок, можно стыковать
-  } else if(endOpen==="B*" && (a.startsWith("B") || b.startsWith("B"))) {
-    // всё ок
-  } else {
- // обычное правило: должно совпасть значение
-// стык только B ↔ A
-const isA = v => typeof v==="string" && v.startsWith("A");
-const isB = v => typeof v==="string" && v.startsWith("B");
+  if (!(tile.a === expected || tile.b === expected)) return false;
 
-if (isA(endOpen)) {
-  // конец открыт A → совпадать должен именно A плитки
-  if (a !== endOpen && b !== endOpen) return false;
-  // и вторая половина должна быть B
-  const other = (a === endOpen) ? b : a;
-  if (!isB(other)) return false;
-}
-
-if (isB(endOpen)) {
-  // конец открыт B → совпадать должен именно B плитки
-  if (a !== endOpen && b !== endOpen) return false;
-  // и вторая половина должна быть A
-  const other = (a === endOpen) ? b : a;
-  if (!isA(other)) return false;
-}
-
-const r = rectOf(pos.orient, pos.x, pos.y);
-return !collidesWithExisting(r);
-  }
+  const r = rectOf(pos.orient, pos.x, pos.y);
+  return !collidesWithExisting(r);
 }
 
 function hasLegalMove(hand){
   const ends = [
-    { e:endLeft, open:openLeft },
-    { e:endRight, open:openRight }
+    { open: openLeft  },
+    { open: openRight }
   ];
 
-  for(const t of hand){
-    for(const side of ends){
+  for (const t of hand){
+    for (const side of ends){
       const endOpen = side.open;
-      if(!endOpen) continue;
+      if (!endOpen) continue;
 
-      // 🔥 обычное совпадение текста
-      if (t.a === endOpen || t.b === endOpen) {
+      // ожидаемая сторона на фишке: Aᵢ ждёт Bᵢ, Bᵢ ждёт Aᵢ
+    if (canPlaceTileAtEnd(t, null, null, endOpen)) {
         return true;
       }
-    }
-  }
-  return false;
-}
-
 
 /* 🔥 добавляем алиас, чтобы updateControls работал */
 function hasPlayable(hand){
@@ -701,34 +665,42 @@ function hasPlayable(hand){
 /* ===========================================================================================
    Placing / autorotate
 =========================================================================================== */
+// ВКЛ/ВЫКЛ отладку
+const DEBUG = true;
+function dlog(...args){ if (DEBUG) console.log('[placeAt]', ...args); }
+
 function placeAt(whichEnd, tileData, choice, endOpen){
   const end = (whichEnd === 'left') ? endLeft : endRight;
   const pos = getNextPos(end, choice);
   if (!pos.orient) return false;
 
-  // Какая половина новой фишки соприкасается со швом
-  function touchingHalf(choice, orient){
-    if (orient === 'h'){
-      return (choice === 'right') ? 0 : 1; // left=правая, right=левая
-    } else {
-      return (choice === 'down') ? 0 : 1; // down=верх, up=низ
-    }
-  }
-  const touchIdx = touchingHalf(choice, pos.orient);
-
-  // Какая сторона у фишки совпадает с endOpen
+  // Что ждёт конец (Aᵢ ↔ Bᵢ)
   const expected = endOpen.startsWith('A')
     ? endOpen.replace('A','B')
     : endOpen.replace('B','A');
 
-  let curMatchIdx = (tileData.a === expected) ? 0
-                  : (tileData.b === expected) ? 1
-                  : -1;
-  if (curMatchIdx === -1) return false;
+  // Какая половина НОВОЙ кости у шва (0 — левая/верхняя, 1 — правая/нижняя)
+  let touchIdx;
+  if (pos.orient === 'h') {
+    // при постановке "вправо" шов слева от новой кости → касается ЛЕВАЯ половина (0)
+    // при постановке "влево" шов справа → касается ПРАВАЯ половина (1)
+    touchIdx = (choice === 'right') ? 0 : 1;
+  } else {
+    // при постановке "вниз" шов сверху → касается ВЕРХНЯЯ половина (0)
+    // при постановке "вверх" шов снизу → касается НИЖНЯЯ половина (1)
+    touchIdx = (choice === 'down') ? 0 : 1;
+  }
 
-  // Нужно ли флипать
-  const needFlip = (curMatchIdx !== touchIdx);
+  // В какой половине исходной кости лежит expected
+  let matchIdx = (tileData.a === expected) ? 0
+               : (tileData.b === expected) ? 1
+               : -1;
+  if (matchIdx === -1){
+    dlog('REJECT: no expected on tile', {endOpen, expected, a:tileData.a, b:tileData.b});
+    return false;
+  }
 
+  const needFlip = (matchIdx !== touchIdx);
   let a = tileData.a, b = tileData.b;
   let dispA = tileData.displayA, dispB = tileData.displayB;
   if (needFlip){
@@ -736,8 +708,13 @@ function placeAt(whichEnd, tileData, choice, endOpen){
     [dispA,dispB] = [dispB,dispA];
   }
 
-  const r = rectOf(pos.orient,pos.x,pos.y);
-  if (collidesWithExisting(r)) return false;
+  dlog('OK', {whichEnd, choice, endOpen, expected, pos, touchIdx, matchIdx, needFlip, final:{a,b}});
+
+  const r = rectOf(pos.orient, pos.x, pos.y);
+  if (collidesWithExisting(r)){
+    dlog('REJECT: collision at', r);
+    return false;
+  }
 
   const newTile = createTileEl(a, b, {
     orient: pos.orient,
@@ -752,35 +729,6 @@ function placeAt(whichEnd, tileData, choice, endOpen){
   end.el = newTile;
   return true;
 }
-
-
-function tryPlace(target, data){
-  if(!data || !target.classList.contains('dz')) return false;
-
-  const isLeft  = target.dataset.end === 'L';
-  const choice  = target.dataset.k;
-  const endOpen = isLeft ? openLeft : openRight;
-
-  // ожидаемая сторона на фишке, чтобы стыковаться с endOpen
-  const expected = endOpen.startsWith('A')
-    ? endOpen.replace('A','B')   // Aᵢ ждёт Bᵢ
-    : endOpen.replace('B','A');  // Bᵢ ждёт Aᵢ
-
-  // у фишки должен быть expected
-  let newOpen = null;
-  if (data.a === expected) newOpen = data.b;
-  else if (data.b === expected) newOpen = data.a;
-  else return false; // фишка не подходит по индексу
-
-  // ставим
-  if (placeAt(isLeft ? 'left' : 'right', data, choice, endOpen)){
-    if (isLeft) openLeft = newOpen; else openRight = newOpen;
-    return true;
-  }
-  return false;
-}
-
-
 
 
 /* ===========================================================================================
