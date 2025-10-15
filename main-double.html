@@ -709,31 +709,31 @@ function tryPlace(target, data){
   const choice = target.dataset.k;
   const endOpen = isLeft ? openLeft : openRight;
 
-  // Проверяем только совпадение ключа
-// Проверяем только по схеме B ↔ A
-const isA = v => typeof v==="string" && v.startsWith("A");
-const isB = v => typeof v==="string" && v.startsWith("B");
+  const isA = v => typeof v==="string" && v.startsWith("A");
+  const isB = v => typeof v==="string" && v.startsWith("B");
 
-let newOpen = null;
+  let newOpen = null;
 
-if (isA(endOpen)) {
-  // конец открыт A → совпасть должен A
-  if (!(data.a === endOpen || data.b === endOpen)) return false;
-  newOpen = (data.a === endOpen) ? data.b : data.a;
-  if (!isB(newOpen)) return false;
+  if (isA(endOpen)) {
+    if (!(data.a === endOpen || data.b === endOpen)) return false;
+    newOpen = (data.a === endOpen) ? data.b : data.a;
+    if (!isB(newOpen)) return false;
+  }
+
+  if (isB(endOpen)) {
+    if (!(data.a === endOpen || data.b === endOpen)) return false;
+    newOpen = (data.a === endOpen) ? data.b : data.a;
+    if (!isA(newOpen)) return false;
+  }
+
+  if(placeAt(isLeft?'left':'right', data, choice)){
+    if(isLeft) openLeft = newOpen; else openRight = newOpen;
+    return true;
+  }
+
+  return false;
 }
 
-if (isB(endOpen)) {
-  // конец открыт B → совпасть должен B
-  if (!(data.a === endOpen || data.b === endOpen)) return false;
-  newOpen = (data.a === endOpen) ? data.b : data.a;
-  if (!isA(newOpen)) return false;
-}
-
-if(placeAt(isLeft?'left':'right', data, choice)){
-  if(isLeft) openLeft = newOpen; else openRight = newOpen;
-  return true;
-}
 
 /* ===========================================================================================
    Fit chain
