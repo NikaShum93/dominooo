@@ -708,21 +708,18 @@ function tryPlace(target, data){
   const choice = target.dataset.k;
   const endOpen = isLeft ? openLeft : openRight;
 
-  const isA = v => typeof v==="string" && v.startsWith("A");
-  const isB = v => typeof v==="string" && v.startsWith("B");
-
   let newOpen = null;
 
-  if (isA(endOpen)) {
-    if (!(data.a === endOpen || data.b === endOpen)) return false;
-    newOpen = (data.a === endOpen) ? data.b : data.a;
-    if (!isB(newOpen)) return false;
+  // если конец открыт A*, ищем совпадение с B* плитки
+  if (endOpen.startsWith("A")) {
+    if (data.b.replace("B","A") !== endOpen) return false;
+    newOpen = data.a; // дальше откроется A*
   }
 
-  if (isB(endOpen)) {
-    if (!(data.a === endOpen || data.b === endOpen)) return false;
-    newOpen = (data.a === endOpen) ? data.b : data.a;
-    if (!isA(newOpen)) return false;
+  // если конец открыт B*, ищем совпадение с A* плитки
+  else if (endOpen.startsWith("B")) {
+    if (data.a.replace("A","B") !== endOpen) return false;
+    newOpen = data.b; // дальше откроется B*
   }
 
   if(placeAt(isLeft?'left':'right', data, choice)){
