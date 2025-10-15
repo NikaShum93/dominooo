@@ -702,39 +702,33 @@ function hasPlayable(hand){
 /* ===========================================================================================
    Placing / autorotate
 =========================================================================================== */
-function placeAt(whichEnd,tileData,choice){
-  const end=(whichEnd==='left')?endLeft:endRight;
-  const pos=getNextPos(end,choice);
-  const r=rectOf(pos.orient,pos.x,pos.y);
-  if(!pos.orient || collidesWithExisting(r)) return false;
+function placeAt(whichEnd, tileData, choice) {
+  const end = (whichEnd === 'left') ? endLeft : endRight;
+  const pos = getNextPos(end, choice);
+  const r   = rectOf(pos.orient, pos.x, pos.y);
+  if (!pos.orient || collidesWithExisting(r)) return false;
 
-  // определяем, нужен ли поворот
-let flip = (choice === "left" || choice === "up");
+  let a = tileData.a, b = tileData.b;
+  let dispA = tileData.displayA, dispB = tileData.displayB;
 
-// если flip → меняем местами половинки
-let dispA = flip ? tileData.displayB : tileData.displayA;
-let dispB = flip ? tileData.displayA : tileData.displayB;
-let keyA  = flip ? tileData.b : tileData.a;
-let keyB  = flip ? tileData.a : tileData.b;
+  // 🔥 корректный поворот: если конец совпадает с b — меняем местами
+  const endOpen = (whichEnd === 'left') ? openLeft : openRight;
+  if (endOpen === b) {
+    [a, b] = [b, a];
+    [dispA, dispB] = [dispB, dispA];
+  }
 
-let a = tileData.a, b = tileData.b;
-let dispA = tileData.displayA, dispB = tileData.displayB;
+  const newTile = createTileEl(
+    a, b,
+    { orient: pos.orient, left: pos.x, top: pos.y, displayA: dispA, displayB: dispB }
+  );
+  chainZoom.appendChild(newTile);
 
-// 🔥 поворот делаем только по совпадению ключа
-if (endOpen === b) {
-  [a, b] = [b, a];
-  [dispA, dispB] = [dispB, dispA];
+  applyPlaced(end, pos);
+  end.el = newTile;
+  return true;
 }
 
-const newTile = createTileEl(
-  a, b,
-  { orient:pos.orient, left:pos.x, top:pos.y, displayA:dispA, displayB:dispB }
-);
-chainZoom.appendChild(newTile);
-
-applyPlaced(end,pos);
-end.el = newTile;
-return true;
 
 
 function tryPlace(target, data){
