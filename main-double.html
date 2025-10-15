@@ -939,32 +939,33 @@ for(let r=0;r<7;r++){
 
 // стартовая на поле
 // стартовая на поле
+// стартовая на поле
 chainZoom.innerHTML='';
 const sx=Math.floor((br().w-TILE_W)/2);
 const sy=Math.floor((br().h-TILE_H)/2);
 
-// берём первую костяшку из колоды (без жёсткого return)
+// берём первую костяшку из колоды
 let first = deck.shift();
 if (!first) {
   console.warn("Deck is empty after deal — using fallback tile");
   first = { a:"A0", b:"B0", displayA:"sleep", displayB:"go", uid:uid() };
 }
 
-// ✅ создаём элемент и кладём его в центр
+// создаём элемент и кладём его в центр
 const startTile = createTileEl(first.a, first.b, {
   orient: 'h',
   left: sx,
   top: sy,
-  displayA: first.displayA,
+  displayA: first.displayA, // 👈 вот тут и будут твои пары B (слева) и A (справа)
   displayB: first.displayB
 });
 chainZoom.appendChild(startTile);
 
-// ✅ теперь задаём открытые концы и хвосты
+// только теперь выставляем концы
 openLeft  = first.a;
 openRight = first.b;
-endLeft   = { x:sx, y:sy, orient:'h', dir:-1, el:startTile };
-endRight  = { x:sx, y:sy, orient:'h', dir: 1, el:startTile };
+endLeft   = { x: sx, y: sy, orient: 'h', dir: -1, el: startTile };
+endRight  = { x: sx, y: sy, orient: 'h', dir:  1, el: startTile };
  
    renderPlayersBar();
   renderHand();
