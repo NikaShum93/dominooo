@@ -581,19 +581,18 @@ for(const side of ends){
   if(!side.e || !side.e.el) continue;
 
   // поддержка универсальных стартов A* / B*
-  const isA = v => typeof v==="string" && v.startsWith("A");
-  const isB = v => typeof v==="string" && v.startsWith("B");
-  const open = side.open;
+ const isA = v => typeof v==="string" && v.startsWith("A");
+const isB = v => typeof v==="string" && v.startsWith("B");
+const open = side.open;
 
-  let fits = false;
-  if(open === "A*"){
-    fits = isA(dragging.a) || isA(dragging.b);
-  } else if(open === "B*"){
-    fits = isB(dragging.a) || isB(dragging.b);
-  } else {
-    fits = (dragging.a===open || dragging.b===open);
-  }
-  if(!fits) continue;
+// Разрешаем зону ТОЛЬКО если у фишки есть ровно такой же ключ,
+// а ДРУГАЯ половина — противоположного типа.
+const matches =
+  (dragging.a === open && (isA(open) ? isB(dragging.b) : isA(dragging.b))) ||
+  (dragging.b === open && (isA(open) ? isB(dragging.a) : isA(dragging.a)));
+
+if (!matches) continue;
+
 
   const seam = getSeam(side.e);
 
