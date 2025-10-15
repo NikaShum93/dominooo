@@ -683,46 +683,24 @@ function placeAt(whichEnd,tileData,choice){
   return true;
 }
 
-function tryPlace(target,data){
+function tryPlace(target, data){
   if(!data || !target.classList.contains('dz')) return false;
 
- const isLeft = target.dataset.end==='L';
-const choice = target.dataset.k;
-const endOpen = isLeft ? openLeft : openRight;
+  const isLeft = target.dataset.end==='L';
+  const choice = target.dataset.k;
+  const endOpen = isLeft ? openLeft : openRight;
 
-const isA = v => typeof v==="string" && v.startsWith("A");
-const isB = v => typeof v==="string" && v.startsWith("B");
+  // Проверяем только совпадение ключа
+  if(!(data.a===endOpen || data.b===endOpen)) return false;
 
-// 1) универсальные старты пропускаем без совпадения значения
-let allowed = false;
-if(endOpen === "A*"){
-  allowed = isA(data.a) || isA(data.b);
-} else if(endOpen === "B*"){
-  allowed = isB(data.a) || isB(data.b);
-} else {
-  allowed = (data.a===endOpen || data.b===endOpen) &&
-            !( (isA(endOpen) && isA(data.a) && isA(data.b)) ||
-               (isB(endOpen) && isB(data.a) && isB(data.b)) );
-}
-if(!allowed) return false;
-
-const need = desiredHalfFor(choice);
-let a=data.a, b=data.b, dA=data.displayA, dB=data.displayB;
-
-// 2) разворот только когда конец не универсальный
-if(need==='a'){
-  if(endOpen!=="A*" && endOpen!=="B*" && a!==endOpen && b===endOpen){ [a,b]=[b,a]; [dA,dB]=[dB,dA]; }
-} else {
-  if(endOpen!=="A*" && endOpen!=="B*" && b!==endOpen && a===endOpen){ [a,b]=[b,a]; [dA,dB]=[dB,dA]; }
+  if(placeAt(isLeft?'left':'right', data, choice)){
+    const newOpen = (data.a === endOpen) ? data.b : data.a;
+    if(isLeft) openLeft = newOpen; else openRight = newOpen;
+    return true;
+  }
+  return false;
 }
 
-if(placeAt(isLeft?'left':'right', {a,b, displayA:dA, displayB:dB}, choice)){
-  const newOpen = (need==='a') ? b : a;
-  if(isLeft) openLeft = newOpen; else openRight = newOpen;
-  return true;
-}
-return false;
-}
 /* ===========================================================================================
    Fit chain
 =========================================================================================== */
