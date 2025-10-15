@@ -641,31 +641,28 @@ function canPlaceTileAtEnd(tile, end, choice, endOpen){
     // всё ок
   } else {
  // обычное правило: должно совпасть значение
-if(!(a===endOpen || b===endOpen)) return false;
-
-// стык только между A и B
+// стык только B ↔ A
 const isA = v => typeof v==="string" && v.startsWith("A");
 const isB = v => typeof v==="string" && v.startsWith("B");
 
 if (isA(endOpen)) {
-  // если конец открыт A — то подставлять можно только B
-  if (!(isB(a) || isB(b))) return false;
+  // конец открыт A → совпадать должен именно A плитки
+  if (a !== endOpen && b !== endOpen) return false;
+  // и вторая половина должна быть B
+  const other = (a === endOpen) ? b : a;
+  if (!isB(other)) return false;
 }
+
 if (isB(endOpen)) {
-  // если конец открыт B — то подставлять можно только A
-  if (!(isA(a) || isA(b))) return false;
+  // конец открыт B → совпадать должен именно B плитки
+  if (a !== endOpen && b !== endOpen) return false;
+  // и вторая половина должна быть A
+  const other = (a === endOpen) ? b : a;
+  if (!isA(other)) return false;
 }
 
-
-    const need = desiredHalfFor(choice);
-    if(need==='a'){
-      if(a!==endOpen && b===endOpen){ [a,b] = [b,a]; }
-    } else {
-      if(b!==endOpen && a===endOpen){ [a,b] = [b,a]; }
-    }
-
-    const r = rectOf(pos.orient, pos.x, pos.y);
-    return !collidesWithExisting(r);
+const r = rectOf(pos.orient, pos.x, pos.y);
+return !collidesWithExisting(r);
   }
 }
 
@@ -713,14 +710,29 @@ function tryPlace(target, data){
   const endOpen = isLeft ? openLeft : openRight;
 
   // Проверяем только совпадение ключа
-  if(!(data.a===endOpen || data.b===endOpen)) return false;
+// Проверяем только по схеме B ↔ A
+const isA = v => typeof v==="string" && v.startsWith("A");
+const isB = v => typeof v==="string" && v.startsWith("B");
 
-  if(placeAt(isLeft?'left':'right', data, choice)){
-    const newOpen = (data.a === endOpen) ? data.b : data.a;
-    if(isLeft) openLeft = newOpen; else openRight = newOpen;
-    return true;
-  }
-  return false;
+let newOpen = null;
+
+if (isA(endOpen)) {
+  // конец открыт A → совпасть должен A
+  if (!(data.a === endOpen || data.b === endOpen)) return false;
+  newOpen = (data.a === endOpen) ? data.b : data.a;
+  if (!isB(newOpen)) return false;
+}
+
+if (isB(endOpen)) {
+  // конец открыт B → совпасть должен B
+  if (!(data.a === endOpen || data.b === endOpen)) return false;
+  newOpen = (data.a === endOpen) ? data.b : data.a;
+  if (!isA(newOpen)) return false;
+}
+
+if(placeAt(isLeft?'left':'right', data, choice)){
+  if(isLeft) openLeft = newOpen; else openRight = newOpen;
+  return true;
 }
 
 /* ===========================================================================================
