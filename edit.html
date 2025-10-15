@@ -5,29 +5,94 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Domino Editor</title>
 <style>
-  body{
-    background:#2c1a32; color:#fdf4ff; font:16px "Inter", sans-serif;
-    display:flex; flex-direction:column; align-items:center; padding:20px; min-height:100vh
+    body{
+    margin:0; padding:0;
+    background: url("https://img.genially.com/64233afb55129a0017751c8e/80454769-7ad4-4911-b11a-636485807651.jpeg") no-repeat center center fixed;
+    background-size:cover;
+    font:16px "Inter", sans-serif;
+    color:#fdf4ff;
+    display:flex; flex-direction:column; align-items:center;
+    min-height:100vh;
+    text-align:center;
+    position:relative;
+    overflow-x:hidden;
   }
-  h1{color:#ffda8b; text-shadow:0 0 6px rgba(255,218,139,.7)}
-  textarea{
-    width:90%; max-width:600px; min-height:80px; margin:10px 0;
-    padding:10px; border-radius:8px; border:2px solid #e6a8ff; background:#fffaf5; color:#2c1a32
+
+ h1{
+  margin-top:10px;
+  font-size:2.2em;
+  color:#ffeeb0;
+  text-shadow:0 0 8px #ffae00, 0 0 16px #d06bff;
+}
+
+    .logo{
+    margin:20px auto;
+    width:120px;
+    filter: drop-shadow(0 0 10px #ffda8b);
   }
+    textarea{
+    width:90%; max-width:600px; min-height:80px; margin:12px auto;
+    padding:12px; border-radius:12px; border:2px solid #ffda8b;
+    background:rgba(255,255,255,0.9); color:#2c1a32; font-size:15px;
+    box-shadow:0 0 10px rgba(255,218,139,.6);
+  }
+ .garland{
+    position:absolute; top:0; left:0; width:100%; display:flex; justify-content:space-around;
+    pointer-events:none; padding:10px;
+  }
+  .garland span{
+    width:14px; height:14px; border-radius:50%;
+    background:#ffda8b; box-shadow:0 0 8px #ffda8b;
+    animation: blink 1.5s infinite alternate;
+  }
+  .garland span:nth-child(2n){background:#ff7eff; box-shadow:0 0 8px #ff7eff; animation-delay:.3s}
+  .garland span:nth-child(3n){background:#7ef9ff; box-shadow:0 0 8px #7ef9ff; animation-delay:.6s}
+  @keyframes blink{from{opacity:.4} to{opacity:1}}
   label{margin:8px 0; display:flex; align-items:center; gap:6px}
+    p, label{
+    font-size:15px;
+    background:rgba(46,25,56,0.6);
+    padding:8px 14px;
+    border-radius:8px;
+    margin:10px auto;
+    max-width:650px;
+    box-shadow:0 0 8px rgba(255,126,255,.4);
+  }
+
   button{
-    padding:12px 20px; border-radius:10px; border:none; background:#ffda8b;
-    color:#2c1a32; cursor:pointer; font-weight:700; font-size:16px; margin:14px 0
+    padding:12px 24px; border-radius:12px; border:none;
+    background:linear-gradient(90deg,#ffda8b,#ff7eff);
+    color:#2c1a32; cursor:pointer; font-weight:700; font-size:16px; margin:18px 0;
+    box-shadow:0 0 12px rgba(255,218,139,.8),0 0 20px rgba(208,107,255,.7);
+    transition:transform .2s, box-shadow .2s;
+  }
+  button:hover{
+    transform:scale(1.05);
+    box-shadow:0 0 16px #ffda8b,0 0 28px #d06bff;
   }
   #embedCodeBox{display:none; margin-top:20px; width:90%; max-width:700px}
   #embedCode{
-    width:100%; min-height:100px; padding:10px; border-radius:8px; background:#1e1022; color:#ffda8b;
-    font-family:monospace; font-size:14px
+    width:100%; min-height:100px; padding:12px; border-radius:12px;
+    background:rgba(30,16,34,0.9); color:#ffda8b;
+    font-family:monospace; font-size:14px;
+    border:2px solid #ff7eff;
+    box-shadow:0 0 12px rgba(255,126,255,.6);
   }
+
 </style>
 </head>
 <body>
-  <h1>Domino · Editor</h1>
+  <div class="garland">
+  <span></span><span></span><span></span><span></span><span></span>
+  <span></span><span></span><span></span><span></span><span></span>
+</div>
+
+   <div class="garland" style="top:auto; bottom:0;">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+  <img src="https://con.xl.ru/fnfLZuvpAUiDaqDs8d1-2g/images/kcJYv7OsYUSGt5AfGq5jIw.png" alt="Лого КГБ" class="logo">
+  <h1>КГБ · Расширение "Домино"</h1>
 
   <p>Введите список A (слова или ссылки на картинки, через запятую или с новой строки):</p>
   <textarea id="listA" placeholder="CAT, DOG, SUN, MOON"></textarea>
