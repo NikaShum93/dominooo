@@ -229,7 +229,11 @@
 </div>
 <canvas id="fireworksCanvas" style="position:fixed; inset:0; z-index:1000000; pointer-events:none; display:none;"></canvas>
 <audio id="winSound" src="win.mp3" preload="auto"></audio>
-
+<audio id="winSound" src="win.mp3" preload="auto"></audio>
+<audio id="sDraw" src="draw.mp3" preload="auto"></audio>
+<audio id="sPick" src="pick.mp3" preload="auto"></audio>
+<audio id="sPlace" src="place.mp3" preload="auto"></audio>
+<audio id="sClick" src="click.mp3" preload="auto"></audio>
 <script>
 /* ===========================================================================================
    Utils & State
@@ -243,6 +247,19 @@ function getQueryData(){
   if(!raw) return null;
   try{ return JSON.parse(decodeURIComponent(raw)); }
   catch(e){ return null; }
+}
+function getQueryData(){
+  const raw=new URLSearchParams(location.search).get('data');
+  ...
+}
+
+// 🔥 универсальный проигрыватель звуков
+function playSound(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.currentTime = 0;
+    el.play().catch(()=>{});
+  }
 }
 
 /* constants */
@@ -493,7 +510,9 @@ function fitToHalf(node, container) {
       e.dataTransfer.setData('text/plain','domino');
       hidePreview();
       renderDirectionalZones();
+       playSound("sPick"); 
     });
+    
     el.addEventListener('dragend',()=>{
       dragging=null; clearZones();
     });
@@ -818,16 +837,20 @@ function buildDeckFromData(d){
   const A = (d && Array.isArray(d.listA)) ? d.listA : [];
   const B = (d && Array.isArray(d.listB)) ? d.listB : [];
 
-  const m = Math.min(A.length, B.length);
-  for (let i = 0; i < m; i++){
+ const m = Math.min(A.length, B.length);
+for (let i = 0; i < m; i++){
+  for (let j = 0; j < m; j++){
+    if (i === j) continue;               // 🔥 исключаем одинаковые индексы
     out.push({
-      a: "A"+i,            // ключ для совпадений
-      b: "B"+i,
-      displayA: B[i],      // СЛЕВА -> B (картинка или что-то ещё)
-      displayB: A[i],      // СПРАВА -> A (слово)
+      a: "A"+i,                           // справа — A[i]
+      b: "B"+j,                           // слева — B[j]
+      displayA: B[j],                     // СЛЕВА показываем B
+      displayB: A[i],                     // СПРАВА показываем A
       uid: uid()
     });
   }
+}
+
 
   return out;
 }
@@ -938,10 +961,11 @@ const startTile = createTileEl(first.a, first.b, {
 chainZoom.appendChild(startTile);
 
 // только теперь выставляем концы
-openLeft  = first.a;
-openRight = first.b;
+openLeft  = first.b; // слева теперь всегда B*
+openRight = first.a; // справа всегда A*
 endLeft   = { x: sx, y: sy, orient: 'h', dir: -1, el: startTile };
 endRight  = { x: sx, y: sy, orient: 'h', dir:  1, el: startTile };
+
  
    renderPlayersBar();
   renderHand();
@@ -970,6 +994,7 @@ drawBtn.addEventListener('click', ()=>{
   hands[currentPlayer] = hand;
   renderHand();
   updateControls();
+  playSound("sDraw"); // 🔥 звук «взял из колоды»
 });
 
 skipBtn.addEventListener('click', ()=>{
@@ -980,7 +1005,10 @@ skipBtn.addEventListener('click', ()=>{
 
 restartBtn.addEventListener('click', ()=>location.reload());
 startBtn.addEventListener('click', startGame);
-
+// 🔥 общий звук клика для UI
+[startBtn, restartBtn, skipBtn].forEach(btn=>{
+  btn.addEventListener('click', ()=>playSound("sClick"));
+});
 addEventListener('dragover', e=>{ if(dragging) e.preventDefault(); });
 
 addEventListener('drop', e=>{
@@ -993,6 +1021,7 @@ addEventListener('drop', e=>{
       const arr=hands[dragging.owner]||[];
       hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid);
       renderHand();
+      playSound("sPlace"); // 🔥 звук «поставил фишку»
       if(hands[dragging.owner].length===0){
         endByWinner(dragging.owner);
         dragging=null; clearZones(); return;
