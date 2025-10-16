@@ -572,9 +572,24 @@ function applyPlaced(end,pos){ end.x=pos.x; end.y=pos.y; end.orient=pos.orient; 
 /* ===========================================================================================
    Rules / helpers
 =========================================================================================== */
-function desiredHalfFor(choice){
-  return (choice==='right' || choice==='down') ? 'a' : 'b';
+function desiredHalfFor(choice, orient) {
+  if (orient === 'h') {
+    // горизонтальная плитка
+    return (choice === 'right') ? 'a'
+         : (choice === 'left')  ? 'b'
+         : (choice === 'down')  ? 'a'
+         : (choice === 'up')    ? 'b'
+         : null;
+  } else {
+    // вертикальная плитка
+    return (choice === 'down') ? 'a'
+         : (choice === 'up')   ? 'b'
+         : (choice === 'right')? 'a'
+         : (choice === 'left') ? 'b'
+         : null;
+  }
 }
+
 
 // совпадает индекс и разные префиксы (A↔B), например A3 с B3
 function isOppositePrefixSameIndex(val, endOpen){
@@ -683,7 +698,7 @@ function tryPlace(dropZone, tileData){
   if (!pos.orient) return false;
 
   // какая половинка должна физически прилечь к стыку
-  const touchHalf = desiredHalfFor(choice);
+ const touchHalf = desiredHalfFor(choice, pos.orient);
 
   // определяем, какая половина совпадает с открытым концом (индекс совпал, префиксы разные)
   let matchHalf = null;
