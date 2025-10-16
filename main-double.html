@@ -614,22 +614,6 @@ if (!(isOppositePrefixSameIndex(tile.a, endOpen) ||
   const r = rectOf(pos.orient, pos.x, pos.y);
   return !collidesWithExisting(r);
 }
-// 🔥 helpers для проверки "у игрока хотя бы одна фишка подходит"
-function ensurePlayable(hand, openLeft, openRight){
-  return hand.some(t =>
-    isOppositePrefixSameIndex(t.a, openLeft) ||
-    isOppositePrefixSameIndex(t.b, openLeft) ||
-    isOppositePrefixSameIndex(t.a, openRight) ||
-    isOppositePrefixSameIndex(t.b, openRight)
-  );
-}
-
-function isOppositePrefixSameIndex(x, y){
-  if (!x || !y) return false;
-  const px = x[0], py = y[0];
-  if (px === py) return false;
-  return x.slice(1) === y.slice(1);
-}
 
 
 function hasLegalMove(hand){
@@ -889,19 +873,21 @@ function buildDeckFromData(d){
   const A = (d && Array.isArray(d.listA)) ? d.listA : [];
   const B = (d && Array.isArray(d.listB)) ? d.listB : [];
 
-  const m = Math.min(A.length, B.length);
-  for (let i = 0; i < m; i++){
+ const m = Math.min(A.length, B.length);
+for (let i = 0; i < m; i++){
+  for (let j = 0; j < m; j++){
+    if (i === j) continue; // ⬅️ нельзя одинаковые индексы
     out.push({
       a: "A"+i,
-      b: "B"+i,  // ⬅️ теперь только совпадающие индексы
-      displayA: B[i],
+      b: "B"+j,
+      displayA: B[j],
       displayB: A[i],
       uid: uid()
     });
   }
-  return shuffle(out);
 }
-
+  return out;
+}
 
 function makeDefaultDeck(){
   const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
@@ -1007,38 +993,20 @@ for (let r = 0; r < 7; r++) {
 }
 
 // создаём элемент и кладём его в центр
-// создаём элемент и кладём его в центр
 const startTile = createTileEl(first.a, first.b, {
   orient: 'h',
   left: sx,
   top: sy,
-  displayA: first.displayA,
-  displayB: first.displayB
+  displayA: first.displayA, // Слева B
+  displayB: first.displayB  // Справа A
 });
 chainZoom.appendChild(startTile);
 
 // только теперь выставляем концы
-openLeft  = first.b;
-openRight = first.a;
+openLeft  = first.b; // слева теперь всегда B*
+openRight = first.a; // справа всегда A*
 endLeft   = { x: sx, y: sy, orient: 'h', dir: -1, el: startTile };
 endRight  = { x: sx, y: sy, orient: 'h', dir:  1, el: startTile };
-
-// 🔥 гарантия валидного старта: проверяем руки игроков
-for (let i = 0; i < n; i++) {
-  if (!ensurePlayable(hands[i], openLeft, openRight)) {
-    const candidate = deck.find(t =>
-      isOppositePrefixSameIndex(t.a, openLeft) ||
-      isOppositePrefixSameIndex(t.b, openLeft) ||
-      isOppositePrefixSameIndex(t.a, openRight) ||
-      isOppositePrefixSameIndex(t.b, openRight)
-    );
-    if (candidate) {
-      hands[i][0] = candidate;
-      deck = deck.filter(t => t.uid !== candidate.uid);
-    }
-  }
-}
-
 
  
    renderPlayersBar();
@@ -1061,28 +1029,18 @@ for (let i = 0; i < n; i++) {
 /* ===========================================================================================
    Buttons & DnD
 =========================================================================================== */
-let drawCount = 0; // 🔥 сколько раз подряд тянул текущий игрок
-
 drawBtn.addEventListener('click', ()=>{
-  if (!deck.length) return;
   const hand = hands[currentPlayer] || [];
+  if (!deck.length) return;
   hand.push(deck.shift());
   hands[currentPlayer] = hand;
   renderHand();
   updateControls();
-  playSound("sDraw");
-
-  drawCount++;
-  if (drawCount >= 3) {
-    drawBtn.disabled = true;
-    skipBtn.disabled = false; // после 3-го добора включаем «Пропустить»
-  }
+  playSound("sDraw"); // 🔥 звук «взял из колоды»
 });
 
-
 skipBtn.addEventListener('click', ()=>{
-  drawCount = 0; // 🔥 сброс счётчика доборов
-  passes[currentPlayer] = (passes[currentPlayer]||0) + 1;
+  passes[currentPlayer]=(passes[currentPlayer]||0)+1;
   if(everyonePassed()){ endByPoints(); return; }
   nextPlayer();
 });
