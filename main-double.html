@@ -747,9 +747,6 @@ function tryPlace(dropZone, tileData) {
   // обновляем геометрию конца
   applyPlaced(endObj, pos);
 
-- // новый открытый конец = противоположная половина от matchIdx
-- const newOpen = (matchIdx === 0) ? b : a;
-+ // ✅ новый открытый конец = противоположная от КАСАЮЩЕЙСЯ стороны (touchIdx)
 + const newOpen = (touchIdx === 0) ? a : b;
 
   if (whichEnd === 'left') {
