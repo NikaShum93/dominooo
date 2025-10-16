@@ -857,15 +857,21 @@ function computeUniformSize(deck){
 =========================================================================================== */
 function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderPlayersBar(); renderHand(); updateControls(); } document.getElementById("playersBar").style.display = "flex";
 function everyonePassed(){ for(let i=0;i<playerNames.length;i++){ if(!passes[i]) return false; } return true; }
-function endByWinner(i){
-  document.getElementById('winnerName').textContent = playerNames[i];
-  document.getElementById('finalOverlay').style.display = 'flex';
+
+  // формируем комбинированное сообщение
+ function endByWinner(i){
+  const winner = playerNames[i];
+  const overlay = document.getElementById('finalOverlay');
+  const finalMsg = overlay.querySelector('.final-message');
+
+  // комбинированное сообщение: и текст из редактора, и победитель
+  finalMsg.innerHTML = `
+    🎉 ${window.feedbackText || "Поздравляем!"} 🎉<br>
+    Победитель: <span>${winner}</span>
+  `;
+
+  overlay.style.display = 'flex';
   startFireworks();
-}
-function endByPoints(){
-  let best=Infinity, wi=0;
-  for(let i=0;i<playerNames.length;i++){ const s=(hands[i]||[]).length; if(s<best){ best=s; wi=i; } }
-  endByWinner(wi);
 }
 
 /* ===========================================================================================
