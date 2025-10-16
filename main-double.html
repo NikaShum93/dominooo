@@ -697,14 +697,36 @@ function tryPlace(dropZone, tileData){
   if (!pos.orient) return false;
 
   // определяем, совпадает ли половинка именно с ОТКРЫТЫМ концом
-  let matchHalf = null;
-  if (tileData.a === endOpen && tileData.b[0] !== endOpen[0]) {
-    matchHalf = 'a';
-  }
-  else if (tileData.b === endOpen && tileData.a[0] !== endOpen[0]) {
-    matchHalf = 'b';
-  }
-  if (!matchHalf) return false;
+ const expected = endOpen[0] === 'A'
+  ? 'B' + endOpen.slice(1)
+  : 'A' + endOpen.slice(1);
+
+// какая половина фишки содержит expected (Bᵢ к Aᵢ или Aᵢ к Bᵢ)
+let matchIdx = (tileData.a === expected) ? 0
+           : (tileData.b === expected) ? 1
+           : -1;
+if (matchIdx === -1) return false;
+
+// где у новой фишки будет шов (какую половинку она подставляет к концу)
+let touchIdx;
+if (pos.orient === 'h') {
+  // при постановке вправо шов слева → касается левая половина (0)
+  // при постановке влево шов справа → касается правая половина (1)
+  touchIdx = (choice === 'right') ? 0 : 1;
+} else {
+  // при постановке вниз шов сверху → касается верхняя половина (0)
+  // при постановке вверх шов снизу → касается нижняя половина (1)
+  touchIdx = (choice === 'down') ? 0 : 1;
+}
+
+// если совпало не той половиной — переворачиваем
+let a = tileData.a, b = tileData.b;
+let dispA = tileData.displayA, dispB = tileData.displayB;
+if (matchIdx !== touchIdx) {
+  [a, b] = [b, a];
+  [dispA, dispB] = [dispB, dispA];
+}
+
 
   const r = rectOf(pos.orient, pos.x, pos.y);
   if (collidesWithExisting(r)) return false;
@@ -863,7 +885,7 @@ function buildDeckFromData(d){
  const m = Math.min(A.length, B.length);
 for (let i = 0; i < m; i++){
   for (let j = 0; j < m; j++){
-    if (i === j) continue; // 🚫 пропускаем одинаковые индексы
+    if (i === j) continue; // ⬅️ нельзя одинаковые индексы
     out.push({
       a: "A"+i,
       b: "B"+j,
@@ -879,17 +901,19 @@ for (let i = 0; i < m; i++){
 function makeDefaultDeck(){
   const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
   const out=[];
-  for (let i = 0; i < F.length; i++) {
-    for (let j = 0; j < F.length; j++) {
-      out.push({
-        a: "A" + i,
-        b: "B" + j,
-        displayA: F[j],
-        displayB: F[i],
-        uid: uid()
-      });
-    }
+ for (let i = 0; i < F.length; i++) {
+  for (let j = 0; j < F.length; j++) {
+    if (i === j) continue; // ⬅️ отсекаем Aᵢ–Bᵢ
+    out.push({
+      a: "A" + i,
+      b: "B" + j,
+      displayA: F[j],
+      displayB: F[i],
+      uid: uid()
+    });
   }
+}
+
   return out;
 }
 
