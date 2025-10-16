@@ -854,15 +854,13 @@ function updateControls(){
   turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
 
   const currentHand = hands[currentPlayer] || [];
-  
-  // 🔥 исправлено: проверяем не только A/B, но и обычные слова
   const playable = hasLegalMove(currentHand);
 
   if (playable) {
     drawBtn.disabled = true;
     skipBtn.disabled = true;
   } else {
-    if (deck.length > 0) {
+    if (deck.length > 0 && drawsThisTurn < MAX_DRAWS_PER_TURN) {
       drawBtn.disabled = false;   // можно взять
       skipBtn.disabled = true;
     } else {
@@ -871,7 +869,6 @@ function updateControls(){
     }
   }
 }
-
 
 
 /* ===========================================================================================
