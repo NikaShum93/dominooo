@@ -659,46 +659,29 @@ function hasLegalMove(hand){
       }
 
 /* 🔥 добавляем алиас, чтобы updateControls работал */
-function hasPlayable(hand){
-  return hasLegalMove(hand);
+function hasLegalMove(hand){
+  const ends = [
+    { e:endLeft, open: openLeft  },
+    { e:endRight, open: openRight }
+  ];
+
+  for (const t of hand){
+    for (const side of ends){
+      if (!side.open || !side.e) continue;
+
+      if (
+        canPlaceTileAtEnd(t, side.e, "right", side.open) ||
+        canPlaceTileAtEnd(t, side.e, "left", side.open) ||
+        canPlaceTileAtEnd(t, side.e, "up", side.open) ||
+        canPlaceTileAtEnd(t, side.e, "down", side.open)
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
-/* ===========================================================================================
-   Placing / autorotate
-=========================================================================================== */
-// ВКЛ/ВЫКЛ отладку
-const DEBUG = true;
-function dlog(...args){ if (DEBUG) console.log('[placeAt]', ...args); }
 
-function placeAt(whichEnd, tileData, choice, endOpen){
-  const end = (whichEnd === 'left') ? endLeft : endRight;
-  const pos = getNextPos(end, choice);
-  if (!pos.orient) return false;
-
-  // Что ждёт конец (Aᵢ ↔ Bᵢ)
-  const expected = endOpen.startsWith('A')
-    ? endOpen.replace('A','B')
-    : endOpen.replace('B','A');
-
-  // Какая половина НОВОЙ кости у шва (0 — левая/верхняя, 1 — правая/нижняя)
-  let touchIdx;
-  if (pos.orient === 'h') {
-    // при постановке "вправо" шов слева от новой кости → касается ЛЕВАЯ половина (0)
-    // при постановке "влево" шов справа → касается ПРАВАЯ половина (1)
-    touchIdx = (choice === 'right') ? 0 : 1;
-  } else {
-    // при постановке "вниз" шов сверху → касается ВЕРХНЯЯ половина (0)
-    // при постановке "вверх" шов снизу → касается НИЖНЯЯ половина (1)
-    touchIdx = (choice === 'down') ? 0 : 1;
-  }
-
-  // В какой половине исходной кости лежит expected
-  let matchIdx = (tileData.a === expected) ? 0
-               : (tileData.b === expected) ? 1
-               : -1;
-  if (matchIdx === -1){
-    dlog('REJECT: no expected on tile', {endOpen, expected, a:tileData.a, b:tileData.b});
-    return false;
-  }
 
   const needFlip = (matchIdx !== touchIdx);
   let a = tileData.a, b = tileData.b;
