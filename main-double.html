@@ -168,11 +168,48 @@
   align-items:center;
 }
 
-  /* ===== HAND ===== */
-  .hands{ width:100%; display:flex; flex-direction:column; gap:10px; padding:10px 0 20px; }
-  .hand-header{ width:100%; text-align:center; font-weight:900; color:#e9d2a2; }
-  .tray{ width:100%; height:60px; display:flex; gap:8px; align-items:center; overflow-x:auto; padding:8px 10px; border:2px solid #8c5c2f; background:#5a3b21; border-radius:12px; }
-  .tray>.tile{ position:static; }
+ /* ===== HAND ===== */
+.hands {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 0 20px;
+}
+
+.hand-header {
+  width: 100%;
+  text-align: center;
+  font-weight: 900;
+  color: #e9d2a2;
+}
+
+.tray {
+  width: 100%;
+  height: 90px;               /* фиксированная высота */
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  overflow-x: auto;           /* скролл по горизонтали */
+  padding: 8px 10px;
+  border: 2px solid #8c5c2f;
+  background: #5a3b21;
+  border-radius: 12px;
+}
+
+/* фиксированный размер для доминошек в руке */
+.tile.hand {
+  width: 200px !important;
+  height: 70px !important;
+  transform: none !important;     /* убираем уменьшение */
+  flex: 0 0 auto;                 /* не сжимать */
+  cursor: grab;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.25));
+}
+.tile.hand * {
+  pointer-events: none;
+}
+
 
   /* ===== DROP ZONES ===== */
   .dz{ position:absolute; width:38px; height:38px; border:2px dashed #b68a3e; border-radius:10px; display:none; background:rgba(255,215,120,.08); }
