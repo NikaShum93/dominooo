@@ -720,26 +720,6 @@ function tryPlace(dropZone, tileData){
   return true;
 }
 
-
-
-  const r = rectOf(pos.orient,pos.x,pos.y);
-  if (collidesWithExisting(r)) return false;
-
-  // создаём костяшку
-  const el = createTileEl(tileData.a,tileData.b,{
-    orient: pos.orient, left: pos.x, top: pos.y,
-    displayA: tileData.displayA, displayB: tileData.displayB
-  });
-  chainZoom.appendChild(el);
-
-  // обновляем концы
-  applyPlaced(endObj,pos);
-  if (whichEnd==='left'){ openLeft = (tileData.a===expected)? tileData.b : tileData.a; }
-  else { openRight = (tileData.a===expected)? tileData.b : tileData.a; }
-
-  return true;
-}
-
 /* ===========================================================================================
    Fit chain
 =========================================================================================== */
@@ -859,7 +839,6 @@ function buildDeckFromData(d){
  const m = Math.min(A.length, B.length);
 for (let i = 0; i < m; i++){
   for (let j = 0; j < m; j++){
-    if (i === j) continue;               // 🔥 исключаем одинаковые индексы
     out.push({
       a: "A"+i,                           // справа — A[i]
       b: "B"+j,                           // слева — B[j]
@@ -877,9 +856,15 @@ for (let i = 0; i < m; i++){
 function makeDefaultDeck(){
   const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
   const out=[];
-  for(let i=0;i<F.length;i++){
-    for(let j=i;j<F.length;j++){
-      out.push({ a:i, b:j, displayA:F[i], displayB:F[j], uid:uid() });
+  for (let i = 0; i < F.length; i++) {
+    for (let j = 0; j < F.length; j++) {
+      out.push({
+        a: "A" + i,
+        b: "B" + j,
+        displayA: F[j],
+        displayB: F[i],
+        uid: uid()
+      });
     }
   }
   return out;
