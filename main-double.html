@@ -697,25 +697,24 @@ function tryPlace(dropZone, tileData){
   const pos = getNextPos(endObj, choice);
   if (!pos.orient) return false;
 
- // определяем, какая половина совпадает с открытым концом
+ // 1. Определяем какая половина совпадает с концом
 let matchHalf = null;
 if (isOppositePrefixSameIndex(tileData.a, endOpen)) matchHalf = 'a';
 else if (isOppositePrefixSameIndex(tileData.b, endOpen)) matchHalf = 'b';
 if (!matchHalf) return false;
 
-const r = rectOf(pos.orient, pos.x, pos.y);
-if (collidesWithExisting(r)) return false;
+// 2. Определяем какая половина реально должна лечь к seam
+let needHalf;
+if (endObj.orient === 'h') {
+  needHalf = (endObj.dir === 1) ? 'a' : 'b';
+} else {
+  needHalf = (endObj.dir === 1) ? 'a' : 'b';
+}
 
-// физический разворот
+// 3. Если совпавшая половина не совпадает с нужной → swap
 let a = tileData.a, b = tileData.b;
 let dispA = tileData.displayA, dispB = tileData.displayB;
-
-// 👉 определяем реальную половинку, которая должна прижаться к seam
-// если тянем вправо/вниз — seam касается «a»; если влево/вверх — seam касается «b»
-let needHalf = (choice === 'right' || choice === 'down') ? 'a' : 'b';
-
-// если совпавшая половина не та, что должна лечь к seam — переворачиваем
-if (matchHalf !== needHalf){
+if (matchHalf !== needHalf) {
   [a, b] = [b, a];
   [dispA, dispB] = [dispB, dispA];
 }
