@@ -740,12 +740,11 @@ function tryPlace(dropZone, tileData){
 
   // обновляем состояние концов
   applyPlaced(endObj, pos);
-  if (whichEnd === 'left'){
-    openLeft  = (a === endOpen) ? b : a;
-  } else {
-    openRight = (a === endOpen) ? b : a;
-  }
-
+ if (whichEnd === 'left') {
+  openLeft = (touchIdx === 0) ? b : a;
+} else {
+  openRight = (touchIdx === 0) ? b : a;
+}
   return true;
 }
 
