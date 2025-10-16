@@ -873,20 +873,47 @@ function buildDeckFromData(d){
   const A = (d && Array.isArray(d.listA)) ? d.listA : [];
   const B = (d && Array.isArray(d.listB)) ? d.listB : [];
 
- const m = Math.min(A.length, B.length);
-for (let i = 0; i < m; i++){
-  for (let j = 0; j < m; j++){
-    if (i === j) continue; // ⬅️ нельзя одинаковые индексы
+  const m = Math.min(A.length, B.length);
+
+  // --- 2 валидные костяшки на каждую пару ---
+  for (let i = 0; i < m; i++){
+    // вариант A[i] ↔ B[i], но раскладываем по разным половинкам
     out.push({
-      a: "A"+i,
-      b: "B"+j,
+      a: "A" + i,
+      b: "B" + i,
+      displayA: B[i],
+      displayB: A[i],
+      uid: uid()
+    });
+    out.push({
+      a: "B" + i,
+      b: "A" + i,
+      displayA: A[i],
+      displayB: B[i],
+      uid: uid()
+    });
+  }
+
+  // --- добавляем 20% мусора ---
+  const totalPairs = out.length;
+  const junkCount = Math.floor(totalPairs * 0.2);
+
+  for (let k = 0; k < junkCount; k++) {
+    const i = Math.floor(Math.random() * m);
+    let j;
+    do { j = Math.floor(Math.random() * m); }
+    while (j === i); // мусор ≠ валидная пара
+
+    out.push({
+      a: "A" + i,
+      b: "B" + j,
       displayA: B[j],
       displayB: A[i],
       uid: uid()
     });
   }
-}
-  return out;
+
+  return shuffle(out);
 }
 
 function makeDefaultDeck(){
@@ -1027,17 +1054,42 @@ endRight  = { x: sx, y: sy, orient: 'h', dir:  1, el: startTile };
 }
 
 /* ===========================================================================================
+/* ===========================================================================================
    Buttons & DnD
 =========================================================================================== */
+let drawsThisTurn = 0; // сколько уже взято за этот ход
+const MAX_DRAWS_PER_TURN = 3;
+
+// при клике на кнопку "Взять"
 drawBtn.addEventListener('click', ()=>{
   const hand = hands[currentPlayer] || [];
   if (!deck.length) return;
+
+  if (drawsThisTurn >= MAX_DRAWS_PER_TURN) {
+    drawBtn.disabled = true; // блокируем кнопку, если попытка лишняя
+    return;
+  }
+
   hand.push(deck.shift());
   hands[currentPlayer] = hand;
   renderHand();
   updateControls();
-  playSound("sDraw"); // 🔥 звук «взял из колоды»
+  playSound("sDraw");
+
+  drawsThisTurn++;
+  if (drawsThisTurn >= MAX_DRAWS_PER_TURN) {
+    drawBtn.disabled = true; // блокируем кнопку, если достигнут лимит
+  }
 });
+
+function nextPlayer(){
+  currentPlayer=(currentPlayer+1)%playerNames.length;
+  drawsThisTurn = 0;          // 🔥 сброс счётчика
+  drawBtn.disabled = false;   // 🔥 разблокируем кнопку для нового игрока
+  renderPlayersBar();
+  renderHand();
+  updateControls();
+}
 
 skipBtn.addEventListener('click', ()=>{
   passes[currentPlayer]=(passes[currentPlayer]||0)+1;
