@@ -859,16 +859,22 @@ function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; rende
 function everyonePassed(){ for(let i=0;i<playerNames.length;i++){ if(!passes[i]) return false; } return true; }
 
   // формируем комбинированное сообщение
- function endByWinner(i){
+function endByWinner(i){
   const winner = playerNames[i];
   const overlay = document.getElementById('finalOverlay');
   const finalMsg = overlay.querySelector('.final-message');
 
-  // комбинированное сообщение: и текст из редактора, и победитель
-  finalMsg.innerHTML = `
-    🎉 ${window.feedbackText || "Поздравляем!"} 🎉<br>
-    Победитель: <span>${winner}</span>
-  `;
+  const fb = window.feedbackText && window.feedbackText.trim();
+  if (fb) {
+    finalMsg.innerHTML = `
+      🎉 ${fb} 🎉<br>
+      Победитель: <span>${winner}</span>
+    `;
+  } else {
+    finalMsg.innerHTML = `
+      Победитель: <span>${winner}</span>
+    `;
+  }
 
   overlay.style.display = 'flex';
   startFireworks();
