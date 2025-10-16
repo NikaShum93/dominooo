@@ -910,19 +910,18 @@ function startFireworks(){
    Deck (from data) + default
 =========================================================================================== */
 function buildDeckFromData(d) {
-  const out = [];
   const A = (d && Array.isArray(d.listA)) ? d.listA : [];
   const B = (d && Array.isArray(d.listB)) ? d.listB : [];
   const m = Math.min(A.length, B.length);
 
-  const counts = {}; // учёт сколько раз использован каждый Ai и Bj
+  const counts = {};
   const usedPairs = new Set();
+  const out = [];
 
-  // функция добавить костяшку
   function addTile(i, j) {
     const key1 = `A${i}-B${j}`;
     const key2 = `B${j}-A${i}`;
-    if (i === j) return false;                // нельзя одинаковые индексы
+    if (i === j) return false;                  // нельзя одинаковые индексы
     if (usedPairs.has(key1) || usedPairs.has(key2)) return false;
 
     out.push({
@@ -938,30 +937,48 @@ function buildDeckFromData(d) {
     return true;
   }
 
-  // пока не набрали ровно 3 для каждого
+  // === шаг 1: базовое наполнение ===
   for (let round = 0; round < 3; round++) {
     for (let i = 0; i < m; i++) {
-      // ищем j, с которым можно скомбинировать
       for (let j = 0; j < m; j++) {
-        if (i === j) continue;
-        const aCount = counts["A"+i] || 0;
-        const bCount = counts["B"+j] || 0;
-        if (aCount >= 3) break; // этот A уже набрал свои 3
-        if (bCount >= 3) continue;
-        if (addTile(i, j)) break; // добавили — выходим из j-цикла
+        if (counts["A"+i] >= 3) break;
+        if (counts["B"+j] >= 3) continue;
+        if (addTile(i, j)) break;
       }
     }
   }
 
-  // проверка: все ли по 3
-  for (let i = 0; i < m; i++) {
-    if ((counts["A"+i]||0) !== 3 || (counts["B"+i]||0) !== 3) {
-      console.warn("❗ Не удалось набрать ровно 3 для индекса", i, counts);
+  // === шаг 2: проверка связности ===
+  function isConnectable(tile, others) {
+    return others.some(o =>
+      (tile.a.slice(1) === o.b.slice(1) && tile.a[0] !== o.b[0]) ||
+      (tile.b.slice(1) === o.a.slice(1) && tile.b[0] !== o.a[0])
+    );
+  }
+
+  for (let i = out.length - 1; i >= 0; i--) {
+    if (!isConnectable(out[i], out.filter((_,j)=>j!==i))) {
+      out.splice(i,1); // убираем висячие
     }
   }
 
+  // === шаг 3: гарантировать стартовую ===
+  let attempts = 0;
+  while (attempts < 10) {
+    const first = out[Math.floor(Math.random()*out.length)];
+    const hasNeighbor = out.some(o =>
+      o !== first && (
+        (first.a.slice(1) === o.b.slice(1) && first.a[0] !== o.b[0]) ||
+        (first.b.slice(1) === o.a.slice(1) && first.b[0] !== o.a[0])
+      )
+    );
+    if (hasNeighbor) break; else attempts++;
+  }
+
+  shuffle(out);
   return out;
 }
+
 function makeDefaultDeck(){
   const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
   const out=[];
