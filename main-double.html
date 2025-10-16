@@ -738,13 +738,18 @@ function tryPlace(dropZone, tileData){
   });
   chainZoom.appendChild(el);
 
-  // обновляем состояние концов
-  applyPlaced(endObj, pos);
- if (whichEnd === 'left') {
-  openLeft = (touchIdx === 0) ? b : a;
+// обновляем состояние концов
+applyPlaced(endObj, pos);
+
+// касающаяся сторона была matchIdx
+const newOpen = (matchIdx === 0) ? b : a;
+
+if (whichEnd === 'left') {
+  openLeft = newOpen;
 } else {
-  openRight = (touchIdx === 0) ? b : a;
+  openRight = newOpen;
 }
+
   return true;
 }
 
