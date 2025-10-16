@@ -696,65 +696,49 @@ function tryPlace(dropZone, tileData){
   const pos = getNextPos(endObj, choice);
   if (!pos.orient) return false;
 
-  // определяем, совпадает ли половинка именно с ОТКРЫТЫМ концом
- const expected = endOpen[0] === 'A'
-  ? 'B' + endOpen.slice(1)
-  : 'A' + endOpen.slice(1);
+  // определяем, какой индекс мы ждём на стыке
+  const expected = endOpen[0] === 'A'
+    ? 'B' + endOpen.slice(1)
+    : 'A' + endOpen.slice(1);
 
-// какая половина фишки содержит expected (Bᵢ к Aᵢ или Aᵢ к Bᵢ)
-let matchIdx = (tileData.a === expected) ? 0
-           : (tileData.b === expected) ? 1
-           : -1;
-if (matchIdx === -1) return false;
+  // какая половина фишки совпадает с expected
+  let matchIdx = (tileData.a === expected) ? 0
+               : (tileData.b === expected) ? 1
+               : -1;
+  if (matchIdx === -1) return false;
 
-// где у новой фишки будет шов (какую половинку она подставляет к концу)
-let touchIdx;
-if (pos.orient === 'h') {
-  // при постановке вправо шов слева → касается левая половина (0)
-  // при постановке влево шов справа → касается правая половина (1)
-  touchIdx = (choice === 'right') ? 0 : 1;
-} else {
-  // при постановке вниз шов сверху → касается верхняя половина (0)
-  // при постановке вверх шов снизу → касается нижняя половина (1)
-  touchIdx = (choice === 'down') ? 0 : 1;
-}
-
-// если совпало не той половиной — переворачиваем
-let a = tileData.a, b = tileData.b;
-let dispA = tileData.displayA, dispB = tileData.displayB;
-if (matchIdx !== touchIdx) {
-  [a, b] = [b, a];
-  [dispA, dispB] = [dispB, dispA];
-}
-
-
-  const r = rectOf(pos.orient, pos.x, pos.y);
-  if (collidesWithExisting(r)) return false;
-
-  // решаем, какая половинка должна лечь к seam
-  let needHalf;
-  if (endObj.orient === 'h') {
-    needHalf = (endObj.dir === 1) ? 'a' : 'b';
+  // какая половина должна касаться конца (по направлению)
+  let touchIdx;
+  if (pos.orient === 'h') {
+    touchIdx = (choice === 'right') ? 0 : 1;
   } else {
-    needHalf = (endObj.dir === 1) ? 'a' : 'b';
+    touchIdx = (choice === 'down') ? 0 : 1;
   }
 
-  // если совпала не та половинка → swap
+  // подготовка переменных
   let a = tileData.a, b = tileData.b;
   let dispA = tileData.displayA, dispB = tileData.displayB;
-  if (matchHalf !== needHalf){
+
+  // если совпало не той половиной — перевернуть
+  if (matchIdx !== touchIdx) {
     [a, b] = [b, a];
     [dispA, dispB] = [dispB, dispA];
   }
 
-  // создаём и кладём
+  const r = rectOf(pos.orient, pos.x, pos.y);
+  if (collidesWithExisting(r)) return false;
+
+  // создаём элемент и кладём
   const el = createTileEl(a, b, {
-    orient: pos.orient, left: pos.x, top: pos.y,
-    displayA: dispA, displayB: dispB
+    orient: pos.orient,
+    left: pos.x,
+    top: pos.y,
+    displayA: dispA,
+    displayB: dispB
   });
   chainZoom.appendChild(el);
 
-  // Сдвигаем конечную точку и открытый маркер
+  // обновляем состояние концов
   applyPlaced(endObj, pos);
   if (whichEnd === 'left'){
     openLeft  = (a === endOpen) ? b : a;
@@ -764,7 +748,6 @@ if (matchIdx !== touchIdx) {
 
   return true;
 }
-
 
 /* ===========================================================================================
    Fit chain
