@@ -860,15 +860,17 @@ function updateControls(){
     drawBtn.disabled = true;
     skipBtn.disabled = true;
   } else {
+    // ✨ учитываем лимит доборов за ход
     if (deck.length > 0 && drawsThisTurn < MAX_DRAWS_PER_TURN) {
       drawBtn.disabled = false;   // можно взять
       skipBtn.disabled = true;
     } else {
       drawBtn.disabled = true;
-      skipBtn.disabled = false;   // можно пропустить
+      skipBtn.disabled = false;   // либо колода пуста, либо лимит доборов достигнут
     }
   }
 }
+
 
 
 /* ===========================================================================================
@@ -1140,21 +1142,26 @@ drawBtn.addEventListener('click', ()=>{
   if (!deck.length) return;
 
   if (drawsThisTurn >= MAX_DRAWS_PER_TURN) {
-    drawBtn.disabled = true; // блокируем кнопку, если попытка лишняя
+    drawBtn.disabled = true;
     return;
   }
 
+  // сначала кладём карту и увеличиваем счётчик,
+  // чтобы updateControls увидел актуальное значение
   hand.push(deck.shift());
   hands[currentPlayer] = hand;
+  drawsThisTurn++;                        // ⬅️ перенесено выше
   renderHand();
-  updateControls();
   playSound("sDraw");
 
-  drawsThisTurn++;
+  // пересчитать доступность кнопок с учётом нового drawsThisTurn
+  updateControls();
+
   if (drawsThisTurn >= MAX_DRAWS_PER_TURN) {
-    drawBtn.disabled = true; // блокируем кнопку, если достигнут лимит
+    drawBtn.disabled = true;
   }
 });
+
 
 function nextPlayer(){
   currentPlayer=(currentPlayer+1)%playerNames.length;
