@@ -697,32 +697,30 @@ function tryPlace(dropZone, tileData){
   const pos = getNextPos(endObj, choice);
   if (!pos.orient) return false;
 
- // 1. Определяем какая половина совпадает с концом
-// 1. Определяем какая половина совпадает с концом
-let matchHalf = null;
-if (isOppositePrefixSameIndex(tileData.a, endOpen)) matchHalf = 'a';
-else if (isOppositePrefixSameIndex(tileData.b, endOpen)) matchHalf = 'b';
-if (!matchHalf) return false;
+  // определяем, какая половина совпадает с открытым концом (индекс совпал, префиксы разные)
+  let matchHalf = null;
+  if (isOppositePrefixSameIndex(tileData.a, endOpen)) matchHalf = 'a';
+  else if (isOppositePrefixSameIndex(tileData.b, endOpen)) matchHalf = 'b';
+  if (!matchHalf) return false;
 
-// 2. Определяем какая половина реально касается seam
-// Смотрим на end.dir (куда «смотрит» конец)
-let needHalf;
-if (endObj.orient === 'h') {
-  // горизонтальная кость
-  needHalf = (endObj.dir === 1) ? 'a' : 'b';
-} else {
-  // вертикальная кость
-  needHalf = (endObj.dir === 1) ? 'a' : 'b';
-}
+  const r = rectOf(pos.orient, pos.x, pos.y);
+  if (collidesWithExisting(r)) return false;
 
-// 3. Если совпавшая половина ≠ та, что должна лечь → swap
-let a = tileData.a, b = tileData.b;
-let dispA = tileData.displayA, dispB = tileData.displayB;
+  // теперь решаем, какая половина ДОЛЖНА лечь к seam
+  let needHalf;
+  if (endObj.orient === 'h') {
+    needHalf = (endObj.dir === 1) ? 'a' : 'b';
+  } else {
+    needHalf = (endObj.dir === 1) ? 'a' : 'b';
+  }
 
-if (matchHalf !== needHalf) {
-  [a, b] = [b, a];
-  [dispA, dispB] = [dispB, dispA];
-}
+  // если совпавшая половина ≠ нужной → делаем swap
+  let a = tileData.a, b = tileData.b;
+  let dispA = tileData.displayA, dispB = tileData.displayB;
+  if (matchHalf !== needHalf){
+    [a, b] = [b, a];
+    [dispA, dispB] = [dispB, dispA];
+  }
 
   // создаём и кладём
   const el = createTileEl(a, b, {
@@ -734,13 +732,14 @@ if (matchHalf !== needHalf) {
   // Сдвигаем конечную точку и открытый маркер
   applyPlaced(endObj, pos);
   if (whichEnd === 'left'){
-    openLeft  = (a === endOpen) ? b : a;   // новый открытый конец слева
+    openLeft  = (a === endOpen) ? b : a;
   } else {
-    openRight = (a === endOpen) ? b : a;   // новый открытый конец справа
+    openRight = (a === endOpen) ? b : a;
   }
 
   return true;
 }
+
 
 /* ===========================================================================================
    Fit chain
