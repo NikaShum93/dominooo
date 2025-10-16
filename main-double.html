@@ -702,28 +702,17 @@ function tryPlace(dropZone, tileData){
     : 'A' + endOpen.slice(1);
 
   // какая половина фишки совпадает с expected
-  let matchIdx = (tileData.a === expected) ? 0
-               : (tileData.b === expected) ? 1
-               : -1;
-  if (matchIdx === -1) return false;
-
-  // какая половина должна касаться конца (по направлению)
-  let touchIdx;
-  if (pos.orient === 'h') {
-    touchIdx = (choice === 'right') ? 0 : 1;
-  } else {
-    touchIdx = (choice === 'down') ? 0 : 1;
-  }
-
-  // подготовка переменных
-  let a = tileData.a, b = tileData.b;
-  let dispA = tileData.displayA, dispB = tileData.displayB;
-
-  // если совпало не той половиной — перевернуть
-  if (matchIdx !== touchIdx) {
+  // если совпало не той половиной, которую касаемся — переворачиваем
+if (matchIdx !== touchIdx) {
+  // но только если реально нужно!
+  // проверяем: вдруг именно так совпадает с endOpen
+  const touchingVal = (matchIdx === 0 ? a : b);
+  if (touchingVal !== endOpen) {
     [a, b] = [b, a];
     [dispA, dispB] = [dispB, dispA];
+    matchIdx = 1 - matchIdx; // обновляем индекс после переворота
   }
+}
 
   const r = rectOf(pos.orient, pos.x, pos.y);
   if (collidesWithExisting(r)) return false;
