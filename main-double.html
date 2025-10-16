@@ -863,17 +863,16 @@ function buildDeckFromData(d){
  const m = Math.min(A.length, B.length);
 for (let i = 0; i < m; i++){
   for (let j = 0; j < m; j++){
+    if (i === j) continue; // 🚫 пропускаем одинаковые индексы
     out.push({
-      a: "A"+i,                           // справа — A[i]
-      b: "B"+j,                           // слева — B[j]
-      displayA: B[j],                     // СЛЕВА показываем B
-      displayB: A[i],                     // СПРАВА показываем A
+      a: "A"+i,
+      b: "B"+j,
+      displayA: B[j],
+      displayB: A[i],
       uid: uid()
     });
   }
 }
-
-
   return out;
 }
 
