@@ -685,6 +685,9 @@ function renderDirectionalZones(){
 /* ===========================================================================================
    Try place tile
 =========================================================================================== */
+/* ===========================================================================================
+   Try place tile
+=========================================================================================== */
 function tryPlace(dropZone, tileData) {
   const whichEnd = dropZone.dataset.end === 'L' ? 'left' : 'right';
   const choice   = dropZone.dataset.k;
@@ -701,13 +704,15 @@ function tryPlace(dropZone, tileData) {
     ? 'B' + endOpen.slice(1)
     : 'A' + endOpen.slice(1);
 
-  // проверяем, какая половина совпала
-  let matchIdx = (tileData.a === expected) ? 0
-               : (tileData.b === expected) ? 1
+  // визуальные индексы:
+  //   0 = левая/верхняя половина → это всегда b
+  //   1 = правая/нижняя половина → это всегда a
+  let matchIdx = (tileData.b === expected) ? 0
+               : (tileData.a === expected) ? 1
                : -1;
   if (matchIdx === -1) return false;
 
-  // какая половина должна касаться конца (по направлению)
+  // определяем, какая половина должна касаться конца (визуально)
   let touchIdx;
   if (pos.orient === 'h') {
     touchIdx = (choice === 'right') ? 0 : 1;
@@ -715,7 +720,7 @@ function tryPlace(dropZone, tileData) {
     touchIdx = (choice === 'down') ? 0 : 1;
   }
 
-  // готовим локальные переменные
+  // локальные переменные
   let a = tileData.a, b = tileData.b;
   let dispA = tileData.displayA, dispB = tileData.displayB;
 
@@ -723,7 +728,7 @@ function tryPlace(dropZone, tileData) {
   if (matchIdx !== touchIdx) {
     [a, b] = [b, a];
     [dispA, dispB] = [dispB, dispA];
-    matchIdx = 1 - matchIdx; // пересчитываем индекс
+    matchIdx = 1 - matchIdx;   // 🔑 пересчитываем индекс совпавшей стороны
   }
 
   const r = rectOf(pos.orient, pos.x, pos.y);
@@ -739,10 +744,10 @@ function tryPlace(dropZone, tileData) {
   });
   chainZoom.appendChild(el);
 
-  // обновляем положение конца
+  // обновляем геометрию конца
   applyPlaced(endObj, pos);
 
-  // новый открытый конец = вторая половина фишки
+  // новый открытый конец = противоположная половина от matchIdx
   const newOpen = (matchIdx === 0) ? b : a;
   if (whichEnd === 'left') {
     openLeft = newOpen;
@@ -752,6 +757,7 @@ function tryPlace(dropZone, tileData) {
 
   return true;
 }
+
 /* ===========================================================================================
    Fit chain
 =========================================================================================== */
