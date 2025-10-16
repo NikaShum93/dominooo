@@ -685,39 +685,51 @@ function renderDirectionalZones(){
 /* ===========================================================================================
    Try place tile
 =========================================================================================== */
-function tryPlace(dropZone, tileData){
+function tryPlace(dropZone, tileData) {
   const whichEnd = dropZone.dataset.end === 'L' ? 'left' : 'right';
   const choice   = dropZone.dataset.k;
 
-  const endObj   = (whichEnd==='left') ? endLeft  : endRight;
-  const endOpen  = (whichEnd==='left') ? openLeft : openRight;
+  const endObj   = (whichEnd === 'left') ? endLeft  : endRight;
+  const endOpen  = (whichEnd === 'left') ? openLeft : openRight;
   if (!endObj || !endOpen) return false;
 
   const pos = getNextPos(endObj, choice);
   if (!pos.orient) return false;
 
-  // определяем, какой индекс мы ждём на стыке
+  // ожидаемое значение на стыке: противоположный префикс того, что уже открыто
   const expected = endOpen[0] === 'A'
     ? 'B' + endOpen.slice(1)
     : 'A' + endOpen.slice(1);
 
-  // какая половина фишки совпадает с expected
-  // если совпало не той половиной, которую касаемся — переворачиваем
-if (matchIdx !== touchIdx) {
-  // но только если реально нужно!
-  // проверяем: вдруг именно так совпадает с endOpen
-  const touchingVal = (matchIdx === 0 ? a : b);
-  if (touchingVal !== endOpen) {
+  // проверяем, какая половина совпала
+  let matchIdx = (tileData.a === expected) ? 0
+               : (tileData.b === expected) ? 1
+               : -1;
+  if (matchIdx === -1) return false;
+
+  // какая половина должна касаться конца (по направлению)
+  let touchIdx;
+  if (pos.orient === 'h') {
+    touchIdx = (choice === 'right') ? 0 : 1;
+  } else {
+    touchIdx = (choice === 'down') ? 0 : 1;
+  }
+
+  // готовим локальные переменные
+  let a = tileData.a, b = tileData.b;
+  let dispA = tileData.displayA, dispB = tileData.displayB;
+
+  // если совпавшая половина оказалась не на касающейся стороне → перевернуть
+  if (matchIdx !== touchIdx) {
     [a, b] = [b, a];
     [dispA, dispB] = [dispB, dispA];
-    matchIdx = 1 - matchIdx; // обновляем индекс после переворота
+    matchIdx = 1 - matchIdx; // пересчитываем индекс
   }
-}
 
   const r = rectOf(pos.orient, pos.x, pos.y);
   if (collidesWithExisting(r)) return false;
 
-  // создаём элемент и кладём
+  // создаём DOM-элемент
   const el = createTileEl(a, b, {
     orient: pos.orient,
     left: pos.x,
@@ -727,21 +739,19 @@ if (matchIdx !== touchIdx) {
   });
   chainZoom.appendChild(el);
 
-// обновляем состояние концов
-applyPlaced(endObj, pos);
+  // обновляем положение конца
+  applyPlaced(endObj, pos);
 
-// касающаяся сторона была matchIdx
-const newOpen = (matchIdx === 0) ? b : a;
-
-if (whichEnd === 'left') {
-  openLeft = newOpen;
-} else {
-  openRight = newOpen;
-}
+  // новый открытый конец = вторая половина фишки
+  const newOpen = (matchIdx === 0) ? b : a;
+  if (whichEnd === 'left') {
+    openLeft = newOpen;
+  } else {
+    openRight = newOpen;
+  }
 
   return true;
 }
-
 /* ===========================================================================================
    Fit chain
 =========================================================================================== */
