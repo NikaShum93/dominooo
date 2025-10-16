@@ -606,11 +606,10 @@ function canPlaceTileAtEnd(tile, end, choice, endOpen){
   const pos = getNextPos(end, choice);
   if (!pos.orient) return false;
 
-  // Должны совпасть индексы и быть разные префиксы
-  if (!(isOppositePrefixSameIndex(tile.a, endOpen) ||
-        isOppositePrefixSameIndex(tile.b, endOpen))) {
-    return false;
-  }
+if (!(isOppositePrefixSameIndex(tile.a, endOpen) ||
+      isOppositePrefixSameIndex(tile.b, endOpen))) {
+  return false;
+}
 
   const r = rectOf(pos.orient, pos.x, pos.y);
   return !collidesWithExisting(r);
@@ -697,16 +696,20 @@ function tryPlace(dropZone, tileData){
   const pos = getNextPos(endObj, choice);
   if (!pos.orient) return false;
 
-  // определяем, какая половина совпадает с открытым концом (индекс совпал, префиксы разные)
+  // определяем, совпадает ли половинка именно с ОТКРЫТЫМ концом
   let matchHalf = null;
-  if (isOppositePrefixSameIndex(tileData.a, endOpen)) matchHalf = 'a';
-  else if (isOppositePrefixSameIndex(tileData.b, endOpen)) matchHalf = 'b';
+  if (tileData.a === endOpen && tileData.b[0] !== endOpen[0]) {
+    matchHalf = 'a';
+  }
+  else if (tileData.b === endOpen && tileData.a[0] !== endOpen[0]) {
+    matchHalf = 'b';
+  }
   if (!matchHalf) return false;
 
   const r = rectOf(pos.orient, pos.x, pos.y);
   if (collidesWithExisting(r)) return false;
 
-  // теперь решаем, какая половина ДОЛЖНА лечь к seam
+  // решаем, какая половинка должна лечь к seam
   let needHalf;
   if (endObj.orient === 'h') {
     needHalf = (endObj.dir === 1) ? 'a' : 'b';
@@ -714,7 +717,7 @@ function tryPlace(dropZone, tileData){
     needHalf = (endObj.dir === 1) ? 'a' : 'b';
   }
 
-  // если совпавшая половина ≠ нужной → делаем swap
+  // если совпала не та половинка → swap
   let a = tileData.a, b = tileData.b;
   let dispA = tileData.displayA, dispB = tileData.displayB;
   if (matchHalf !== needHalf){
