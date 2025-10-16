@@ -259,9 +259,10 @@
     <div id="tray" class="tray"></div>
   </div>
 
-  <div id="finalOverlay" class="final-overlay">
-    <div class="final-message">🎉 Победитель: <span id="winnerName"></span> 🎉</div>
-  </div>
+ <div id="finalOverlay" class="final-overlay">
+  <div class="final-message" id="finalMessage"></div>
+</div>
+
 </div>
 
 <div id="tilePreview"
@@ -1039,10 +1040,15 @@ function computeUniformSize(deck){
 function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderPlayersBar(); renderHand(); updateControls(); } document.getElementById("playersBar").style.display = "flex";
 function everyonePassed(){ for(let i=0;i<playerNames.length;i++){ if(!passes[i]) return false; } return true; }
 function endByWinner(i){
-  document.getElementById('winnerName').textContent = playerNames[i];
+  const winner = playerNames[i];
+  // ✨ выводим фидбек вместе с победителем
+  const msgEl = document.querySelector('#finalOverlay .final-message');
+  msgEl.innerHTML = `${finalFeedback}<br>🎉 Победитель: <span id="winnerName">${winner}</span> 🎉`;
+
   document.getElementById('finalOverlay').style.display = 'flex';
   startFireworks();
 }
+
 function endByPoints(){
   let best=Infinity, wi=0;
   for(let i=0;i<playerNames.length;i++){ const s=(hands[i]||[]).length; if(s<best){ best=s; wi=i; } }
@@ -1066,7 +1072,12 @@ function startGame(){
 const data = getQueryData() || {};
 deck = buildDeckFromData(data);
 if(!deck.length){ deck = makeDefaultDeck(); }
-shuffle(deck);
+
+// ⚡️ читаем финальный фидбек
+let finalFeedback = "Поздравляем!";
+if (data.feedback) {
+  finalFeedback = data.feedback;
+}
 
 // шрифт под все слова (опционально)
 computeUniformSize(deck);
