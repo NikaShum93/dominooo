@@ -229,7 +229,10 @@
 </div>
 <canvas id="fireworksCanvas" style="position:fixed; inset:0; z-index:1000000; pointer-events:none; display:none;"></canvas>
 <audio id="winSound" src="win.mp3" preload="auto"></audio>
-
+<audio id="sDraw" src="draw.mp3" preload="auto"></audio>
+<audio id="sPick" src="pick.mp3" preload="auto"></audio>
+<audio id="sPlace" src="place.mp3" preload="auto"></audio>
+<audio id="sClick" src="click.mp3" preload="auto"></audio>
 <script>
 /* ===========================================================================================
    Utils & State
@@ -270,6 +273,11 @@ const turnInfo=document.getElementById('turnInfo');
 const previewWrap=document.getElementById('tilePreview');
 const previewInner=document.getElementById('tilePreviewInner');
 
+/* ===== Sounds ===== */
+const sDraw  = document.getElementById("sDraw");
+const sPick  = document.getElementById("sPick");
+const sPlace = document.getElementById("sPlace");
+const sClick = document.getElementById("sClick");
 /* Game state */
 let playerNames=[], hands={}, deck=[], currentPlayer=0, passes={};
 let openLeft=null, openRight=null, endLeft=null, endRight=null, dragging=null;
@@ -481,9 +489,10 @@ function fitToHalf(node, container) {
 
   if(role==='hand'){
     el.draggable=true;
-    el.addEventListener('dragstart',e=>{
-      dragging={
-        a:opts.aKey ?? a,
+el.addEventListener('dragstart',e=>{
+  if (sPick) { sPick.currentTime = 0; sPick.play().catch(()=>{}); }
+  dragging={
+    a:opts.aKey ?? a,
         b:opts.bKey ?? b,
         displayA: dispA,
         displayB: dispB,
@@ -926,8 +935,10 @@ function startGame(){
    Buttons & DnD
 =========================================================================================== */
 drawBtn.addEventListener('click', ()=>{
+  if (sDraw) { sDraw.currentTime = 0; sDraw.play().catch(()=>{}); }
   const hand = hands[currentPlayer] || [];
   if (!deck.length) return;
+
   hand.push(deck.shift());
   hands[currentPlayer] = hand;
   renderHand();
@@ -935,13 +946,23 @@ drawBtn.addEventListener('click', ()=>{
 });
 
 skipBtn.addEventListener('click', ()=>{
+  if (sClick) { sClick.currentTime = 0; sClick.play().catch(()=>{}); }
   passes[currentPlayer]=(passes[currentPlayer]||0)+1;
+
   if(everyonePassed()){ endByPoints(); return; }
   nextPlayer();
 });
 
-restartBtn.addEventListener('click', ()=>location.reload());
-startBtn.addEventListener('click', startGame);
+restartBtn.addEventListener('click', ()=>{
+  if (sClick) { sClick.currentTime = 0; sClick.play().catch(()=>{}); }
+  location.reload();
+});
+
+startBtn.addEventListener('click', ()=>{
+  if (sClick) { sClick.currentTime = 0; sClick.play().catch(()=>{}); }
+  startGame();
+});
+
 
 addEventListener('dragover', e=>{ if(dragging) e.preventDefault(); });
 
@@ -951,8 +972,10 @@ addEventListener('drop', e=>{
   if(t && t.classList && t.classList.contains('dz')){
     e.preventDefault();
     const ok=tryPlace(t,dragging);
-    if(ok){
-      const arr=hands[dragging.owner]||[];
+   if(ok){
+  if (sPlace) { sPlace.currentTime = 0; sPlace.play().catch(()=>{}); }
+  const arr=hands[dragging.owner]||[];
+
       hands[dragging.owner]=arr.filter(x=>x.uid!==dragging.uid);
       renderHand();
       if(hands[dragging.owner].length===0){
