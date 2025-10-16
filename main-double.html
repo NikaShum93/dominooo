@@ -576,23 +576,31 @@ function desiredHalfFor(choice){
   return (choice==='right' || choice==='down') ? 'a' : 'b';
 }
 
-// --- СТАЛО ---
+// совпадает индекс и разные префиксы (A↔B), например A3 с B3
 function isOppositePrefixSameIndex(val, endOpen){
   if (!val || !endOpen) return false;
   const p1 = val[0], i1 = val.slice(1);
   const p2 = endOpen[0], i2 = endOpen.slice(1);
-  return (i1 === i2) && (p1 !== p2);   // индекс одинаковый, префиксы разные
+  return (i1 === i2) && (p1 !== p2);
 }
 
-if (!(isOppositePrefixSameIndex(tile.a, endOpen) ||
-      isOppositePrefixSameIndex(tile.b, endOpen))) {
-  return false;
-}
+// МОЖНО ЛИ ПОСТАВИТЬ В ЭТУ ЗОНУ
+function canPlaceTileAtEnd(tile, end, choice, endOpen){
+  if (!end || !choice || !endOpen) return false;
 
+  const pos = getNextPos(end, choice);
+  if (!pos.orient) return false;
+
+  // Должны совпасть индексы и быть разные префиксы
+  if (!(isOppositePrefixSameIndex(tile.a, endOpen) ||
+        isOppositePrefixSameIndex(tile.b, endOpen))) {
+    return false;
+  }
 
   const r = rectOf(pos.orient, pos.x, pos.y);
   return !collidesWithExisting(r);
 }
+
 
 function hasLegalMove(hand){
   const ends = [
@@ -674,12 +682,45 @@ function tryPlace(dropZone, tileData){
   const pos = getNextPos(endObj, choice);
   if (!pos.orient) return false;
 
-  const expected = endOpen.startsWith('A')
-    ? endOpen.replace('A','B')
-    : endOpen.replace('B','A');
+  // какая половинка должна физически прилечь к стыку
+  const touchHalf = desiredHalfFor(choice);
 
-  // проверяем, подходит ли хоть одна половина
-  if (!(tileData.a === expected || tileData.b === expected)) return false;
+  // определяем, какая половина совпадает с открытым концом (индекс совпал, префиксы разные)
+  let matchHalf = null;
+  if (isOppositePrefixSameIndex(tileData.a, endOpen)) matchHalf = 'a';
+  else if (isOppositePrefixSameIndex(tileData.b, endOpen)) matchHalf = 'b';
+  if (!matchHalf) return false;
+
+  const r = rectOf(pos.orient, pos.x, pos.y);
+  if (collidesWithExisting(r)) return false;
+
+  // ФИЗИЧЕСКИЙ разворот: если совпавшая половина не та, что должна прижаться — делаем swap
+  let a = tileData.a, b = tileData.b;
+  let dispA = tileData.displayA, dispB = tileData.displayB;
+  if (matchHalf !== touchHalf){
+    [a, b] = [b, a];
+    [dispA, dispB] = [dispB, dispA];
+  }
+
+  // создаём и кладём
+  const el = createTileEl(a, b, {
+    orient: pos.orient, left: pos.x, top: pos.y,
+    displayA: dispA, displayB: dispB
+  });
+  chainZoom.appendChild(el);
+
+  // Сдвигаем конечную точку и открытый маркер
+  applyPlaced(endObj, pos);
+  if (whichEnd === 'left'){
+    openLeft  = (a === endOpen) ? b : a;   // новый открытый конец слева
+  } else {
+    openRight = (a === endOpen) ? b : a;   // новый открытый конец справа
+  }
+
+  return true;
+}
+
+
 
   const r = rectOf(pos.orient,pos.x,pos.y);
   if (collidesWithExisting(r)) return false;
