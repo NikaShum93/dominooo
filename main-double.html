@@ -675,7 +675,26 @@ function tryPlace(dropZone, tileData){
     ? endOpen.replace('A','B')
     : endOpen.replace('B','A');
 
-  const touch
+  // проверяем, подходит ли хоть одна половина
+  if (!(tileData.a === expected || tileData.b === expected)) return false;
+
+  const r = rectOf(pos.orient,pos.x,pos.y);
+  if (collidesWithExisting(r)) return false;
+
+  // создаём костяшку
+  const el = createTileEl(tileData.a,tileData.b,{
+    orient: pos.orient, left: pos.x, top: pos.y,
+    displayA: tileData.displayA, displayB: tileData.displayB
+  });
+  chainZoom.appendChild(el);
+
+  // обновляем концы
+  applyPlaced(endObj,pos);
+  if (whichEnd==='left'){ openLeft = (tileData.a===expected)? tileData.b : tileData.a; }
+  else { openRight = (tileData.a===expected)? tileData.b : tileData.a; }
+
+  return true;
+}
 
 /* ===========================================================================================
    Fit chain
