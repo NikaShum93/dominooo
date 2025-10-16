@@ -199,15 +199,19 @@
 
 /* фиксированный размер для доминошек в руке */
 .tile.hand {
-  width: 200px !important;
-  height: 70px !important;
-  transform: none !important;     /* убираем уменьшение */
-  flex: 0 0 auto;                 /* не сжимать */
+  width: 130px;   /* фиксированный размер (примерно 200 * 0.65) */
+  height: 45px;   /* фиксированный размер (примерно 70 * 0.65) */
+  transform: none;   /* убираем scale */
   cursor: grab;
   filter: drop-shadow(0 1px 1px rgba(0,0,0,.25));
+  flex-shrink: 0;   /* не сжимается в flex-контейнере */
 }
-.tile.hand * {
-  pointer-events: none;
+.tray {
+  overflow-x: auto;   /* скролл, если не помещаются */
+  white-space: nowrap;
+}
+.tray>.tile {
+  position: static;
 }
 
 
@@ -905,41 +909,21 @@ function startFireworks(){
 /* ===========================================================================================
    Deck (from data) + default
 =========================================================================================== */
-function buildDeckFromData(d){
+function buildDeckFromData(d) {
   const out = [];
   const A = (d && Array.isArray(d.listA)) ? d.listA : [];
   const B = (d && Array.isArray(d.listB)) ? d.listB : [];
-
   const m = Math.min(A.length, B.length);
 
-  // --- 2 валидные костяшки на каждую пару ---
-  for (let i = 0; i < m; i++){
-    // вариант A[i] ↔ B[i], но раскладываем по разным половинкам
-    out.push({
-      a: "A" + i,
-      b: "B" + i,
-      displayA: B[i],
-      displayB: A[i],
-      uid: uid()
-    });
-    out.push({
-      a: "B" + i,
-      b: "A" + i,
-      displayA: A[i],
-      displayB: B[i],
-      uid: uid()
-    });
-  }
+  const counts = {}; // учёт сколько раз использован каждый Ai и Bj
+  const usedPairs = new Set();
 
-  // --- добавляем 20% мусора ---
-  const totalPairs = out.length;
-  const junkCount = Math.floor(totalPairs * 0.2);
-
-  for (let k = 0; k < junkCount; k++) {
-    const i = Math.floor(Math.random() * m);
-    let j;
-    do { j = Math.floor(Math.random() * m); }
-    while (j === i); // мусор ≠ валидная пара
+  // функция добавить костяшку
+  function addTile(i, j) {
+    const key1 = `A${i}-B${j}`;
+    const key2 = `B${j}-A${i}`;
+    if (i === j) return false;                // нельзя одинаковые индексы
+    if (usedPairs.has(key1) || usedPairs.has(key2)) return false;
 
     out.push({
       a: "A" + i,
@@ -948,11 +932,36 @@ function buildDeckFromData(d){
       displayB: A[i],
       uid: uid()
     });
+    usedPairs.add(key1);
+    counts["A"+i] = (counts["A"+i] || 0) + 1;
+    counts["B"+j] = (counts["B"+j] || 0) + 1;
+    return true;
   }
 
-  return shuffle(out);
-}
+  // пока не набрали ровно 3 для каждого
+  for (let round = 0; round < 3; round++) {
+    for (let i = 0; i < m; i++) {
+      // ищем j, с которым можно скомбинировать
+      for (let j = 0; j < m; j++) {
+        if (i === j) continue;
+        const aCount = counts["A"+i] || 0;
+        const bCount = counts["B"+j] || 0;
+        if (aCount >= 3) break; // этот A уже набрал свои 3
+        if (bCount >= 3) continue;
+        if (addTile(i, j)) break; // добавили — выходим из j-цикла
+      }
+    }
+  }
 
+  // проверка: все ли по 3
+  for (let i = 0; i < m; i++) {
+    if ((counts["A"+i]||0) !== 3 || (counts["B"+i]||0) !== 3) {
+      console.warn("❗ Не удалось набрать ровно 3 для индекса", i, counts);
+    }
+  }
+
+  return out;
+}
 function makeDefaultDeck(){
   const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
   const out=[];
@@ -982,16 +991,30 @@ function computeUniformSize(deck){
   if(!words.length) return;
 
   const meas=document.createElement('div');
-  meas.style.cssText=`position:fixed;left:-9999px;top:-9999px;width:${TILE_W/2-24}px;white-space:nowrap;font-weight:900;font-family:Inter,system-ui,sans-serif;`;
+  meas.style.cssText=`
+    position:fixed;left:-9999px;top:-9999px;
+    width:${TILE_W/2-24}px;
+    height:${TILE_H-16}px;
+    white-space:nowrap;
+    font-weight:900;
+    font-family:Inter,system-ui,sans-serif;
+  `;
   document.body.appendChild(meas);
+
   let min=30;
   for(const w of words){
-    let s=30; meas.style.fontSize=s+'px'; meas.textContent=w;
-    while(s>10 && meas.scrollWidth>meas.clientWidth){ s--; meas.style.fontSize=s+'px'; }
+    let s=30;
+    meas.style.fontSize=s+'px';
+    meas.textContent=w;
+    while(s>10 && (meas.scrollWidth>meas.clientWidth || meas.scrollHeight>meas.clientHeight)){
+      s--; 
+      meas.style.fontSize=s+'px';
+    }
     min=Math.min(min,s);
   }
+
   document.body.removeChild(meas);
-  // если хочешь использовать min где-то глобально — можно сохранить
+  return min; // 🔥 теперь возвращаем значение
 }
 
 /* ===========================================================================================
