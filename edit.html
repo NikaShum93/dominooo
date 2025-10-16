@@ -101,6 +101,8 @@
   <textarea id="listB" placeholder="🐱, 🐶, ☀️, 🌙"></textarea>
 
   <label><input type="checkbox" id="freeMode"> Свободная игра (без правил)</label>
+<p>Введите текст финального фидбека (сообщение после победы):</p>
+<textarea id="feedbackText" placeholder="Поздравляем! Ты победил!"></textarea>
 
   <button id="generateBtn">Сгенерировать iframe</button>
 
@@ -124,7 +126,8 @@ document.getElementById("generateBtn").addEventListener("click", ()=>{
     return;
   }
 
-  const data = {listA:A, listB:B, freeMode:freeMode};
+ const feedback = document.getElementById("feedbackText").value || "Поздравляем!";
+const data = {listA:A, listB:B, freeMode:freeMode, feedback:feedback};
   const json = encodeURIComponent(JSON.stringify(data));
 
   // Определяем, какой main-файл использовать
