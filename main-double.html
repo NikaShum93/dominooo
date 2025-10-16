@@ -568,64 +568,7 @@ function getNextPos(end, choice){
 }
 function applyPlaced(end,pos){ end.x=pos.x; end.y=pos.y; end.orient=pos.orient; end.dir=pos.nextDir; }
 
-/* ===========================================================================================
-   Drop zones
-=========================================================================================== */
-const DZ_SZ = DZ;
-function clearZones(){ chainZoom.querySelectorAll('.dz').forEach(n=>n.remove()); }
-function renderDirectionalZones(){
-  clearZones();
-  if(!dragging) return;
-  const ends=[ {e:endLeft, id:'L', open:openLeft}, {e:endRight, id:'R', open:openRight} ];
-for(const side of ends){
-  if(!side.e || !side.e.el) continue;
 
-  // поддержка универсальных стартов A* / B*
-const isA = v => typeof v==="string" && v.startsWith("A");
-const isB = v => typeof v==="string" && v.startsWith("B");
-const open = side.open;
-
-if (!canPlaceTileAtEnd(dragging, side.e, "right", side.open) &&
-    !canPlaceTileAtEnd(dragging, side.e, "left", side.open) &&
-    !canPlaceTileAtEnd(dragging, side.e, "up", side.open) &&
-    !canPlaceTileAtEnd(dragging, side.e, "down", side.open)) {
-  continue;
-}
-
-
-
-
-
-  const seam = getSeam(side.e);
-
-  const zones={
-    up:    { left:seam.x - DZ_SZ/2, top:seam.y - DZ_SZ*2, dir:'↑', k:'up'    },
-    right: { left:seam.x + DZ_SZ,   top:seam.y - DZ_SZ/2, dir:'→', k:'right' },
-    down:  { left:seam.x - DZ_SZ/2, top:seam.y + DZ_SZ,   dir:'↓', k:'down'  },
-    left:  { left:seam.x - DZ_SZ*2, top:seam.y - DZ_SZ/2, dir:'←', k:'left'  }
-  };
-
-  for(const k of Object.keys(zones)){
-    const pos=getNextPos(side.e,k);
-    if(!pos.orient) continue;
-    const r=rectOf(pos.orient,pos.x,pos.y);
-    if(collidesWithExisting(r)) continue;
-
-    const z=document.createElement('div');
-    z.className='dz active';
-    z.style.left=zones[k].left+'px';
-    z.style.top=zones[k].top+'px';
-    z.dataset.dir=zones[k].dir;
-    z.dataset.end=side.id;
-    z.dataset.k=k;
-    chainZoom.appendChild(z);
-  }
-}
-} 
-
-/* ===========================================================================================
-   Rules / helpers
-=========================================================================================== */
 /* ===========================================================================================
    Rules / helpers
 =========================================================================================== */
