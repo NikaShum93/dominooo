@@ -329,7 +329,7 @@ const previewInner=document.getElementById('tilePreviewInner');
 /* Game state */
 let playerNames=[], hands={}, deck=[], currentPlayer=0, passes={};
 let openLeft=null, openRight=null, endLeft=null, endRight=null, dragging=null;
-
+let finalFeedback = "Поздравляем!"; // глобальный фидбек для конца игры
 
 /* ===========================================================================================
    Pan & Zoom
@@ -1082,9 +1082,6 @@ if(!deck.length){ deck = makeDefaultDeck(); }
 
 // ⚡️ читаем финальный фидбек
 let finalFeedback = "Поздравляем!";
-if (data.feedback) {
-  finalFeedback = data.feedback;
-}
 
 // шрифт под все слова (опционально)
 computeUniformSize(deck);
