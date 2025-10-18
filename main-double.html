@@ -240,11 +240,12 @@
 
   <div class="topbar">
     <div id="playersBar" class="players"></div>
-    <div class="controls">
-      <button id="drawBtn" class="btn">Взять</button>
-      <button id="skipBtn" class="btn">Пропустить</button>
-      <button id="restartBtn" class="btn">Перезапустить</button>
-    </div>
+   <div class="controls">
+  <button id="drawBtn" class="btn">Взять</button>
+  <button id="skipBtn" class="btn">Пропустить</button>
+  <button id="endBtn" class="btn">Завершить игру</button> <!-- 🔥 новая кнопка -->
+  <button id="restartBtn" class="btn">Перезапустить</button>
+</div>
   </div>
   <div id="turnInfo"></div>
 
@@ -319,6 +320,7 @@ const trayEl=document.getElementById('tray');
 const drawBtn=document.getElementById('drawBtn');
 const skipBtn=document.getElementById('skipBtn');
 const restartBtn=document.getElementById('restartBtn');
+const endBtn=document.getElementById('endBtn');   // просто объявление
 const turnInfo=document.getElementById('turnInfo');
 
 const previewWrap=document.getElementById('tilePreview');
@@ -327,6 +329,7 @@ const previewInner=document.getElementById('tilePreviewInner');
 /* Game state */
 let playerNames=[], hands={}, deck=[], currentPlayer=0, passes={};
 let openLeft=null, openRight=null, endLeft=null, endRight=null, dragging=null;
+
 
 /* ===========================================================================================
    Pan & Zoom
@@ -861,18 +864,22 @@ function updateControls(){
     drawBtn.disabled = true;
     skipBtn.disabled = true;
   } else {
-    // ✨ учитываем лимит доборов за ход
     if (deck.length > 0 && drawsThisTurn < MAX_DRAWS_PER_TURN) {
-      drawBtn.disabled = false;   // можно взять
+      drawBtn.disabled = false;
       skipBtn.disabled = true;
     } else {
       drawBtn.disabled = true;
-      skipBtn.disabled = false;   // либо колода пуста, либо лимит доборов достигнут
+      skipBtn.disabled = false;
+
+      // 🔥 если игрок не может ни сходить, ни взять — он автоматически "пасует"
+      passes[currentPlayer] = (passes[currentPlayer]||0)+1;
+      if (everyonePassed()) {
+        endByPoints();
+        return;
+      }
     }
   }
 }
-
-
 
 /* ===========================================================================================
    Fireworks + Sound
@@ -1198,8 +1205,12 @@ startBtn.addEventListener('click', ()=>{
 });
 
 // 🔥 общий звук клика для остальных UI-кнопок
-[restartBtn, skipBtn].forEach(btn=>{
+[restartBtn, skipBtn, endBtn].forEach(btn=>{
   btn.addEventListener('click', ()=>playSound("sClick"));
+});
+endBtn.addEventListener('click', ()=>{
+  playSound("sClick");
+  endByPoints(); // завершаем по очкам
 });
 
 addEventListener('dragover', e=>{ if(dragging) e.preventDefault(); });
