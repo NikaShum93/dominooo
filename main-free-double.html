@@ -221,6 +221,7 @@
   .final-overlay{ position:absolute; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:100000; }
   .final-message{ font-size:42px; font-weight:900; color:#ffe97f; }
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
 
@@ -463,15 +464,16 @@ function showPreview(a, b){
     container.appendChild(img); 
   } else {
     const textEl=document.createElement('b'); 
-    textEl.textContent=value; 
-    textEl.style.fontSize = "40px"; 
-    textEl.style.wordBreak = "break-word"; 
-    textEl.style.whiteSpace = "normal"; 
-    textEl.style.overflow = "auto"; 
-    textEl.style.display = "flex";
-    textEl.style.alignItems = "center";
-    textEl.style.justifyContent = "center";
-    container.appendChild(textEl); 
+textEl.innerHTML = `<span class="math">${value}</span>`;
+textEl.style.fontSize = "40px"; 
+textEl.style.wordBreak = "break-word"; 
+textEl.style.whiteSpace = "normal"; 
+textEl.style.overflow = "auto"; 
+textEl.style.display = "flex";
+textEl.style.alignItems = "center";
+textEl.style.justifyContent = "center";
+container.appendChild(textEl); 
+if (window.MathJax) MathJax.typesetPromise([textEl]);
   }
 }
 
@@ -532,8 +534,12 @@ function fitToHalf(node, container) {
       const img=document.createElement('img'); img.src=value; containerEl.appendChild(img);
       return null;
     }else{
-      const b=document.createElement('b'); b.textContent=value; containerEl.appendChild(b); return b;
-    }
+  const b=document.createElement('b'); 
+  b.innerHTML = `<span class="math">${value}</span>`;
+  containerEl.appendChild(b); 
+  if (window.MathJax) MathJax.typesetPromise([b]);
+  return b;
+}
   }
 
   const dispA = opts.displayA ?? a;
