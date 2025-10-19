@@ -443,27 +443,19 @@ function renderHalf(container, value){
     img.src=value; 
     container.appendChild(img); 
   } else {
-    const span=document.createElement('span'); 
-    span.className = "math";     // ✨ для MathJax
-    span.textContent=value; 
-
-    span.style.fontSize = "40px"; 
-    span.style.wordBreak = "break-word"; 
-    span.style.whiteSpace = "normal"; 
-    span.style.overflow = "auto"; 
-    span.style.display = "flex";
-    span.style.alignItems = "center";
-    span.style.justifyContent = "center";
-
-    container.appendChild(span); 
-
-    if(window.MathJax){
-      MathJax.typesetPromise([span]);
-    }
+   const textEl=document.createElement('b'); 
+textEl.innerHTML = `<span class="math">${value}</span>`;
+textEl.style.fontSize = "40px"; 
+textEl.style.wordBreak = "break-word"; 
+textEl.style.whiteSpace = "normal"; 
+textEl.style.overflow = "auto"; 
+textEl.style.display = "flex";
+textEl.style.alignItems = "center";
+textEl.style.justifyContent = "center";
+container.appendChild(textEl); 
+if (window.MathJax) MathJax.typesetPromise([textEl]);
   }
 }
-
-
 
   renderHalf(halfL, a);
   renderHalf(halfR, b);
