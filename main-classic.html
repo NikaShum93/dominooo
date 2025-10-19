@@ -394,8 +394,8 @@ function showPreview(a, b){
     img.src=value; 
     container.appendChild(img); 
   } else {
-    const textEl=document.createElement('b'); 
-    textEl.textContent=value; 
+   const textEl=document.createElement('b'); 
+textEl.innerHTML = `<span class="math">${value}</span>`;
     textEl.style.fontSize = "40px"; 
     textEl.style.wordBreak = "break-word"; 
     textEl.style.whiteSpace = "normal"; 
