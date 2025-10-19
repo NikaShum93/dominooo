@@ -515,17 +515,17 @@ function renderHalf(containerEl, value){
     containerEl.appendChild(img);
     return null;
   } else {
-    const span=document.createElement('span');
-    span.className="math";   // ✨ MathJax отрисует это
-    span.textContent=value;
-    containerEl.appendChild(span);
+    const b = document.createElement('b');
+    b.innerHTML = `<span class="math">${value}</span>`;
+    containerEl.appendChild(b);
 
     if(window.MathJax){
-      MathJax.typesetPromise([span]);
+      MathJax.typesetPromise([b]);
     }
-    return span;
+    return b;
   }
 }
+
 
 
   const dispA = opts.displayA ?? a;
