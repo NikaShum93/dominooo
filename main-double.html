@@ -330,7 +330,6 @@ const previewInner=document.getElementById('tilePreviewInner');
 /* Game state */
 let playerNames=[], hands={}, deck=[], currentPlayer=0, passes={};
 let openLeft=null, openRight=null, endLeft=null, endRight=null, dragging=null;
-let finalFeedback = "Поздравляем!"; // глобальный фидбек для конца игры
 
 /* ===========================================================================================
    Pan & Zoom
@@ -702,42 +701,38 @@ function renderDirectionalZones(){
   clearZones();
   if(!dragging) return;
 
-  const ends=[ {e:endLeft, id:'L', open:openLeft}, {e:endRight, id:'R', open:openRight} ];
-  for(const side of ends){
-    if(!side.e || !side.e.el || !side.open) continue;
+ const ends=[ {e:endLeft, id:'L', open:openLeft}, {e:endRight, id:'R', open:openRight} ];
+for(const side of ends){
+  if(!side.e || !side.e.el || !side.open) continue;
 
-    if (
-      !canPlaceTileAtEnd(dragging, side.e, "right", side.open) &&
-      !canPlaceTileAtEnd(dragging, side.e, "left",  side.open) &&
-      !canPlaceTileAtEnd(dragging, side.e, "up",    side.open) &&
-      !canPlaceTileAtEnd(dragging, side.e, "down",  side.open)
-    ) continue;
+  const seam = getSeam(side.e);
+  const zones={
+    up:    { left:seam.x - DZ_SZ/2, top:seam.y - DZ_SZ*2, dir:'↑', k:'up'    },
+    right: { left:seam.x + DZ_SZ,   top:seam.y - DZ_SZ/2, dir:'→', k:'right' },
+    down:  { left:seam.x - DZ_SZ/2, top:seam.y + DZ_SZ,   dir:'↓', k:'down'  },
+    left:  { left:seam.x - DZ_SZ*2, top:seam.y - DZ_SZ/2, dir:'←', k:'left'  }
+  };
 
-    const seam = getSeam(side.e);
-    const zones={
-      up:    { left:seam.x - DZ_SZ/2, top:seam.y - DZ_SZ*2, dir:'↑', k:'up'    },
-      right: { left:seam.x + DZ_SZ,   top:seam.y - DZ_SZ/2, dir:'→', k:'right' },
-      down:  { left:seam.x - DZ_SZ/2, top:seam.y + DZ_SZ,   dir:'↓', k:'down'  },
-      left:  { left:seam.x - DZ_SZ*2, top:seam.y - DZ_SZ/2, dir:'←', k:'left'  }
-    };
+  for(const k of Object.keys(zones)){
+    const pos=getNextPos(side.e,k);
+    if(!pos.orient) continue;
+    const r=rectOf(pos.orient,pos.x,pos.y);
+    if(collidesWithExisting(r)) continue;
 
-    for(const k of Object.keys(zones)){
-      const pos=getNextPos(side.e,k);
-      if(!pos.orient) continue;
-      const r=rectOf(pos.orient,pos.x,pos.y);
-      if(collidesWithExisting(r)) continue;
+    // ✅ проверка именно на этом конце
+    if (!canPlaceTileAtEnd(dragging, side.e, k, side.open)) continue;
 
-      const z=document.createElement('div');
-      z.className='dz active';
-      z.style.left=zones[k].left+'px';
-      z.style.top=zones[k].top+'px';
-      z.dataset.dir=zones[k].dir;
-      z.dataset.end=side.id;
-      z.dataset.k=k;
-      chainZoom.appendChild(z);
-    }
+    const z=document.createElement('div');
+    z.className='dz active';
+    z.style.left=zones[k].left+'px';
+    z.style.top=zones[k].top+'px';
+    z.dataset.dir=zones[k].dir;
+    z.dataset.end=side.id;
+    z.dataset.k=k;
+    chainZoom.appendChild(z);
   }
 }
+
 
 /* ===========================================================================================
    Try place tile
@@ -1092,8 +1087,8 @@ const data = getQueryData() || {};
 deck = buildDeckFromData(data);
 if(!deck.length){ deck = makeDefaultDeck(); }
 
-// ⚡️ читаем финальный фидбек
-let finalFeedback = "Поздравляем!";
+// ⚡️ читаем финальный фидбек из редактора
+finalFeedback = (data.feedback && data.feedback.trim()) || "Поздравляем!";
 
 // шрифт под все слова (опционально)
 computeUniformSize(deck);
