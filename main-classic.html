@@ -491,13 +491,12 @@ function fitToHalf(node, container) {
   renderHalf(halves[1], dispB);
 
   // ЛКМ — предпросмотр
-  el.addEventListener('click',()=>showPreview(dispA,dispB));
+el.addEventListener('click',()=>showPreview(dispA,dispB));
 
-  if(role==='hand'){
-    // ПКМ — переворот
+if(role==='hand'){
+    // 👉 добавляем обработчик ПКМ для переворота
     el.addEventListener('contextmenu', e=>{
-      e.preventDefault();
-      // меняем местами значения и отображение
+      e.preventDefault();   // блокируем меню браузера
       [a,b] = [b,a];
       [dispA,dispB] = [dispB,dispA];
       renderHalf(halves[0], dispA);
