@@ -458,62 +458,61 @@ function fitToHalf(node, container) {
   const rightEl = halves[1].firstElementChild;
   const isImg=v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
 
+ function createTileEl(a,b,opts={}) {
+  const role=opts.role||'chain';
+  const orient=opts.orient||'h';
+  const el=document.createElement('div');
+  el.className='tile '+(orient==='v'?'vert ':'')+(role==='hand'?'hand':'');
+  el.style.left=(opts.left||0)+'px';
+  el.style.top=(opts.top||0)+'px';
+  el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
+
+  const halves=el.getElementsByClassName('half');
+  const isImg=v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
+
   function renderHalf(containerEl, value){
     containerEl.innerHTML="";
     if(isImg(value)){
       const img=document.createElement('img'); img.src=value; containerEl.appendChild(img);
       return null;
-   } else {
-  const b=document.createElement('b');
-  // Заворачиваем содержимое в span.math
-  b.innerHTML = `<span class="math">${value}</span>`;
-  containerEl.appendChild(b);
-  // Отрисовать формулу
-  if (window.MathJax) MathJax.typesetPromise([b]);
-  return b;
-}
-
+    } else {
+      const b=document.createElement('b');
+      b.innerHTML = `<span class="math">${value}</span>`;
+      containerEl.appendChild(b);
+      if (window.MathJax) MathJax.typesetPromise([b]);
+      return b;
+    }
   }
 
-  const dispA = opts.displayA ?? a;
-  const dispB = opts.displayB ?? b;
+  let dispA = opts.displayA ?? a;
+  let dispB = opts.displayB ?? b;
 
-  const leftNode  = renderHalf(halves[0], dispA);
-  const rightNode = renderHalf(halves[1], dispB);
+  renderHalf(halves[0], dispA);
+  renderHalf(halves[1], dispB);
 
-  const leftSize  = leftNode  ? fitToHalf(leftNode,  halves[0]) : 12;
-  const rightSize = rightNode ? fitToHalf(rightNode, halves[1]) : 12;
-  const finalSize = Math.min(leftSize, rightSize);
-
-  if(role === 'hand'){
-    if(leftNode)  leftNode.style.fontSize  = (finalSize * 1.2) + "px";
-    if(rightNode) rightNode.style.fontSize = (finalSize * 1.2) + "px";
-  } else {
-    if(leftNode)  leftNode.style.fontSize  = finalSize + "px";
-    if(rightNode) rightNode.style.fontSize = finalSize + "px";
-  }
-
+  // ЛКМ — предпросмотр
   el.addEventListener('click',()=>showPreview(dispA,dispB));
 
   if(role==='hand'){
+    // ПКМ — переворот
+    el.addEventListener('contextmenu', e=>{
+      e.preventDefault();
+      // меняем местами значения и отображение
+      [a,b] = [b,a];
+      [dispA,dispB] = [dispB,dispA];
+      renderHalf(halves[0], dispA);
+      renderHalf(halves[1], dispB);
+    });
+
     el.draggable=true;
-el.addEventListener('dragstart',e=>{
-  if (sPick) { sPick.currentTime = 0; sPick.play().catch(()=>{}); }
-  dragging={
-    a:opts.aKey ?? a,
-        b:opts.bKey ?? b,
-        displayA: dispA,
-        displayB: dispB,
-        owner:opts.owner,
-        uid:opts.uid
-      };
+    el.addEventListener('dragstart',e=>{
+      if (sPick) { sPick.currentTime = 0; sPick.play().catch(()=>{}); }
+      dragging={ a, b, displayA:dispA, displayB:dispB, owner:opts.owner, uid:opts.uid };
       e.dataTransfer.setData('text/plain','domino');
       hidePreview();
       renderDirectionalZones();
     });
-    el.addEventListener('dragend',()=>{
-      dragging=null; clearZones();
-    });
+    el.addEventListener('dragend',()=>{ dragging=null; clearZones(); });
   }
 
   return el;
