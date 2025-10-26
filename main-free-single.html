@@ -662,59 +662,28 @@ function getSeam(end){
       : {x:end.x + VERT_W/2,   y:end.y};
   }
 }
-function getNextPos(end, choice) {
-  let x, y, orient, nextDir;
-  if (end.orient === 'h') {
-    const seamX = end.dir === 1 ? end.x + TILE_W : end.x;
-    switch (choice) {
-      case 'right': 
-        x = seamX + GAP;              
-        y = end.y;                    
-        orient = 'h'; nextDir = 1; 
-        break;
-      case 'left':  
-        x = seamX - TILE_W - GAP;     
-        y = end.y;                    
-        orient = 'h'; nextDir = -1; 
-        break;
-      case 'down':  
-        x = seamX - (VERT_W - TILE_H) / 2; 
-        y = end.y + TILE_H + GAP;    
-        orient = 'v'; nextDir = 1;  
-        break;
-      case 'up':    
-        x = seamX - (VERT_W - TILE_H) / 2; 
-        y = end.y - VERT_H - GAP;    
-        orient = 'v'; nextDir = -1; 
-        break;
+function getNextPos(end, choice){
+  let x,y,orient,nextDir;
+  if(end.orient==='h'){
+    const seamX = end.dir===1 ? end.x + TILE_W : end.x;
+    switch(choice){
+      case 'right': x=seamX + GAP;           y=end.y;                 orient='h'; nextDir= 1; break;
+      case 'left':  x=seamX - TILE_W - GAP;  y=end.y;                 orient='h'; nextDir=-1; break;
+      case 'down':  x=seamX - VERT_W/2;      y=end.y + TILE_H + GAP;  orient='v'; nextDir= 1; break;
+      case 'up':    x=seamX - VERT_W/2;      y=end.y - VERT_H - GAP;  orient='v'; nextDir=-1; break;
     }
   } else {
-    const seamY = end.dir === 1 ? end.y + VERT_H : end.y;
-    switch (choice) {
-      case 'up':    
-        x = end.x;                    
-        y = seamY - VERT_H - GAP;     
-        orient = 'v'; nextDir = -1; 
-        break;
-      case 'down':  
-        x = end.x;                    
-        y = seamY + GAP;              
-        orient = 'v'; nextDir = 1;  
-        break;
-      case 'right': 
-        x = end.x + VERT_W + GAP;     
-        y = seamY - (TILE_H - VERT_W) / 2; 
-        orient = 'h'; nextDir = 1;  
-        break;
-      case 'left':  
-        x = end.x - TILE_W - GAP;     
-        y = seamY - (TILE_H - VERT_W) / 2; 
-        orient = 'h'; nextDir = -1; 
-        break;
+    const seamY = end.dir===1 ? end.y + VERT_H : end.y;
+    switch(choice){
+      case 'up':    x=end.x;                  y=seamY - VERT_H - GAP;  orient='v'; nextDir=-1; break;
+      case 'down':  x=end.x;                  y=seamY + GAP;           orient='v'; nextDir= 1; break;
+      case 'right': x=end.x + VERT_W + GAP;   y=seamY - TILE_H/2;      orient='h'; nextDir= 1; break;
+      case 'left':  x=end.x - TILE_W - GAP;   y=seamY - TILE_H/2;      orient='h'; nextDir=-1; break;
     }
   }
-  return { x, y, orient, nextDir };
+  return { x,y,orient,nextDir };
 }
+
 
 function applyPlaced(end,pos){ end.x=pos.x; end.y=pos.y; end.orient=pos.orient; end.dir=pos.nextDir; }
 // ===== Recompute ends from DOM (robust after UNDO) =====
