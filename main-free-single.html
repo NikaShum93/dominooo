@@ -138,15 +138,27 @@
   position: relative;
 }
 .tile .flip-btn {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%,-50%);
-  background: rgba(0,0,0,0.6);
-  border-radius: 50%;
-  padding: 6px;
-  opacity: 0;
-  cursor: pointer;
+  position:absolute;
+  top:4px;
+  right:4px;
+  background:rgba(255,255,255,0.9);
+  border-radius:50%;
+  width:24px;
+  height:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+  cursor:pointer;
+  z-index:999;          /* 🔥 поверх всего */
+  pointer-events:auto;  /* 🔥 кликабельная */
+}
+
+/* половинки не мешают клику по кнопке */
+.tile .half {
+  pointer-events:none;
+}
+
   transition: opacity 0.2s, transform 0.2s;
   z-index: 2;
 }
