@@ -553,6 +553,13 @@ function fitToHalf(node, container) {
   el.dataset.displayA = dispA;
   el.dataset.displayB = dispB;
 
+  // 👁️ предпросмотр по клику — берём актуальные значения из dataset
+  el.addEventListener('click', ()=>{
+    const A = el.dataset.displayA ?? dispA;
+    const B = el.dataset.displayB ?? dispB;
+    showPreview(A, B);
+  });
+
 
 if(role==='hand'){
    // 🔄 ROTATION: кнопка в центре и обмен половинок местами
@@ -566,7 +573,7 @@ if(role==='hand'){
     const tmp = halves[0].innerHTML;
     halves[0].innerHTML = halves[1].innerHTML;
     halves[1].innerHTML = tmp;
-    // обновляем актуальные отображаемые значения
+        // обновляем актуальные отображаемые значения
     const da = el.dataset.displayA;
     el.dataset.displayA = el.dataset.displayB;
     el.dataset.displayB = da;
