@@ -143,6 +143,18 @@
   .tile.hand{ transform:scale(.65); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
   .tile.hand *{ pointer-events:none; }
 
+/* 🔄 кнопка поворота на костяшке в руке */
+  .tile.hand{ position:relative; } /* чтобы абсолютное позиционирование работало внутри */
+  .tile.hand .rotator{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:28px; height:28px; border-radius:999px; z-index:2;
+    border:2px solid #7a5525; background:linear-gradient(#f1c97a,#e7b85f);
+    color:#2b1a10; font-weight:900; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 4px rgba(0,0,0,.3); cursor:pointer; pointer-events:auto;
+  }
+  .tile.hand .rotator::before{ content:"⟲"; }
+
+
   /* ===== PREVIEW ===== */
   #tilePreview .tile{ width:680px!important; height:260px!important; }
  #tilePreview .tile b {
@@ -537,20 +549,41 @@ function fitToHalf(node, container) {
     if(rightNode) rightNode.style.fontSize = finalSize + "px";
   }
 
-  el.addEventListener('click',()=>showPreview(dispA,dispB));
+  // 🔄 ROTATION: запоминаем текущую «визуальную» ориентацию
+  el.dataset.displayA = dispA;
+  el.dataset.displayB = dispB;
+
 
 if(role==='hand'){
+   // 🔄 ROTATION: кнопка в центре и обмен половинок местами
+  const rot = document.createElement('button');
+  rot.type = 'button';
+  rot.className = 'rotator';
+  rot.title = 'Повернуть';
+  rot.addEventListener('click', (ev)=>{
+    ev.stopPropagation(); // не открывать превью
+    const halves = el.getElementsByClassName('half');
+    const tmp = halves[0].innerHTML;
+    halves[0].innerHTML = halves[1].innerHTML;
+    halves[1].innerHTML = tmp;
+    // обновляем актуальные отображаемые значения
+    const da = el.dataset.displayA;
+    el.dataset.displayA = el.dataset.displayB;
+    el.dataset.displayB = da;
+  });
+  el.appendChild(rot);
   el.draggable=true;
   el.addEventListener('dragstart',e=>{
     hideCenterHint(); // спрятать подсказку центра
     dragging={
-      a:opts.aKey ?? a,
-      b:opts.bKey ?? b,
-      displayA: dispA,
-      displayB: dispB,
-      owner:opts.owner,
-      uid:opts.uid
-    };
+    a:opts.aKey ?? a,
+    b:opts.bKey ?? b,
+    displayA: el.dataset.displayA,
+    displayB: el.dataset.displayB,
+    owner:opts.owner,
+    uid:opts.uid
+  };
+
         play(sPick); // ← звук «подняли плитку»
     e.dataTransfer.setData('text/plain','domino');
     hidePreview();
