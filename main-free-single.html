@@ -137,44 +137,56 @@
 .tile {
   position: relative;
 }
+
+/* сама кнопка */
 .tile .flip-btn {
   position:absolute;
-  top:4px;
-  right:4px;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%); /* по центру перегородки */
   background:rgba(255,255,255,0.9);
   border-radius:50%;
-  width:24px;
-  height:24px;
+  width:28px;
+  height:28px;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:14px;
+  font-size:16px;
   cursor:pointer;
-  z-index:999;          /* 🔥 поверх всего */
-  pointer-events:auto;  /* 🔥 кликабельная */
+  z-index:1000;          
+  opacity:0;             /* по умолчанию скрыта */
+  transition:opacity 0.2s, transform 0.2s;
+  pointer-events:auto;   /* 🔥 кликабельная */
 }
 
-/* половинки не мешают клику по кнопке */
-.tile .half {
+/* половинки костяшки НЕ мешают кнопке */
+.tile .half b,
+.tile .half img {
   pointer-events:none;
 }
 
-  transition: opacity 0.2s, transform 0.2s;
-  z-index: 2;
+/* для руки: всё блокируем кроме кнопки */
+.tile.hand{ 
+  transform:scale(.65); 
+  transform-origin:left center; 
+  cursor:grab; 
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)); 
 }
+.tile.hand *{ pointer-events:none; }
+.tile.hand .flip-btn { pointer-events:auto; }
+
+/* эффект при наведении */
 .tile:hover .flip-btn {
-  opacity: 1;
-  transform: translate(-50%,-50%) scale(1.1);
+  opacity:1;
+  transform:translate(-50%,-50%) scale(1.1);
 }
 .tile .flip-btn:hover {
-  background: rgba(0,0,0,0.8);
+  background:rgba(0,0,0,0.8);
+  color:#fff;
 }
 .tile .flip-btn svg {
-  display: block;
+  display:block;
 }
-
-  .tile.hand{ transform:scale(.65); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
-  .tile.hand *{ pointer-events:none; }
 
   /* ===== PREVIEW ===== */
   #tilePreview .tile{ width:680px!important; height:260px!important; }
