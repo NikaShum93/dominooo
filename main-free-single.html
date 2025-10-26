@@ -144,9 +144,7 @@
   transform: translate(-50%,-50%);
   background: rgba(0,0,0,0.6);
   border-radius: 50%;
-  padding: 4px;
-  font-size: 14px;
-  color: white;
+  padding: 6px;
   opacity: 0;
   cursor: pointer;
   transition: opacity 0.2s, transform 0.2s;
@@ -159,15 +157,9 @@
 .tile .flip-btn:hover {
   background: rgba(0,0,0,0.8);
 }
-
-/* ===== ИЗМЕНЕНИЕ #2: Стили изображения ТОЛЬКО для превью ===== */
-#tilePreview .half img {
-  width: 250px;
-  height: 250px;
-  object-fit: contain;
+.tile .flip-btn svg {
   display: block;
 }
-
 
   .tile.hand{ transform:scale(.65); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
   .tile.hand *{ pointer-events:none; }
@@ -562,42 +554,51 @@ function createTileEl(a,b,opts={}){
 
   el.addEventListener('click',()=>showPreview(dispA,dispB));
 
-  if(role==='hand'){
-    // 🔄 добавляем кнопку переворота
-    const flipBtn = document.createElement('div');
-    flipBtn.className = 'flip-btn';
-    flipBtn.innerHTML = '🔄';
-    el.appendChild(flipBtn);
+ if(role==='hand'){
+  // 🔄 добавляем кнопку переворота
+const flipBtn = document.createElement('div');
+flipBtn.className = 'flip-btn';
+flipBtn.innerHTML = `
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="white">
+    <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6
+             0 1.01-.25 1.97-.7 2.8l1.46 1.46
+             A7.932 7.932 0 0020 12c0-4.42-3.58-8-8-8zm-6.76.24
+             L3.76 5.64A7.932 7.932 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3
+             c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8z"/>
+  </svg>
+`;
+el.appendChild(flipBtn);
 
-    flipBtn.addEventListener('click', e=>{
-      e.stopPropagation(); // не открывать предпросмотр
-      [a,b] = [b,a];
-      [dispA,dispB] = [dispB,dispA];
-      renderHalf(halves[0], dispA);
-      renderHalf(halves[1], dispB);
-    });
+  flipBtn.addEventListener('click', e=>{
+    e.stopPropagation();   // 🚫 не даём клик всплыть (чтобы не открывался предпросмотр)
+    e.preventDefault();    // 🚫 отключаем дефолтное поведение
+    [a,b] = [b,a];
+    [dispA,dispB] = [dispB,dispA];
+    renderHalf(halves[0], dispA);
+    renderHalf(halves[1], dispB);
+  });
 
-    el.draggable=true;
-    el.addEventListener('dragstart',e=>{
-      hideCenterHint();
-      dragging={
-        a:opts.aKey ?? a,
-        b:opts.bKey ?? b,
-        displayA: dispA,
-        displayB: dispB,
-        owner:opts.owner,
-        uid:opts.uid
-      };
-      play(sPick);
-      e.dataTransfer.setData('text/plain','domino');
-      hidePreview();
-      renderDirectionalZones();
-    });
-    el.addEventListener('dragend',()=>{
-      dragging=null;
-      clearZones();
-    });
-  }
+  el.draggable=true;
+  el.addEventListener('dragstart',e=>{
+    hideCenterHint(); // спрятать подсказку центра
+    dragging={
+      a:opts.aKey ?? a,
+      b:opts.bKey ?? b,
+      displayA: dispA,
+      displayB: dispB,
+      owner:opts.owner,
+      uid:opts.uid
+    };
+    play(sPick); // ← звук «подняли плитку»
+    e.dataTransfer.setData('text/plain','domino');
+    hidePreview();
+    renderDirectionalZones();   // ← Показать зоны
+  });
+  el.addEventListener('dragend',()=>{
+    dragging=null;
+    clearZones();               // ← Убрать зоны
+  });
+}
   return el;
 }
 
