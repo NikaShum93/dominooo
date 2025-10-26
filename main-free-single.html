@@ -1100,15 +1100,24 @@ addEventListener('drop', e=>{
 endRight = { x:sx, y:sy, orient:'h', dir: 1, el:placedEl };
   } else {
     const end = isLeft ? endLeft : endRight;
-    const pos = getNextPos(end, choice);
-    if(!pos.orient || collidesWithExisting(rectOf(pos.orient,pos.x,pos.y))) {
-      dragging=null; clearZones(); return;
-    }
-    placedEl = createTileEl(dragging.a, dragging.b,
-      { left:pos.x, top:pos.y, orient:pos.orient, displayA:dragging.displayA, displayB:dragging.displayB });
-    chainZoom.appendChild(placedEl);
-    applyPlaced(end, pos);
-    end.el = placedEl;
+const pos = getNextPos(end, choice);
+
+// ⬆️ если ставим вертикально «вверх», меняем половинки местами,
+// чтобы к стыку оказалась нужная сторона
+let dispA = dragging.displayA;
+let dispB = dragging.displayB;
+if (pos.orient === 'v' && choice === 'up') {
+  [dispA, dispB] = [dispB, dispA];
+}
+
+if(!pos.orient || collidesWithExisting(rectOf(pos.orient,pos.x,pos.y))) {
+  dragging=null; clearZones(); return;
+}
+placedEl = createTileEl(dragging.a, dragging.b,
+  { left:pos.x, top:pos.y, orient:pos.orient, displayA:dispA, displayB:dispB });
+chainZoom.appendChild(placedEl);
+applyPlaced(end, pos);
+end.el = placedEl;
   }
 play(sPlace); // ← звук «положили плитку на стол»
   // убрать из руки
