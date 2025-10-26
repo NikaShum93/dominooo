@@ -593,26 +593,32 @@ flipBtn.innerHTML = `
 `;
 el.appendChild(flipBtn);
 
-  flipBtn.addEventListener('click', e=>{
-    e.stopPropagation();   // 🚫 не даём клик всплыть (чтобы не открывался предпросмотр)
-    e.preventDefault();    // 🚫 отключаем дефолтное поведение
-    [a,b] = [b,a];
-    [dispA,dispB] = [dispB,dispA];
-    renderHalf(halves[0], dispA);
-    renderHalf(halves[1], dispB);
-  });
+ flipBtn.addEventListener('click', e=>{
+  e.stopPropagation();
+  e.preventDefault();
+  [a,b] = [b,a];
+  [dispA,dispB] = [dispB,dispA];
+  renderHalf(halves[0], dispA);
+  renderHalf(halves[1], dispB);
+
+  // 🔥 фиксируем ориентацию (оставляем горизонтальной)
+  el.classList.remove('vert');
+  opts.orient = 'h';
+});
 
   el.draggable=true;
   el.addEventListener('dragstart',e=>{
     hideCenterHint(); // спрятать подсказку центра
-    dragging={
-      a:opts.aKey ?? a,
-      b:opts.bKey ?? b,
-      displayA: dispA,
-      displayB: dispB,
-      owner:opts.owner,
-      uid:opts.uid
-    };
+   dragging={
+  a: a,
+  b: b,
+  displayA: dispA,
+  displayB: dispB,
+  owner: opts.owner,
+  uid: opts.uid,
+  orient: opts.orient   // 🔥 теперь передаём актуальную ориентацию
+};
+
     play(sPick); // ← звук «подняли плитку»
     e.dataTransfer.setData('text/plain','domino');
     hidePreview();
