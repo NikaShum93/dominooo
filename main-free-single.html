@@ -132,6 +132,34 @@
   display:block;
   padding:4px; /* можно подогнать отдельно */
 }
+
+/* === flip button на костяшке === */
+.tile {
+  position: relative;
+}
+.tile .flip-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  background: rgba(0,0,0,0.6);
+  border-radius: 50%;
+  padding: 4px;
+  font-size: 14px;
+  color: white;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 2;
+}
+.tile:hover .flip-btn {
+  opacity: 1;
+  transform: translate(-50%,-50%) scale(1.1);
+}
+.tile .flip-btn:hover {
+  background: rgba(0,0,0,0.8);
+}
+
 /* ===== ИЗМЕНЕНИЕ #2: Стили изображения ТОЛЬКО для превью ===== */
 #tilePreview .half img {
   width: 250px;
@@ -139,6 +167,7 @@
   object-fit: contain;
   display: block;
 }
+
 
   .tile.hand{ transform:scale(.65); transform-origin:left center; cursor:grab; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
   .tile.hand *{ pointer-events:none; }
@@ -478,31 +507,25 @@ function createTileEl(a,b,opts={}){
   el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
 
   const halves=el.getElementsByClassName('half');
-function fitToHalf(node, container) {
-  if (!node) return 12;
-
-  let best = 12;
-  node.style.whiteSpace = "nowrap";  // всегда в одну строку
-  node.style.overflow = "hidden";
-  node.style.textAlign = "center";
-
-  // уменьшаем размер шрифта до тех пор, пока ВЕСЬ текст не влезет
-  for (let s = 40; s >= 8; s--) {
-    node.style.fontSize = s + "px";
-    const fits =
-      node.scrollWidth <= container.clientWidth - 4 &&
-      node.scrollHeight <= container.clientHeight - 4;
-    if (fits) {
-      best = s;
-      break;
+  function fitToHalf(node, container) {
+    if (!node) return 12;
+    let best = 12;
+    node.style.whiteSpace = "nowrap";
+    node.style.overflow = "hidden";
+    node.style.textAlign = "center";
+    for (let s = 40; s >= 8; s--) {
+      node.style.fontSize = s + "px";
+      const fits =
+        node.scrollWidth <= container.clientWidth - 4 &&
+        node.scrollHeight <= container.clientHeight - 4;
+      if (fits) {
+        best = s;
+        break;
+      }
     }
+    return best;
   }
-  return best;
-}
 
-
-  const leftEl = halves[0].firstElementChild;
-  const rightEl = halves[1].firstElementChild;
   const isImg=v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
 
   function renderHalf(containerEl, value){
@@ -510,17 +533,17 @@ function fitToHalf(node, container) {
     if(isImg(value)){
       const img=document.createElement('img'); img.src=value; containerEl.appendChild(img);
       return null;
-   }else{
-  const b=document.createElement('b'); 
-  b.innerHTML = `<span class="math">${value}</span>`;
-  containerEl.appendChild(b); 
-  if (window.MathJax) MathJax.typesetPromise([b]);
-  return b;
-}
+    }else{
+      const b=document.createElement('b'); 
+      b.innerHTML = `<span class="math">${value}</span>`;
+      containerEl.appendChild(b); 
+      if (window.MathJax) MathJax.typesetPromise([b]);
+      return b;
+    }
   }
 
-  const dispA = opts.displayA ?? a;
-  const dispB = opts.displayB ?? b;
+  let dispA = opts.displayA ?? a;
+  let dispB = opts.displayB ?? b;
 
   const leftNode  = renderHalf(halves[0], dispA);
   const rightNode = renderHalf(halves[1], dispB);
@@ -539,30 +562,45 @@ function fitToHalf(node, container) {
 
   el.addEventListener('click',()=>showPreview(dispA,dispB));
 
-if(role==='hand'){
-  el.draggable=true;
-  el.addEventListener('dragstart',e=>{
-    hideCenterHint(); // спрятать подсказку центра
-    dragging={
-      a:opts.aKey ?? a,
-      b:opts.bKey ?? b,
-      displayA: dispA,
-      displayB: dispB,
-      owner:opts.owner,
-      uid:opts.uid
-    };
-        play(sPick); // ← звук «подняли плитку»
-    e.dataTransfer.setData('text/plain','domino');
-    hidePreview();
-    renderDirectionalZones();   // ← Показать зоны
-  });
-  el.addEventListener('dragend',()=>{
-    dragging=null;
-    clearZones();               // ← Убрать зоны
-  });
-}
+  if(role==='hand'){
+    // 🔄 добавляем кнопку переворота
+    const flipBtn = document.createElement('div');
+    flipBtn.className = 'flip-btn';
+    flipBtn.innerHTML = '🔄';
+    el.appendChild(flipBtn);
+
+    flipBtn.addEventListener('click', e=>{
+      e.stopPropagation(); // не открывать предпросмотр
+      [a,b] = [b,a];
+      [dispA,dispB] = [dispB,dispA];
+      renderHalf(halves[0], dispA);
+      renderHalf(halves[1], dispB);
+    });
+
+    el.draggable=true;
+    el.addEventListener('dragstart',e=>{
+      hideCenterHint();
+      dragging={
+        a:opts.aKey ?? a,
+        b:opts.bKey ?? b,
+        displayA: dispA,
+        displayB: dispB,
+        owner:opts.owner,
+        uid:opts.uid
+      };
+      play(sPick);
+      e.dataTransfer.setData('text/plain','domino');
+      hidePreview();
+      renderDirectionalZones();
+    });
+    el.addEventListener('dragend',()=>{
+      dragging=null;
+      clearZones();
+    });
+  }
   return el;
 }
+
 
 /* ===========================================================================================
    Collisions
