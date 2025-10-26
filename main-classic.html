@@ -431,49 +431,34 @@ function createTileEl(a,b,opts={}){
   el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
 
   const halves=el.getElementsByClassName('half');
-function fitToHalf(node, container) {
-  if (!node) return 12;
 
-  let best = 12;
-  node.style.whiteSpace = "nowrap";  // всегда в одну строку
-  node.style.overflow = "hidden";
-  node.style.textAlign = "center";
-
-  // уменьшаем размер шрифта до тех пор, пока ВЕСЬ текст не влезет
-  for (let s = 40; s >= 8; s--) {
-    node.style.fontSize = s + "px";
-    const fits =
-      node.scrollWidth <= container.clientWidth - 4 &&
-      node.scrollHeight <= container.clientHeight - 4;
-    if (fits) {
-      best = s;
-      break;
+  function fitToHalf(node, container) {
+    if (!node) return 12;
+    let best = 12;
+    node.style.whiteSpace = "nowrap";  
+    node.style.overflow = "hidden";
+    node.style.textAlign = "center";
+    for (let s = 40; s >= 8; s--) {
+      node.style.fontSize = s + "px";
+      const fits =
+        node.scrollWidth <= container.clientWidth - 4 &&
+        node.scrollHeight <= container.clientHeight - 4;
+      if (fits) {
+        best = s;
+        break;
+      }
     }
+    return best;
   }
-  return best;
-}
 
-
-  const leftEl = halves[0].firstElementChild;
-  const rightEl = halves[1].firstElementChild;
-  const isImg=v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
-
- function createTileEl(a,b,opts={}) {
-  const role=opts.role||'chain';
-  const orient=opts.orient||'h';
-  const el=document.createElement('div');
-  el.className='tile '+(orient==='v'?'vert ':'')+(role==='hand'?'hand':'');
-  el.style.left=(opts.left||0)+'px';
-  el.style.top=(opts.top||0)+'px';
-  el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
-
-  const halves=el.getElementsByClassName('half');
   const isImg=v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
 
   function renderHalf(containerEl, value){
     containerEl.innerHTML="";
     if(isImg(value)){
-      const img=document.createElement('img'); img.src=value; containerEl.appendChild(img);
+      const img=document.createElement('img'); 
+      img.src=value; 
+      containerEl.appendChild(img);
       return null;
     } else {
       const b=document.createElement('b');
@@ -490,13 +475,13 @@ function fitToHalf(node, container) {
   renderHalf(halves[0], dispA);
   renderHalf(halves[1], dispB);
 
-  // ЛКМ — предпросмотр
-el.addEventListener('click',()=>showPreview(dispA,dispB));
+  // предпросмотр ЛКМ
+  el.addEventListener('click',()=>showPreview(dispA,dispB));
 
-if(role==='hand'){
-    // 👉 добавляем обработчик ПКМ для переворота
+  if(role==='hand'){
+    // ПКМ переворот
     el.addEventListener('contextmenu', e=>{
-      e.preventDefault();   // блокируем меню браузера
+      e.preventDefault();
       [a,b] = [b,a];
       [dispA,dispB] = [dispB,dispA];
       renderHalf(halves[0], dispA);
