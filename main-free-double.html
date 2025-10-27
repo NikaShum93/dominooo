@@ -503,6 +503,9 @@ function createTileEl(a,b,opts={}){
   el.style.left=(opts.left||0)+'px';
   el.style.top=(opts.top||0)+'px';
   el.innerHTML='<div class="half"><b></b></div><div class="half"><b></b></div>';
+// ключи (для чтения из DOM при необходимости)
+el.dataset.a = (opts.aKey ?? a);
+el.dataset.b = (opts.bKey ?? b);
 
   const halves=el.getElementsByClassName('half');
 function fitToHalf(node, container) {
@@ -747,6 +750,22 @@ z.dataset.dir = '●';
 /* ===========================================================================================
    Rules / helpers
 =========================================================================================== */
+// 0 = левая/верхняя (визуально это side "b"), 1 = правая/нижняя (side "a")
+function touchingIdxFor(choice, orient) {
+  if (orient === 'h') {
+    return (choice === 'right') ? 0
+         : (choice === 'left')  ? 1
+         : (choice === 'down')  ? 0
+         : (choice === 'up')    ? 1
+         : null;
+  } else {
+    return (choice === 'down')  ? 0
+         : (choice === 'up')    ? 1
+         : (choice === 'right') ? 0
+         : (choice === 'left')  ? 1
+         : null;
+  }
+}
 
 
 /* ===========================================================================================
@@ -1121,6 +1140,8 @@ addEventListener('drop', e=>{
       { left:sx, top:sy, orient:'h', displayA:dragging.displayA, displayB:dragging.displayB });
     chainZoom.appendChild(placedEl);
     hideCenterHint();
+    openLeft  = dragging.b;   // слева открыт B*
+openRight = dragging.a;   // справа открыт A*
     endLeft  = { x:sx, y:sy, orient:'h', dir:-1, el:placedEl };
 endRight = { x:sx, y:sy, orient:'h', dir: 1, el:placedEl };
  } else {
@@ -1133,30 +1154,49 @@ endRight = { x:sx, y:sy, orient:'h', dir: 1, el:placedEl };
   // 🔧 AUTOROTATE — какая половина должна прилегать к шву?
   // Горизонталь: right → левая(A), left → правая(B)
   // Вертикаль:   down  → верхняя(A), up   → нижняя(B)
-  const needAatSeam = (pos.orient === 'h')
-    ? (choice === 'right')
-    : (choice === 'down');
+ // ожидаемое значение на этом конце: противоположный префикс с тем же индексом
+const endOpen = isLeft ? openLeft : openRight;           // 'A7' или 'B3'
+const expected = endOpen
+  ? (endOpen[0] === 'A' ? 'B' + endOpen.slice(1)         // A7 → ждём B7
+                        : 'A' + endOpen.slice(1))        // B3 → ждём A3
+  : null;
 
-  let a  = dragging.a,  b  = dragging.b;
-  let dA = dragging.displayA, dB = dragging.displayB;
+const touchIdx = touchingIdxFor(choice, pos.orient);     // 0: b, 1: a
+if (touchIdx == null) { dragging=null; clearZones(); return; }
 
-  if (!needAatSeam) {
-    [a, b]   = [b, a];
-    [dA, dB] = [dB, dA];
-  }
+let a  = dragging.a,  b  = dragging.b;
+let dA = dragging.displayA, dB = dragging.displayB;
 
-  placedEl = createTileEl(a, b, {
-    left: pos.x,
-    top:  pos.y,
-    orient: pos.orient,
-    displayA: dA,
-    displayB: dB
-  });
-  chainZoom.appendChild(placedEl);
+// совпадает ли уже касающаяся половина?
+const touchMatches =
+  (touchIdx === 0 && b === expected) ||
+  (touchIdx === 1 && a === expected);
 
-  applyPlaced(end, pos);
-  end.el = placedEl;
+// если нет — подходит ли другая половина? если да, переворачиваем; если нет — запрещаем ход
+if (!touchMatches) {
+  const otherMatches =
+    (touchIdx === 0 && a === expected) ||
+    (touchIdx === 1 && b === expected);
+  if (!otherMatches) { dragging=null; clearZones(); return; }
+  [a,b] = [b,a];
+  [dA,dB] = [dB,dA];
 }
+
+ placedEl = createTileEl(a, b, {
+  left: pos.x,
+  top:  pos.y,
+  orient: pos.orient,
+  displayA: dA,
+  displayB: dB
+});
+chainZoom.appendChild(placedEl);
+
+applyPlaced(end, pos);
+end.el = placedEl;
+
+// ← ДОБАВИТЬ вот это сразу после applyPlaced/end.el:
+const newOpen = (touchIdx === 0) ? a : b;
+if (isLeft) openLeft = newOpen; else openRight = newOpen;
 
 play(sPlace); // ← звук «положили плитку на стол»
   // убрать из руки
