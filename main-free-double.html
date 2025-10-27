@@ -1155,11 +1155,9 @@ endRight = { x:sx, y:sy, orient:'h', dir: 1, el:placedEl };
   // Горизонталь: right → левая(A), left → правая(B)
   // Вертикаль:   down  → верхняя(A), up   → нижняя(B)
  // ожидаемое значение на этом конце: противоположный префикс с тем же индексом
+// ожидаем только противоположный ПРЕФИКС (индекс любой)
 const endOpen = isLeft ? openLeft : openRight;           // 'A7' или 'B3'
-const expected = endOpen
-  ? (endOpen[0] === 'A' ? 'B' + endOpen.slice(1)         // A7 → ждём B7
-                        : 'A' + endOpen.slice(1))        // B3 → ждём A3
-  : null;
+const needPrefix = endOpen ? (endOpen[0] === 'A' ? 'B' : 'A') : null;
 
 const touchIdx = touchingIdxFor(choice, pos.orient);     // 0: b, 1: a
 if (touchIdx == null) { dragging=null; clearZones(); return; }
@@ -1167,16 +1165,18 @@ if (touchIdx == null) { dragging=null; clearZones(); return; }
 let a  = dragging.a,  b  = dragging.b;
 let dA = dragging.displayA, dB = dragging.displayB;
 
-// совпадает ли уже касающаяся половина?
-const touchMatches =
-  (touchIdx === 0 && b === expected) ||
-  (touchIdx === 1 && a === expected);
+const hasPrefix = (val, pref) => typeof val === 'string' && val.startsWith(pref);
 
-// если нет — подходит ли другая половина? если да, переворачиваем; если нет — запрещаем ход
+// совпадает ли уже касающаяся половина по префиксу?
+const touchMatches =
+  (touchIdx === 0 && hasPrefix(b, needPrefix)) ||
+  (touchIdx === 1 && hasPrefix(a, needPrefix));
+
+// если нет — подходит ли другая половина по префиксу? если да — переворачиваем; иначе — запрещаем ход
 if (!touchMatches) {
   const otherMatches =
-    (touchIdx === 0 && a === expected) ||
-    (touchIdx === 1 && b === expected);
+    (touchIdx === 0 && hasPrefix(a, needPrefix)) ||
+    (touchIdx === 1 && hasPrefix(b, needPrefix));
   if (!otherMatches) { dragging=null; clearZones(); return; }
   [a,b] = [b,a];
   [dA,dB] = [dB,dA];
