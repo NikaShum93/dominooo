@@ -116,14 +116,17 @@
   .tile.vert{ width:70px; height:200px; grid-template-columns:1fr; grid-template-rows:1fr 1fr; }
   .tile.vert .half:first-child{ border-right:none; border-bottom:2px solid #d8c8aa; }
 .tile b {
-  display:block;
   font-weight:900;
   color:#1c1712;
-  white-space:nowrap;      /* одна строка */
-  overflow:hidden;
   text-align:center;
   line-height:1.1;
+  white-space:nowrap;       /* одна строка, как было */
+  overflow:hidden;
+  display:flex;
+  align-items:center;       /* центр по вертикали */
+  justify-content:center;   /* центр по горизонтали */
 }
+
 .tile .half img {
   max-width:90%;
   max-height:90%;
