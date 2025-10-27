@@ -526,7 +526,8 @@ function fitToHalf(node, container) {
 
   const leftEl = halves[0].firstElementChild;
   const rightEl = halves[1].firstElementChild;
-  const isImg=v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
+const isImg=v=>/\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
+
 
   function renderHalf(containerEl, value){
     containerEl.innerHTML="";
