@@ -1123,18 +1123,41 @@ addEventListener('drop', e=>{
     hideCenterHint();
     endLeft  = { x:sx, y:sy, orient:'h', dir:-1, el:placedEl };
 endRight = { x:sx, y:sy, orient:'h', dir: 1, el:placedEl };
-  } else {
-    const end = isLeft ? endLeft : endRight;
-    const pos = getNextPos(end, choice);
-    if(!pos.orient || collidesWithExisting(rectOf(pos.orient,pos.x,pos.y))) {
-      dragging=null; clearZones(); return;
-    }
-    placedEl = createTileEl(dragging.a, dragging.b,
-      { left:pos.x, top:pos.y, orient:pos.orient, displayA:dragging.displayA, displayB:dragging.displayB });
-    chainZoom.appendChild(placedEl);
-    applyPlaced(end, pos);
-    end.el = placedEl;
+ } else {
+  const end = isLeft ? endLeft : endRight;
+  const pos = getNextPos(end, choice);
+  if (!pos.orient || collidesWithExisting(rectOf(pos.orient, pos.x, pos.y))) {
+    dragging = null; clearZones(); return;
   }
+
+  // 🔧 AUTOROTATE — какая половина должна прилегать к шву?
+  // Горизонталь: right → левая(A), left → правая(B)
+  // Вертикаль:   down  → верхняя(A), up   → нижняя(B)
+  const needAatSeam = (pos.orient === 'h')
+    ? (choice === 'right')
+    : (choice === 'down');
+
+  let a  = dragging.a,  b  = dragging.b;
+  let dA = dragging.displayA, dB = dragging.displayB;
+
+  if (!needAatSeam) {
+    [a, b]   = [b, a];
+    [dA, dB] = [dB, dA];
+  }
+
+  placedEl = createTileEl(a, b, {
+    left: pos.x,
+    top:  pos.y,
+    orient: pos.orient,
+    displayA: dA,
+    displayB: dB
+  });
+  chainZoom.appendChild(placedEl);
+
+  applyPlaced(end, pos);
+  end.el = placedEl;
+}
+
 play(sPlace); // ← звук «положили плитку на стол»
   // убрать из руки
   const arr = hands[dragging.owner] || [];
