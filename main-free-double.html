@@ -874,46 +874,40 @@ function buildDeckFromData(d){
   const m = Math.min(A.length, B.length);
   if (!m) return [];
 
-  const usedA = {};
-  const usedB = {};
+  // Делаем три дерранжированных сдвига: +1, +2, +3
+  // Это гарантирует: индекс всегда разный (i ≠ j),
+  // каждый элемент A и B используется ровно по 3 раза.
+  const shifts = [1, 2, 3];
   const out = [];
 
-  for (let i = 0; i < m; i++) {
-    for (let j = 0; j < m; j++) {
-      if (i === j) continue; // исключаем одинаковые индексы
-
-      if ((usedA[A[i]] || 0) >= 3) continue;
-      if ((usedB[B[j]] || 0) >= 3) continue;
-
+  for (const k of shifts) {
+    for (let i = 0; i < m; i++) {
+      const j = (i + k) % m;      // всегда другой индекс
       out.push({
         a: "A" + i,
         b: "B" + j,
+        // как в твоём втором режиме: слева показываем B[j], справа A[i]
         displayA: B[j],
         displayB: A[i],
         uid: uid()
       });
-
-      usedA[A[i]] = (usedA[A[i]] || 0) + 1;
-      usedB[B[j]] = (usedB[B[j]] || 0) + 1;
     }
   }
 
-  return out;
+  return out; // размер = 3 * m
 }
 
 function makeDefaultDeck(){
   const F = ["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
   const m = F.length;
+  if (!m) return [];
+
+  const shifts = [1, 2, 3];
   const out = [];
-  const used = {}; // учёт повторов каждого слова
 
-  for (let i = 0; i < m; i++) {
-    for (let j = 0; j < m; j++) {
-      if (i === j) continue; // исключаем одинаковые индексы
-
-      if ((used[F[i]] || 0) >= 3) continue;
-      if ((used[F[j]] || 0) >= 3) continue;
-
+  for (const k of shifts) {
+    for (let i = 0; i < m; i++) {
+      const j = (i + k) % m;  // всегда другой индекс
       out.push({
         a: "A" + i,
         b: "B" + j,
@@ -921,13 +915,12 @@ function makeDefaultDeck(){
         displayB: F[i],
         uid: uid()
       });
-
-      used[F[i]] = (used[F[i]] || 0) + 1;
-      used[F[j]] = (used[F[j]] || 0) + 1;
     }
   }
-  return out;
+
+  return out; // 3 * m
 }
+
 
 /* оценка единого размера шрифта — по отображаемым словам/картинкам (только текст) */
 function computeUniformSize(deck){
