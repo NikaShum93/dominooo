@@ -874,49 +874,57 @@ function buildDeckFromData(d){
   const m = Math.min(A.length, B.length);
   if (!m) return [];
 
-  // счётчики использования
   const usedA = {};
   const usedB = {};
   const out = [];
 
   for (let i = 0; i < m; i++) {
-    const j = (i + 1) % m; // или любая логика подбора B
-    const aWord = A[i];
-    const bWord = B[j];
+    for (let j = 0; j < m; j++) {
+      if (i === j) continue; // исключаем одинаковые индексы
 
-    // проверка лимита 3
-    if ((usedA[aWord] || 0) >= 3) continue;
-    if ((usedB[bWord] || 0) >= 3) continue;
+      if ((usedA[A[i]] || 0) >= 3) continue;
+      if ((usedB[B[j]] || 0) >= 3) continue;
 
-    out.push({
-      a: "A" + i,
-      b: "B" + j,
-      displayA: bWord,
-      displayB: aWord,
-      uid: uid()
-    });
+      out.push({
+        a: "A" + i,
+        b: "B" + j,
+        displayA: B[j],
+        displayB: A[i],
+        uid: uid()
+      });
 
-    usedA[aWord] = (usedA[aWord] || 0) + 1;
-    usedB[bWord] = (usedB[bWord] || 0) + 1;
+      usedA[A[i]] = (usedA[A[i]] || 0) + 1;
+      usedB[B[j]] = (usedB[B[j]] || 0) + 1;
+    }
   }
 
   return out;
 }
 
 function makeDefaultDeck(){
-  const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
+  const F = ["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
   const m = F.length;
-  const out=[];
+  const out = [];
+  const used = {}; // учёт повторов каждого слова
+
   for (let i = 0; i < m; i++) {
-    const j = (i + 1) % m; // всегда другой индекс
-    out.push({
-      a: "A" + i,
-      b: "B" + j,
-      // как в «другом режиме»: слева B[j], справа A[i]
-      displayA: F[j],
-      displayB: F[i],
-      uid: uid()
-    });
+    for (let j = 0; j < m; j++) {
+      if (i === j) continue; // исключаем одинаковые индексы
+
+      if ((used[F[i]] || 0) >= 3) continue;
+      if ((used[F[j]] || 0) >= 3) continue;
+
+      out.push({
+        a: "A" + i,
+        b: "B" + j,
+        displayA: F[j],
+        displayB: F[i],
+        uid: uid()
+      });
+
+      used[F[i]] = (used[F[i]] || 0) + 1;
+      used[F[j]] = (used[F[j]] || 0) + 1;
+    }
   }
   return out;
 }
