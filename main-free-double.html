@@ -869,40 +869,57 @@ function startFireworks(){
    Deck (from data) + default
 =========================================================================================== */
 function buildDeckFromData(d){
-  const out = [];
-  const listA = (d && Array.isArray(d.listA)) ? d.listA : [];
-  const listB = (d && Array.isArray(d.listB)) ? d.listB : [];
+  const A = (d && Array.isArray(d.listA)) ? d.listA : [];
+  const B = (d && Array.isArray(d.listB)) ? d.listB : [];
+  const m = Math.min(A.length, B.length);
+  if (!m) return [];
 
-  // создаём уникальные пары A[i] ↔ B[i]
-  for (let i = 0; i < Math.min(listA.length, listB.length); i++) {
+  // счётчики использования
+  const usedA = {};
+  const usedB = {};
+  const out = [];
+
+  for (let i = 0; i < m; i++) {
+    const j = (i + 1) % m; // или любая логика подбора B
+    const aWord = A[i];
+    const bWord = B[j];
+
+    // проверка лимита 3
+    if ((usedA[aWord] || 0) >= 3) continue;
+    if ((usedB[bWord] || 0) >= 3) continue;
+
     out.push({
-      a: "A"+i,
-      b: "B"+i,
-      displayA: listA[i],
-      displayB: listB[i],
+      a: "A" + i,
+      b: "B" + j,
+      displayA: bWord,
+      displayB: aWord,
+      uid: uid()
+    });
+
+    usedA[aWord] = (usedA[aWord] || 0) + 1;
+    usedB[bWord] = (usedB[bWord] || 0) + 1;
+  }
+
+  return out;
+}
+
+function makeDefaultDeck(){
+  const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
+  const m = F.length;
+  const out=[];
+  for (let i = 0; i < m; i++) {
+    const j = (i + 1) % m; // всегда другой индекс
+    out.push({
+      a: "A" + i,
+      b: "B" + j,
+      // как в «другом режиме»: слева B[j], справа A[i]
+      displayA: F[j],
+      displayB: F[i],
       uid: uid()
     });
   }
   return out;
 }
-
-
-function makeDefaultDeck(){
-  const listA=["кот","луна","звезда","река","лес"];
-  const listB=["пёс","солнце","мост","дом","море"];
-  const out=[];
-  for(let i=0;i<Math.min(listA.length,listB.length);i++){
-    out.push({
-      a:"A"+i,
-      b:"B"+i,
-      displayA:listA[i],
-      displayB:listB[i],
-      uid:uid()
-    });
-  }
-  return out;
-}
-
 
 /* оценка единого размера шрифта — по отображаемым словам/картинкам (только текст) */
 function computeUniformSize(deck){
