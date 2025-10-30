@@ -883,20 +883,37 @@ function startFireworks(){
 function buildDeckFromData(d){
   const out=[];
   const raw = (d && Array.isArray(d.listA)) ? d.listA : [];
-  const A = [...new Set(raw)];           // уникальные слова
-  for(let i=0;i+1<A.length;i+=2){        // попарно (разные слова на половинах)
-    out.push({ a:i, b:i+1, displayA:A[i], displayB:A[i+1], uid:uid() });
+  const A = [...new Set(raw)]; // уникальные слова
+
+  // перемешиваем перед парсингом
+  shuffle(A);
+
+  for(let i=0;i+1<A.length;i+=2){
+    out.push({
+      a: i, b: i+1,
+      displayA: A[i],
+      displayB: A[i+1],
+      uid: uid()
+    });
   }
   return out;
 }
 
-
 function makeDefaultDeck(){
   const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
   const A=[...new Set(F)];
+
+  // тоже перемешиваем
+  shuffle(A);
+
   const out=[];
   for(let i=0;i+1<A.length;i+=2){
-    out.push({ a:i, b:i+1, displayA:A[i], displayB:A[i+1], uid:uid() });
+    out.push({
+      a: i, b: i+1,
+      displayA: A[i],
+      displayB: A[i+1],
+      uid: uid()
+    });
   }
   return out;
 }
