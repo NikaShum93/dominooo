@@ -282,6 +282,8 @@ function getQueryData(){
   try{ return JSON.parse(decodeURIComponent(raw)); }
   catch(e){ return null; }
 }
+const __payload = getQueryData() || {};
+const FEEDBACK = (typeof __payload.feedback === 'string' ? __payload.feedback.trim() : '');
 
 /* constants */
 const TILE_W=200, TILE_H=70, VERT_W=70, VERT_H=200, GAP=4, DZ=38;
@@ -883,6 +885,41 @@ function computeUniformSize(deck){
 =========================================================================================== */
 function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderPlayersBar(); renderHand(); updateControls(); } document.getElementById("playersBar").style.display = "flex";
 function everyonePassed(){ for(let i=0;i<playerNames.length;i++){ if(!passes[i]) return false; } return true; }
+function endByPoints(){
+  // очки = у кого меньше костяшек в руке
+  const counts = playerNames.map((_,i)=> (hands[i]||[]).length );
+  let best = Infinity, winnerIdx = -1, tie = false;
+
+  counts.forEach((c, i)=>{
+    if (c < best){ best = c; winnerIdx = i; tie = false; }
+    else if (c === best){ tie = true; }
+  });
+
+  const overlay = document.getElementById('finalOverlay');
+  const finalMsg = overlay.querySelector('.final-message');
+  const fb = FEEDBACK;
+
+  if (tie){
+    // оставляем ничью (если хочешь — можно выбрать тай-брейк по ходу/первому игроку)
+    finalMsg.innerHTML = fb ? `🎉 ${fb} 🎉<br>Победила дружба!`
+                            : `Победила дружба!`;
+  } else {
+    const winner = playerNames[winnerIdx];
+    finalMsg.innerHTML = fb
+      ? `🎉 ${fb} 🎉<br>Победитель: <span>${winner}</span>`
+      : `Победитель: <span>${winner}</span>`;
+  }
+
+  overlay.style.display = 'flex';
+  if (typeof startFireworks === 'function') startFireworks();
+
+  // привязка «Начать заново» (однократно)
+  const restartBtnWin = document.getElementById('restartOnWin');
+  if (restartBtnWin && !restartBtnWin.dataset.bound){
+    restartBtnWin.addEventListener('click', ()=>location.reload());
+    restartBtnWin.dataset.bound = '1';
+  }
+}
 
   // формируем комбинированное сообщение
 function endByWinner(i){
@@ -890,58 +927,14 @@ function endByWinner(i){
   const overlay = document.getElementById('finalOverlay');
   const finalMsg = overlay.querySelector('.final-message');
 
-  const fb = window.feedbackText && window.feedbackText.trim();
-  if (fb) {
-    finalMsg.innerHTML = `
-      🎉 ${fb} 🎉<br>
-      Победитель: <span>${winner}</span>
-    `;
-  } else {
-    finalMsg.innerHTML = `
-      Победитель: <span>${winner}</span>
-    `;
-  }
-
-  overlay.style.display = 'flex';
-  startFireworks();
-
-  // ✚ привязка кнопки «Начать заново»
-  const restartOnWin = document.getElementById('restartOnWin');
-  if (restartOnWin && !restartOnWin.dataset.bound){
-    restartOnWin.addEventListener('click', ()=>{ location.reload(); });
-    restartOnWin.dataset.bound = '1';
-  }
-}
-
-/* ✚ НОВАЯ функция: завершение по пассам (очки/остатки) */
-function endByPoints(){
-  // у кого меньше костяшек — тот и выиграл
-  let bestIdx = -1;
-  let bestCount = Infinity;
-  for (let i = 0; i < playerNames.length; i++){
-    const cnt = (hands[i] || []).length;
-    if (cnt < bestCount){ bestCount = cnt; bestIdx = i; }
-  }
-
-  const overlay  = document.getElementById('finalOverlay');
-  const finalMsg = overlay.querySelector('.final-message');
-  const fb = (window.feedbackText && window.feedbackText.trim()) || '';
-
-  const tie = playerNames
-    .map((_,i)=>(hands[i]||[]).length)
-    .filter(c => c === bestCount).length > 1;
-
-  if (tie){
-    finalMsg.innerHTML = fb ? `🎉 ${fb} 🎉<br>Победила дружба!`
-                            : `Победила дружба!`;
-  } else {
-    const winner = playerNames[bestIdx];
-    finalMsg.innerHTML = fb ? `🎉 ${fb} 🎉<br>Победитель: <span>${winner}</span>`
-                            : `Победитель: <span>${winner}</span>`;
-  }
+  const fb = FEEDBACK; // ← берём из ?data
+  finalMsg.innerHTML = fb
+    ? `🎉 ${fb} 🎉<br>Победитель: <span>${winner}</span>`
+    : `Победитель: <span>${winner}</span>`;
 
   overlay.style.display = 'flex';
   if (typeof startFireworks === 'function') startFireworks();
+}
 
   // ✚ привязка кнопки «Начать заново»
   const restartOnWin = document.getElementById('restartOnWin');
@@ -949,7 +942,6 @@ function endByPoints(){
     restartOnWin.addEventListener('click', ()=>{ location.reload(); });
     restartOnWin.dataset.bound = '1';
   }
-}
 
 
 /* ===========================================================================================
@@ -1037,15 +1029,26 @@ skipBtn.addEventListener('click', ()=>{
   if (sClick) { sClick.currentTime = 0; sClick.play().catch(()=>{}); }
   passes[currentPlayer]=(passes[currentPlayer]||0)+1;
 
-  if(everyonePassed()){ endByPoints(); return; }
+  // Заканчиваем ИГРУ, когда все подряд пасанули и колода пуста
+  if (everyonePassed() && deck.length === 0){
+    endByPoints();
+    return;
+  }
   nextPlayer();
 });
+
 
 restartBtn.addEventListener('click', ()=>{
   if (sClick) { sClick.currentTime = 0; sClick.play().catch(()=>{}); }
   location.reload();
 });
-
+// привязка кнопки в оверлее (если появится)
+document.addEventListener('DOMContentLoaded', ()=>{
+  const restartBtnWin = document.getElementById('restartOnWin');
+  if (restartBtnWin){
+    restartBtnWin.addEventListener('click', ()=>location.reload());
+  }
+});
 startBtn.addEventListener('click', ()=>{
   if (sClick) { sClick.currentTime = 0; sClick.play().catch(()=>{}); }
   startGame();
