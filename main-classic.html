@@ -180,8 +180,39 @@
   .dz::after{ content:attr(data-dir); font-size:11px; color:#2c1a32; font-weight:900; background:#f2c56a; padding:2px 6px; border-radius:8px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
 
   /* ===== WIN OVERLAY ===== */
-  .final-overlay{ position:absolute; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:100000; }
-  .final-message{ font-size:42px; font-weight:900; color:#ffe97f; }
+/* Центрированный фидбек + кнопка в оверлее */
+.final-overlay{
+  position:absolute; inset:0;
+  background:rgba(0,0,0,0.7);
+  display:none;
+  align-items:center;         /* по вертикали центр */
+  justify-content:center;     /* по горизонтали центр */
+  z-index:100000;
+  flex-direction:column;      /* текст сверху, кнопка ниже */
+  gap:16px;
+  padding:20px;
+}
+.final-message{
+  font-size:42px;
+  font-weight:900;
+  color:#ffe97f;
+  text-align:center;          /* точно по центру */
+  line-height:1.2;
+  max-width:90vw;
+  margin:0 auto;
+}
+.win-actions{ display:flex; gap:12px; }
+.win-btn{
+  padding:10px 18px;
+  border-radius:10px;
+  border:2px solid #7a5525;
+  background:linear-gradient(#f1c97a,#e7b85f);
+  color:#2b1a10;
+  font-weight:900;
+  cursor:pointer;
+}
+.win-btn:hover{ filter:brightness(1.05); }
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
@@ -219,10 +250,13 @@
     <div id="tray" class="tray"></div>
   </div>
 
- <div id="finalOverlay" class="final-overlay">
+<div id="finalOverlay" class="final-overlay">
   <div class="final-message"></div>
+  <div class="win-actions">
+    <button id="restartOnWin" type="button" class="win-btn">Начать заново</button>
+  </div>
 </div>
-</div>
+
 
 <div id="tilePreview"
      style="position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:999999; background:rgba(0,0,0,.6)">
@@ -868,8 +902,19 @@ function endByWinner(i){
     `;
   }
 
+  // показать оверлей и фейерверк
   overlay.style.display = 'flex';
   startFireworks();
+
+  // 🔁 кнопка "Начать заново"
+  const restartOnWin = document.getElementById('restartOnWin');
+  if (restartOnWin && !restartOnWin.dataset.bound) {
+    restartOnWin.addEventListener('click', ()=>{
+      try { if (sClick) { sClick.currentTime = 0; sClick.play(); } } catch(e){}
+      location.reload();
+    });
+    restartOnWin.dataset.bound = '1';
+  }
 }
 
 /* ===========================================================================================
