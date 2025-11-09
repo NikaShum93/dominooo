@@ -222,8 +222,24 @@
   .dz::after{ content:attr(data-dir); font-size:11px; color:#2c1a32; font-weight:900; background:#f2c56a; padding:2px 6px; border-radius:8px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
 
   /* ===== WIN OVERLAY ===== */
-  .final-overlay{ position:absolute; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:100000; }
-  .final-message{ font-size:42px; font-weight:900; color:#ffe97f; }
+  /* ===== WIN OVERLAY ===== */
+.final-overlay{
+  position:absolute; inset:0;
+  background:rgba(0,0,0,0.7);
+  display:none;
+  align-items:center;              /* по вертикали центр */
+  justify-content:center;          /* по горизонтали центр */
+  z-index:100000;
+}
+.final-message{
+  font-size:42px; font-weight:900; color:#ffe97f;
+  text-align:center;               /* центрируем многострочный текст */
+  line-height:1.2;                 /* аккуратные межстрочные интервалы */
+  max-width:90vw;                  /* не уезжает за экран */
+  margin:0 auto;                   /* центр контейнера */
+  padding:8px 16px;                /* чуть воздуха вокруг */
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
@@ -708,7 +724,7 @@ function renderDirectionalZones(){
   clearZones();
   if(!dragging) return;
 
-  ensureEndsValid(); // ← ключевое: актуализируем концы перед расчётом зон
+  if (!endLeft || !endRight) ensureEndsValid();
 
   const placed = [...chainZoom.querySelectorAll('.tile:not(.hand)')];
   // если на поле нет ни одной плитки — показываем центральную зону
@@ -1081,35 +1097,30 @@ if (!chainZoom.querySelector('.tile:not(.hand)')) {
 }
   // 2) вернуть состояние концов, как было ДО хода
   // (если это была первая плитка — prevEnds.left/right будут null)
-  if (last.prevEnds) {
-    endLeft  = last.prevEnds.left  ? { ...last.prevEnds.left  } : null;
-    endRight = last.prevEnds.right ? { ...last.prevEnds.right } : null;
-  } else {
-    endLeft = endRight = null;
-  }
+// 2) вернуть состояние концов, как было ДО хода
+if (last.prevEnds) {
+  endLeft  = last.prevEnds.left  ? { ...last.prevEnds.left  } : null;
+  endRight = last.prevEnds.right ? { ...last.prevEnds.right } : null;
+} else {
+  endLeft = endRight = null;
+}
 
-  // 3) вернуть плитку в руку того игрока, кто ходил
-  hands[last.player].push({
-    a: last.tile.a,
-    b: last.tile.b,
-    displayA: last.tile.displayA,
-    displayB: last.tile.displayB,
-    uid: last.tile.uid
-  });
+// 2a) ✨ восстановить "открытые значения" концов
+if (last.prevOpen) {
+  openLeft  = last.prevOpen.left  ?? null;
+  openRight = last.prevOpen.right ?? null;
+} else {
+  openLeft = openRight = null;
+}
 
-  // 4) вернуть ход этому игроку (важно!)
-  currentPlayer = last.player;
+// ...дальше...
 
-  // 5) перерисовать всё и обновить доступность кнопок
-  renderPlayersBar();
-  renderHand();
-  updateControls();
+// после восстановления истории — пересчитывать концы по DOM
+// ТОЛЬКО если они отсутствуют (например, поле пустое)
+if (!endLeft || !endRight) ensureEndsValid();
 
-  // после восстановления истории — переинициализируем концы по DOM
-  ensureEndsValid();
-
-  clearZones();
-  renderDirectionalZones();
+clearZones();
+renderDirectionalZones();
 });
 // 🔥 новая кнопка «Пропустить»
 document.getElementById("skipBtn").addEventListener("click", ()=>{
@@ -1229,13 +1240,17 @@ history.push({
   player: dragging.owner,
   tile: { ...dragging },   // сохраняем значения плитки
   el: placedEl,
-  // снимок концов до размещения этой костяшки
+  // снимок концов ДО размещения этой костяшки
   prevEnds: {
     left:  cloneEnd(endLeft),
     right: cloneEnd(endRight)
+  },
+  // ✨ добавили это:
+  prevOpen: {
+    left:  openLeft,
+    right: openRight
   }
 });
-
 
   dragging = null;
   updateControls();
