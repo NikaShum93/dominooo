@@ -1169,33 +1169,29 @@ addEventListener('dragover', e=>{ if(dragging) e.preventDefault(); });
 if(!(t && t.classList && t.classList.contains('dz'))) return; // кидаем только в зону
 e.preventDefault();
 
-// --- снимок состояния ДО хода (концы + "открытые" значения) ---
-function cloneEnd(e){
-  if(!e) return null;
-  return { x:e.x, y:e.y, orient:e.orient, dir:e.dir, el:e.el };
-}
-const __snapshotBefore = {
-  prevEnds: {
-    left:  cloneEnd(endLeft),
-    right: cloneEnd(endRight)
-  },
-  prevOpen: {
-    left:  openLeft,
-    right: openRight
-  },
-  player: dragging.owner,
-  tile: { ...dragging }   // сохраняем текущую плитку
-};
-
-const isCenter = t.dataset.end === 'C';
-const isLeft   = t.dataset.end === 'L';
-
 addEventListener('drop', e=>{
   if(!dragging) return;
   const t = e.target;
   if(!(t && t.classList && t.classList.contains('dz'))) return; // кидаем только в зону
   e.preventDefault();
 
+  // --- снимок состояния ДО хода (концы + "открытые" значения) ---
+  function cloneEnd(e){
+    if(!e) return null;
+    return { x:e.x, y:e.y, orient:e.orient, dir:e.dir, el:e.el };
+  }
+  const __snapshotBefore = {
+    prevEnds: {
+      left:  cloneEnd(endLeft),
+      right: cloneEnd(endRight)
+    },
+    prevOpen: {
+      left:  openLeft,
+      right: openRight
+    },
+    player: dragging.owner,
+    tile: { ...dragging }   // сохраняем текущую плитку
+  };
   const isCenter = t.dataset.end === 'C';
   const isLeft   = t.dataset.end === 'L';
   const choice   = t.dataset.k;
