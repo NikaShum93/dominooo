@@ -1108,44 +1108,53 @@ drawBtn.addEventListener('click', ()=>{
 
 document.getElementById("undoBtn").addEventListener("click", ()=>{
   const last = history.pop();
-  if(!last) return;
+  if (!last) return;
 
-  // 1) убрать с поля выложенную плитку
-  if(last.el && last.el.parentNode){
+  // 1) убрать плитку с поля
+  if (last.el && last.el.parentNode) {
     last.el.parentNode.removeChild(last.el);
   }
-// Если после удаления на поле не осталось плиток — показать подсказку центра
-if (!chainZoom.querySelector('.tile:not(.hand)')) {
-  endLeft = endRight = null;
-  showCenterHintIfEmpty();
-}
-  // 2) вернуть состояние концов, как было ДО хода
-  // (если это была первая плитка — prevEnds.left/right будут null)
-// 2) вернуть состояние концов, как было ДО хода
-// 2) вернуть состояние концов, как было ДО хода
-if (last.prevEnds) {
-  endLeft  = last.prevEnds.left  ? { ...last.prevEnds.left  } : null;
-  endRight = last.prevEnds.right ? { ...last.prevEnds.right } : null;
-} else {
-  endLeft = endRight = null;
-}
 
-// 2a) вернуть "открытые" значения концов (A*/B*)
-if (last.prevOpen) {
-  openLeft  = (last.prevOpen.left  ?? null);
-  openRight = (last.prevOpen.right ?? null);
-} else {
-  openLeft = openRight = null;
-}
+  // если поле опустело — подсказка центра
+  if (!chainZoom.querySelector('.tile:not(.hand)')) {
+    endLeft = endRight = null;
+    showCenterHintIfEmpty();
+  }
 
-// ...дальше...
+  // 2) восстановить концы и «открытые» значения
+  if (last.prevEnds) {
+    endLeft  = last.prevEnds.left  ? { ...last.prevEnds.left  } : null;
+    endRight = last.prevEnds.right ? { ...last.prevEnds.right } : null;
+  } else {
+    endLeft = endRight = null;
+  }
+  if (last.prevOpen) {
+    openLeft  = (last.prevOpen.left  ?? null);
+    openRight = (last.prevOpen.right ?? null);
+  } else {
+    openLeft = openRight = null;
+  }
+  if (!endLeft || !endRight) ensureEndsValid();
 
-// пересчёт концов по DOM делаем ТОЛЬКО если концов нет вообще
-if (!endLeft || !endRight) ensureEndsValid();
+  // 3) вернуть плитку в руку того игрока, который делал ход
+  if (last.tile && typeof last.player === 'number') {
+    hands[last.player] = hands[last.player] || [];
+    hands[last.player].push(last.tile);
+  }
 
-clearZones();
-renderDirectionalZones();
+  // 4) вернуть ход этому игроку
+  if (typeof last.player === 'number') {
+    currentPlayer = last.player;
+  }
+
+  // 5) обновить UI и подсказки
+  renderPlayersBar();
+  renderHand();
+  updateControls();
+  clearZones();
+  renderDirectionalZones();
 });
+
 // 🔥 новая кнопка «Пропустить»
 document.getElementById("skipBtn").addEventListener("click", ()=>{
   currentPlayer = (currentPlayer+1) % playerNames.length;
