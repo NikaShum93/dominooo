@@ -301,8 +301,7 @@ async function getPayload(){
   return null;
 }
 
-const __payload = getQueryData() || {};
-const FEEDBACK = (typeof __payload.feedback === 'string' ? __payload.feedback.trim() : '');
+let FEEDBACK = ""; // глобально, вместо const FEEDBACK...
 
 /* constants */
 const TILE_W=200, TILE_H=70, VERT_W=70, VERT_H=200, GAP=4, DZ=38;
@@ -966,7 +965,7 @@ function endByWinner(i){
 /* ===========================================================================================
    Start game
 =========================================================================================== */
-function startGame(){
+async function startGame(){
   const n=Math.max(2,Math.min(4,parseInt(playerCountEl.value)||2));
 
   // names
@@ -975,8 +974,9 @@ function startGame(){
     playerNames.push((document.getElementById('pname'+i)?.value||'').trim()||('Игрок '+(i+1)));
   }
 
-  // deck — сначала из ?data=listA, иначе дефолт
- const data = await getPayload() || {};
+// deck — сначала из ?data=listA, иначе дефолт
+const data = await getPayload() || {};
+FEEDBACK = (typeof data.feedback === 'string' ? data.feedback.trim() : "");
 deck = buildDeckFromData(data);
 
   if(!deck.length){ deck = makeDefaultDeck(); }
