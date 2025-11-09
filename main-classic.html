@@ -276,12 +276,31 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.rand
 function uid(){ return Math.random().toString(36).slice(2,9); }
 function br(){ return { w:chainEl.clientWidth, h:chainEl.clientHeight }; }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
-function getQueryData(){
-  const raw=new URLSearchParams(location.search).get('data');
-  if(!raw) return null;
-  try{ return JSON.parse(decodeURIComponent(raw)); }
-  catch(e){ return null; }
+async function getPayload(){
+  const sp = new URLSearchParams(location.search);
+  const raw = sp.get('data');
+  const id  = sp.get('id');
+
+  // 1) Старый режим: ?data=
+  if (raw) {
+    try { return JSON.parse(decodeURIComponent(raw)); }
+    catch(e){ console.warn('Bad data param', e); }
+  }
+
+  // 2) Новый режим: ?id= → тянем JSON с GitHub Pages
+  if (id) {
+    const url = `https://nikashum93.github.io/texts/data/${encodeURIComponent(id)}.json`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (res.ok) {
+      return await res.json();
+    } else {
+      console.warn('Cannot load JSON by id', id, res.status);
+    }
+  }
+
+  return null;
 }
+
 const __payload = getQueryData() || {};
 const FEEDBACK = (typeof __payload.feedback === 'string' ? __payload.feedback.trim() : '');
 
@@ -957,8 +976,9 @@ function startGame(){
   }
 
   // deck — сначала из ?data=listA, иначе дефолт
-  const data = getQueryData() || {};
-  deck = buildDeckFromData(data);
+ const data = await getPayload() || {};
+deck = buildDeckFromData(data);
+
   if(!deck.length){ deck = makeDefaultDeck(); }
   shuffle(deck);
 
