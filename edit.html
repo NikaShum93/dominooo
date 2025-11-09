@@ -23,7 +23,7 @@
     min-height:100vh;
     text-align:center;
     position:relative;
-    overflow:hidden; /* убираем скролл */
+    overflow:auto; /* убираем скролл */
   }
 
   h1{
@@ -130,29 +130,34 @@
     box-shadow:0 0 16px #ffda8b,0 0 28px #d06bff;
   }
 
-  #embedCodeBox{
-    display:none;
-    margin-top:12px;
-    width:90%;
-    max-width:800px;
-    text-align:center;
-    position:relative; z-index:2;
-  }
-  #embedCode{
-    width:100%;
-    min-height:100px;
-    padding:14px;
-    border-radius:12px;
-    background:rgba(30,16,34,0.9);
-    color:#ffda8b;
-    font-family:monospace;
-    font-size:15px;
-    border:2px solid #ff7eff;
-    box-shadow:0 0 12px rgba(255,126,255,.6);
-    text-align:left;
-    display:block;
-    margin:0 auto;
-  }
+#embedCodeBox{
+  display:none;                 /* покажем после генерации */
+  margin-top:12px;
+  width:90%;
+  max-width:800px;
+  text-align:center;
+  position:relative;
+  z-index:2;
+}
+
+#embedCode{
+  width:100%;
+  min-height:120px;             /* чуть выше базовая высота */
+  max-height:320px;             /* ограничиваем, чтобы не разъезжалась верстка */
+  overflow:auto;                /* собственная прокрутка внутри поля */
+  resize:vertical;              /* можно растягивать мышкой вниз/вверх */
+  padding:14px;
+  border-radius:12px;
+  background:rgba(30,16,34,0.9);
+  color:#ffda8b;
+  font-family:monospace;
+  font-size:15px;
+  border:2px solid #ff7eff;
+  box-shadow:0 0 12px rgba(255,126,255,.6);
+  text-align:left;
+  display:block;
+  margin:0 auto;
+}
 
   /* гирлянда */
   .garland{
@@ -215,27 +220,41 @@ function cleanList(raw){
   return raw.split(/[\n,]+/).map(x=>x.trim()).filter(x=>x);
 }
 
-/* ✚ НОВОЕ: публикация JSON на сервер и получение id */
-async function publishToServer(payload, idHint="domino") {
-  const id = idHint.replace(/[^\w-]+/g,'').toLowerCase() + "-" + Date.now();
-  const res = await fetch("https://server-kjnn.onrender.com/publish", {
+const ENDPOINT    = "https://server-kjnn.onrender.com/publish";
+const PUBLISH_KEY = "nika_read_pub_2025";
+
+async function publishToServer(dataObj, idHint = "domino"){
+  const slug = (idHint || "domino")
+    .toLowerCase()
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9-]+/g,'-').replace(/^-+|-+$/g,'')
+    .slice(0,40) || "domino";
+  const d=new Date(),p=n=>String(n).padStart(2,'0');
+  const stamp = `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  const id = `${slug}-${stamp}`;
+
+  const payload = {
+    id,
+    folder: "data",                          // как в рабочем файле
+    content: JSON.stringify(dataObj, null, 2) // ВАЖНО: строка!
+  };
+
+  const res = await fetch(ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Publish-Key": "nika_read_pub_2025"
+      "X-Publish-Key": PUBLISH_KEY
     },
-    body: JSON.stringify({
-      id,                   // id файла (имя без .json)
-      folder: "texts/data", // папка на GitHub Pages
-      content: payload      // сам JSON (объект)
-    })
+    body: JSON.stringify(payload)
   });
-  if (!res.ok) {
+
+  if(!res.ok){
     const msg = await res.text().catch(()=>res.statusText);
-    throw new Error("Publish failed: " + msg);
+    throw new Error(msg || "Server error");
   }
   return id;
 }
+
 
 document.getElementById("generateBtn").addEventListener("click", async ()=>{
   const A = cleanList(document.getElementById("listA").value);
@@ -243,13 +262,10 @@ document.getElementById("generateBtn").addEventListener("click", async ()=>{
   const freeMode = document.getElementById("freeMode").checked;
   const useServer = document.getElementById("useServer").checked;
 
-  if (!A.length){
-    alert("Список A обязателен!");
-    return;
-  }
+  if(!A.length){ alert("Список A обязателен!"); return; }
 
-  const feedback = document.getElementById("feedbackText").value || "Поздравляем!";
-  const data = {listA:A, listB:B, freeMode, feedback};
+  const feedback = (document.getElementById("feedbackText").value || "Поздравляем!").trim();
+  const data = { listA:A, listB:B, freeMode, feedback };
 
   let file = "";
   if (freeMode && B.length) file = "main-free-double.html";
@@ -260,19 +276,16 @@ document.getElementById("generateBtn").addEventListener("click", async ()=>{
   const base = "https://nikashum93.github.io/dominooo/";
   let url;
 
-  if (useServer) {
-    try {
+  if (useServer){
+    try{
       const id = await publishToServer(data, A[0] || "domino");
       url = `${base}${file}?id=${encodeURIComponent(id)}`;
-    } catch (e) {
-      console.error(e);
+    }catch(e){
       alert("Не удалось опубликовать на сервер: " + e.message + "\nСделаю локальный ?data для надёжности.");
-      const json = encodeURIComponent(JSON.stringify(data));
-      url = `${base}${file}?data=${json}`;
+      url = `${base}${file}?data=${encodeURIComponent(JSON.stringify(data))}`;
     }
   } else {
-    const json = encodeURIComponent(JSON.stringify(data));
-    url = `${base}${file}?data=${json}`;
+    url = `${base}${file}?data=${encodeURIComponent(JSON.stringify(data))}`;
   }
 
   const code = `<iframe src="${url}" width="960" height="540" style="border:0;" allowfullscreen></iframe>`;
