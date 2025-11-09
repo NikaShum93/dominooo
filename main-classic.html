@@ -902,20 +902,55 @@ function endByWinner(i){
     `;
   }
 
-  // показать оверлей и фейерверк
   overlay.style.display = 'flex';
   startFireworks();
 
-  // 🔁 кнопка "Начать заново"
+  // ✚ привязка кнопки «Начать заново»
   const restartOnWin = document.getElementById('restartOnWin');
-  if (restartOnWin && !restartOnWin.dataset.bound) {
-    restartOnWin.addEventListener('click', ()=>{
-      try { if (sClick) { sClick.currentTime = 0; sClick.play(); } } catch(e){}
-      location.reload();
-    });
+  if (restartOnWin && !restartOnWin.dataset.bound){
+    restartOnWin.addEventListener('click', ()=>{ location.reload(); });
     restartOnWin.dataset.bound = '1';
   }
 }
+
+/* ✚ НОВАЯ функция: завершение по пассам (очки/остатки) */
+function endByPoints(){
+  // у кого меньше костяшек — тот и выиграл
+  let bestIdx = -1;
+  let bestCount = Infinity;
+  for (let i = 0; i < playerNames.length; i++){
+    const cnt = (hands[i] || []).length;
+    if (cnt < bestCount){ bestCount = cnt; bestIdx = i; }
+  }
+
+  const overlay  = document.getElementById('finalOverlay');
+  const finalMsg = overlay.querySelector('.final-message');
+  const fb = (window.feedbackText && window.feedbackText.trim()) || '';
+
+  const tie = playerNames
+    .map((_,i)=>(hands[i]||[]).length)
+    .filter(c => c === bestCount).length > 1;
+
+  if (tie){
+    finalMsg.innerHTML = fb ? `🎉 ${fb} 🎉<br>Победила дружба!`
+                            : `Победила дружба!`;
+  } else {
+    const winner = playerNames[bestIdx];
+    finalMsg.innerHTML = fb ? `🎉 ${fb} 🎉<br>Победитель: <span>${winner}</span>`
+                            : `Победитель: <span>${winner}</span>`;
+  }
+
+  overlay.style.display = 'flex';
+  if (typeof startFireworks === 'function') startFireworks();
+
+  // ✚ привязка кнопки «Начать заново»
+  const restartOnWin = document.getElementById('restartOnWin');
+  if (restartOnWin && !restartOnWin.dataset.bound){
+    restartOnWin.addEventListener('click', ()=>{ location.reload(); });
+    restartOnWin.dataset.bound = '1';
+  }
+}
+
 
 /* ===========================================================================================
    Start game
@@ -990,9 +1025,13 @@ drawBtn.addEventListener('click', ()=>{
 
   hand.push(deck.shift());
   hands[currentPlayer] = hand;
+
+  passes[currentPlayer] = 0;  // ← сброс серии пассов
+
   renderHand();
   updateControls();
 });
+
 
 skipBtn.addEventListener('click', ()=>{
   if (sClick) { sClick.currentTime = 0; sClick.play().catch(()=>{}); }
