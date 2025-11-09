@@ -1,54 +1,206 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Domino Editor</title>
+
+<!-- Подключаем шрифт Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
 <style>
   body{
-    margin:0; padding:0;
+    margin:0;
+    padding:0;
     background: url("https://img.genially.com/64233afb55129a0017751c8e/80454769-7ad4-4911-b11a-636485807651.jpeg") no-repeat center center fixed;
     background-size:cover;
-    font:16px "Inter", Arial, sans-serif;
+    font:18px "Inter", sans-serif;
     color:#fdf4ff;
-    display:flex; flex-direction:column; align-items:center;
-    min-height:100vh; text-align:center; position:relative; overflow-x:hidden;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    min-height:100vh;
+    text-align:center;
+    position:relative;
+    overflow:hidden; /* убираем скролл */
   }
-  .garland{ position:absolute; top:0; left:0; width:100%; display:flex; justify-content:space-around; pointer-events:none; padding:10px; }
-  .garland span{ width:12px; height:12px; border-radius:50%; box-shadow:0 0 6px; animation: blink 1.5s infinite alternate; }
-  .garland span:nth-child(1){ background:#ffda8b; box-shadow:0 0 8px #ffda8b; }
-  .garland span:nth-child(2){ background:#ff7eff; box-shadow:0 0 8px #ff7eff; animation-delay:.3s; }
-  .garland span:nth-child(3){ background:#7ef9ff; box-shadow:0 0 8px #7ef9ff; animation-delay:.6s; }
+
+  h1{
+    margin:10px 0;
+    font-size:2.6em;
+    color:#ffeeb0;
+    text-shadow:0 0 8px #ffae00, 0 0 16px #d06bff;
+    position:relative; z-index:2;
+  }
+
+  .logo{
+    margin:10px auto 0;
+    width:120px;
+    filter: drop-shadow(0 0 10px #ffda8b);
+    position:relative; z-index:2;
+  }
+
+  /* контейнер для списков */
+  .lists {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    width: 90%;
+    max-width: 900px;
+    margin: 10px auto;
+    position:relative;
+    z-index:2;
+  }
+  .list-col {
+    flex: 1;
+    min-width: 0;
+  }
+  .list-col p {
+    font-size: 16px;
+    background:rgba(46,25,56,0.6);
+    padding:8px 14px;
+    border-radius:8px;
+    margin-bottom:8px;
+    box-shadow:0 0 8px rgba(255,126,255,.4);
+  }
+  .list-col textarea {
+    width: 100%;
+    min-height: 120px;
+    padding:14px 16px;
+    border-radius:12px;
+    border:2px solid #ffda8b;
+    background:rgba(255,255,255,0.9);
+    color:#2c1a32;
+    font-size:16px;
+    box-shadow:0 0 10px rgba(255,218,139,.6);
+  }
+
+  label{
+    margin:10px auto;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:16px;
+    background:rgba(46,25,56,0.6);
+    padding:8px 14px;
+    border-radius:8px;
+    max-width:650px;
+    box-shadow:0 0 8px rgba(255,126,255,.4);
+    position:relative; z-index:2;
+  }
+
+  p.feedback-label {
+    font-size:16px;
+    background:rgba(46,25,56,0.6);
+    padding:8px 14px;
+    border-radius:8px;
+    margin:12px auto;
+    max-width:650px;
+    box-shadow:0 0 8px rgba(255,126,255,.4);
+    position:relative; z-index:2;
+  }
+
+  textarea#feedbackText {
+    width:90%;
+    max-width:800px;
+    min-height:80px;
+    margin:12px auto;
+    padding:14px 16px;
+    border-radius:12px;
+    border:2px solid #ffda8b;
+    background:rgba(255,255,255,0.9);
+    color:#2c1a32;
+    font-size:16px;
+    box-shadow:0 0 10px rgba(255,218,139,.6);
+    display:block;
+    position:relative; z-index:2;
+  }
+
+  button{
+    padding:14px 28px; border-radius:12px; border:none;
+    background:linear-gradient(90deg,#ffda8b,#ff7eff);
+    color:#2c1a32; cursor:pointer; font-weight:700; font-size:18px; margin:16px 0;
+    box-shadow:0 0 12px rgba(255,218,139,.8),0 0 20px rgba(208,107,255,.7);
+    transition:transform .2s, box-shadow .2s;
+    position:relative; z-index:2;
+  }
+  button:hover{
+    transform:scale(1.05);
+    box-shadow:0 0 16px #ffda8b,0 0 28px #d06bff;
+  }
+
+  #embedCodeBox{
+    display:none;
+    margin-top:12px;
+    width:90%;
+    max-width:800px;
+    text-align:center;
+    position:relative; z-index:2;
+  }
+  #embedCode{
+    width:100%;
+    min-height:100px;
+    padding:14px;
+    border-radius:12px;
+    background:rgba(30,16,34,0.9);
+    color:#ffda8b;
+    font-family:monospace;
+    font-size:15px;
+    border:2px solid #ff7eff;
+    box-shadow:0 0 12px rgba(255,126,255,.6);
+    text-align:left;
+    display:block;
+    margin:0 auto;
+  }
+
+  /* гирлянда */
+  .garland{
+    position:fixed;
+    top:10px;
+    left:0;
+    width:100%;
+    display:flex;
+    justify-content:space-evenly;
+    pointer-events:none;
+    z-index:1;
+  }
+  .garland span{
+    width:20px; height:20px; border-radius:50%;
+    background:#ffda8b; box-shadow:0 0 8px #ffda8b;
+    animation: blink 1.5s infinite alternate;
+  }
+  .garland span:nth-child(2n){background:#ff7eff; box-shadow:0 0 8px #ff7eff; animation-delay:.3s}
+  .garland span:nth-child(3n){background:#7ef9ff; box-shadow:0 0 8px #7ef9ff; animation-delay:.6s}
   @keyframes blink{from{opacity:.4} to{opacity:1}}
-  h1{ margin-top:10px; font-size:2.0em; color:#ffeeb0; text-shadow:0 0 8px #ffae00; }
-  .logo{ margin:20px auto; width:120px; filter: drop-shadow(0 0 10px #ffda8b); }
-  textarea{ width:90%; max-width:600px; min-height:80px; margin:12px auto; padding:12px; border-radius:12px; border:2px solid #ffda8b; background:rgba(255,255,255,0.9); color:#2c1a32; font-size:15px; box-shadow:0 0 10px rgba(255,218,139,.6); }
-  p{ font-size:15px; background:rgba(46,25,56,0.6); padding:8px 14px; border-radius:8px; margin:10px auto; max-width:650px; box-shadow:0 0 8px rgba(255,126,255,.4); }
-  label{ margin:8px 0; display:flex; align-items:center; gap:6px; color:#fff; }
-  button{ padding:12px 24px; border-radius:12px; border:none; background:linear-gradient(90deg,#ffda8b,#ff7eff); color:#2c1a32; cursor:pointer; font-weight:700; font-size:16px; margin:18px 0; box-shadow:0 0 12px rgba(255,218,139,.8); transition:transform .15s; }
-  button:hover{ transform:scale(1.04); box-shadow:0 0 20px rgba(208,107,255,.6); }
-  #embedCodeBox{ display:none; margin-top:20px; width:90%; max-width:700px; }
-  #embedCode{ width:100%; min-height:120px; padding:12px; border-radius:12px; background:rgba(30,16,34,0.9); color:#ffda8b; font-family:monospace; font-size:14px; border:2px solid #ff7eff; box-shadow:0 0 12px rgba(255,126,255,.6); }
-  .notice { margin-top:10px; font-size:13px; color:#ffdca8; background: rgba(20,10,25,0.5); padding:8px 12px; border-radius:8px; max-width:700px; }
 </style>
 </head>
 <body>
-  <div class="garland">
-    <span></span><span></span><span></span><span></span><span></span>
-  </div>
 
-  <img src="https://con.xl.ru/fnfLZuvpAUiDaqDs8d1-2g/images/kcJYv7OsYUSGt5AfGq5jIw.png" alt="Лого" class="logo">
+  <!-- верхняя гирлянда -->
+  <div class="garland" id="garlandTop"></div>
+
+  <img src="https://con.xl.ru/fnfLZuvpAUiDaqDs8d1-2g/images/kcJYv7OsYUSGt5AfGq5jIw.png" alt="Лого КГБ" class="logo">
   <h1>КГБ · Расширение "Домино"</h1>
 
-  <p>Введите список A (слова или ссылки на картинки, через запятую или с новой строки):</p>
-  <textarea id="listA" placeholder="CAT, DOG, SUN, MOON"></textarea>
+  <div class="lists">
+    <div class="list-col">
+      <p>Введите список A (слова или ссылки на картинки):</p>
+      <textarea id="listA" placeholder="CAT, DOG, SUN, MOON"></textarea>
+    </div>
+    <div class="list-col">
+      <p>Введите список B (опционально: картинки или слова для пар):</p>
+      <textarea id="listB" placeholder="🐱, 🐶, ☀️, 🌙"></textarea>
+    </div>
+  </div>
 
-  <p>Введите список B (опционально: картинки или слова для пар, в том же порядке):</p>
-  <textarea id="listB" placeholder="🐱, 🐶, ☀️, 🌙"></textarea>
+<label><input type="checkbox" id="freeMode"> Свободная игра (без правил)</label>
 
-  <label><input type="checkbox" id="freeMode"> Свободная игра (без правил)</label>
+<!-- ✚ НОВОЕ: переключатель серверной публикации -->
+<label><input type="checkbox" id="useServer"> Публиковать на сервер (короткий iframe с ?id=)</label>
 
-  <p>Введите текст финального фидбека (сообщение после победы):</p>
+<p class="feedback-label">Введите текст финального фидбека (сообщение после победы):</p>
+
   <textarea id="feedbackText" placeholder="Поздравляем! Ты победил!"></textarea>
 
   <button id="generateBtn">Сгенерировать iframe</button>
@@ -56,22 +208,95 @@
   <div id="embedCodeBox">
     <p>Скопируй этот код и вставь в Genially:</p>
     <textarea id="embedCode" readonly></textarea>
-    <div class="notice" id="trapNotice"></div>
   </div>
 
 <script>
-function esc(s){ return s.replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+function cleanList(raw){
+  return raw.split(/[\n,]+/).map(x=>x.trim()).filter(x=>x);
+}
+<script>
+function cleanList(raw){
+  return raw.split(/[\n,]+/).map(x=>x.trim()).filter(x=>x);
+}
 
-document.getElementById("generateBtn").addEventListener("click", function(){
-  var userMessage = "А что это мы тут ищем? Игру? А нет игры... *Вызываю полицию* У нас тут воришка попался!";
-  var inner = '<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Сообщение</title><style>body{margin:0;padding:0;background:#07060a;color:#fff;font-family:Inter,Arial,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh} .box{max-width:780px;background:linear-gradient(180deg,#1a0820,#200a2b);padding:26px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 8px 30px rgba(0,0,0,0.6);text-align:center} h1{margin:0 0 8px;color:#ffd66a;font-size:22px} p{color:#ffdfb8;line-height:1.5} .small{margin-top:12px;color:#b9f7ff;font-size:13px}</style></head><body><div class="box" role="dialog"><h1>' + esc(userMessage) + '</h1><p>Подождите 10 секунд...</p><div class="small">Если вы разработчик — свяжитесь с автором.</div></div><script>var run=false; function playBeep(){try{var C=window.AudioContext||window.webkitAudioContext;var ctx=new C();var o=ctx.createOscillator(),g=ctx.createGain();o.type=\"sine\";o.frequency.value=880;o.connect(g);g.connect(ctx.destination);var t=ctx.currentTime;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.4,t+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+0.25);o.start(t);o.stop(t+0.26);}catch(e){} } function startEffect(){ if(run) return; run=true; var overlay=document.createElement('div'); overlay.style.position='fixed'; overlay.style.left=0; overlay.style.top=0; overlay.style.width='100%'; overlay.style.height='100%'; overlay.style.background='rgba(200,0,0,0.08)'; overlay.style.backdropFilter='contrast(80%)'; overlay.style.zIndex=9999; document.body.appendChild(overlay); var flashes=0; var fl=setInterval(function(){ overlay.style.background = (flashes%2? 'rgba(200,0,0,0.18)':'rgba(150,0,0,0.05)'); flashes++; if(flashes>12){ clearInterval(fl); showWarnings(); } playBeep(); },600); } function showWarnings(){ for(var i=0;i<6;i++){ createWarning(i); } function createWarning(i){ var w=document.createElement('div'); w.textContent='Ошибка: неизвестный процесс #' + (i+1); w.style.position='fixed'; w.style.left=(10+ i*12)+'%'; w.style.top=(20 + i*8)+'%'; w.style.background='rgba(0,0,0,0.75)'; w.style.color='#ffdddd'; w.style.padding='10px 14px'; w.style.border='2px solid rgba(255,100,100,0.6)'; w.style.borderRadius='8px'; w.style.zIndex=10000; w.style.boxShadow='0 8px 24px rgba(0,0,0,0.6)'; document.body.appendChild(w); (function(el){ setTimeout(function(){ el.style.transform='translateY(-6px)'; el.style.opacity='0.95'; },50); setTimeout(function(){ el.style.opacity='0'; el.style.transition='opacity 1s ease'; },4500); setTimeout(function(){ try{ el.remove(); }catch(e){} },6500); })(w); } } setTimeout(startEffect,10000);</script></body></html>';
-  var safe = esc(inner);
-  var iframe = "<iframe srcdoc='" + safe + "' width='960' height='540' style='border:0;border-radius:8px;overflow:hidden;' allowfullscreen></iframe>";
-  var commentlessCode = iframe;
-  document.getElementById("embedCode").value = commentlessCode;
+/* ✚ НОВОЕ: публикация JSON на сервер и получение id */
+async function publishToServer(payload, idHint="domino") {
+  const id = idHint.replace(/[^\w-]+/g,'').toLowerCase() + "-" + Date.now();
+  const res = await fetch("https://server-kjnn.onrender.com/publish", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Publish-Key": "nika_read_pub_2025"
+    },
+    body: JSON.stringify({
+      id,                           // id файла (имя без .json)
+      folder: "texts/data",         // папка на GitHub Pages
+      content: payload              // сам JSON (объект)
+    })
+  });
+  if (!res.ok) {
+    const msg = await res.text().catch(()=>res.statusText);
+    throw new Error("Publish failed: " + msg);
+  }
+  return id;
+}
+
+document.getElementById("generateBtn").addEventListener("click", async ()=>{
+  const A = cleanList(document.getElementById("listA").value);
+  const B = cleanList(document.getElementById("listB").value);
+  const freeMode = document.getElementById("freeMode").checked;
+  const useServer = document.getElementById("useServer").checked;
+
+  if (!A.length){
+    alert("Список A обязателен!");
+    return;
+  }
+
+  const feedback = document.getElementById("feedbackText").value || "Поздравляем!";
+  const data = {listA:A, listB:B, freeMode, feedback};
+
+  let file = "";
+  if (freeMode && B.length) file = "main-free-double.html";
+  else if (freeMode && !B.length) file = "main-free-single.html";
+  else if (!freeMode && B.length) file = "main-double.html";
+  else file = "main-classic.html";
+
+  const base = "https://nikashum93.github.io/dominooo/";
+
+  let url;
+  if (useServer) {
+    try {
+      // ✚ публикуем JSON, получаем короткий id
+      const id = await publishToServer(data, A[0] || "domino");
+      url = `${base}${file}?id=${encodeURIComponent(id)}`;
+    } catch (e) {
+      console.error(e);
+      alert("Не удалось опубликовать на сервер: " + e.message + "\nСделаю локальный ?data для надёжности.");
+      const json = encodeURIComponent(JSON.stringify(data));
+      url = `${base}${file}?data=${json}`;
+    }
+  } else {
+    // старый режим с ?data
+    const json = encodeURIComponent(JSON.stringify(data));
+    url = `${base}${file}?data=${json}`;
+  }
+
+  const code = `<iframe src="${url}" width="960" height="540" style="border:0;" allowfullscreen></iframe>`;
+  document.getElementById("embedCode").value = code;
   document.getElementById("embedCodeBox").style.display = "block";
-  document.getElementById("trapNotice").textContent = "Готово.";
 });
+
+
+/* Генерация верхней гирлянды */
+function generateGarland(id, step=40){
+  const container = document.getElementById(id);
+  const count = Math.floor(window.innerWidth / step);
+  for (let i=0; i<count; i++){
+    const span = document.createElement("span");
+    container.appendChild(span);
+  }
+}
+generateGarland("garlandTop", 40);
 </script>
 </body>
 </html>
