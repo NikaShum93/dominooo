@@ -250,7 +250,7 @@
   </div>
 
  <div id="finalOverlay" class="final-overlay">
-  <div class="final-message">🎉 Победила дружба! 🎉</div>
+  <div class="final-message"></div>
 </div>
 </div>
 
@@ -280,6 +280,21 @@ function getQueryData(){
   catch(e){ return null; }
 }
 
+// === финальный текст победы из параметров редактора ===
+const __payload = getQueryData() || {};
+const FINAL_TEXT =
+  (__payload && typeof __payload.feedback === 'string' && __payload.feedback.trim())
+    ? __payload.feedback.trim()
+    : '🎉 Победила дружба! 🎉';
+
+// Унифицированный показ оверлея победы
+function showWinOverlay() {
+  const msgEl = document.querySelector('#finalOverlay .final-message');
+  if (msgEl) msgEl.textContent = FINAL_TEXT;
+  const overlay = document.getElementById('finalOverlay');
+  if (overlay) overlay.style.display = 'flex';
+  startFireworks(); // существующая функция — трогать не нужно
+}
 /* constants */
 const TILE_W=200, TILE_H=70, VERT_W=70, VERT_H=200, GAP=4, DZ=38;
 
@@ -1076,10 +1091,7 @@ if (!chainZoom.querySelector('.tile:not(.hand)')) {
   renderDirectionalZones();
 });
 
-document.getElementById("endBtn").addEventListener("click", ()=>{
-  document.getElementById("finalOverlay").style.display = "flex";
-  startFireworks(); // ← запуск фейерверка и win.mp3
-});
+document.getElementById("endBtn").addEventListener("click", showWinOverlay);
 
 
 restartBtn.addEventListener('click', ()=>location.reload());
@@ -1143,8 +1155,7 @@ play(sPlace); // ← звук «положили плитку на стол»
   renderHand();
 // если у игрока закончились костяшки — победа
 if ((hands[dragging.owner] || []).length === 0) {
-  document.getElementById("finalOverlay").style.display = "flex";
-  startFireworks(); // звук + фейерверк по реальному событию победы
+  showWinOverlay();
 }
   // история (для корректного Undo)
 function cloneEnd(e){
