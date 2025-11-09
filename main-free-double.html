@@ -1166,9 +1166,6 @@ document.addEventListener('click', (e)=>{
   play(sClick);
 });
 addEventListener('dragover', e=>{ if(dragging) e.preventDefault(); });
-if(!(t && t.classList && t.classList.contains('dz'))) return; // кидаем только в зону
-e.preventDefault();
-
 addEventListener('drop', e=>{
   if(!dragging) return;
   const t = e.target;
