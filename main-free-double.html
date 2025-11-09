@@ -230,15 +230,22 @@
   align-items:center;              /* по вертикали центр */
   justify-content:center;          /* по горизонтали центр */
   z-index:100000;
+  flex-direction:column;           /* ✨ текст сверху, кнопка ниже */
+  gap:16px;
 }
 .final-message{
   font-size:42px; font-weight:900; color:#ffe97f;
-  text-align:center;               /* центрируем многострочный текст */
-  line-height:1.2;                 /* аккуратные межстрочные интервалы */
-  max-width:90vw;                  /* не уезжает за экран */
-  margin:0 auto;                   /* центр контейнера */
-  padding:8px 16px;                /* чуть воздуха вокруг */
+  text-align:center; line-height:1.2;
+  max-width:90vw; margin:0 auto; padding:8px 16px;
 }
+.win-actions{ display:flex; gap:12px; }
+.win-btn{
+  padding:10px 18px; border-radius:10px;
+  border:2px solid #7a5525;
+  background:linear-gradient(#f1c97a,#e7b85f);
+  color:#2b1a10; font-weight:900; cursor:pointer;
+}
+.win-btn:hover{ filter:brightness(1.05); }
 
 </style>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -282,6 +289,9 @@
 
 <div id="finalOverlay" class="final-overlay">
   <div class="final-message"></div>
+  <div class="win-actions">
+    <button id="restartOnWin" type="button" class="win-btn">Начать заново</button>
+  </div>
 </div>
 </div>
 
@@ -322,10 +332,24 @@ const FINAL_TEXT =
 function showWinOverlay() {
   const msgEl = document.querySelector('#finalOverlay .final-message');
   if (msgEl) msgEl.textContent = FINAL_TEXT;
+
   const overlay = document.getElementById('finalOverlay');
   if (overlay) overlay.style.display = 'flex';
-  startFireworks(); // фейерверк/звук остаются
+
+  // ✨ кнопка «Начать заново»
+  const restartBtnWin = document.getElementById('restartOnWin');
+  if (restartBtnWin && !restartBtnWin.dataset.bound) {
+    restartBtnWin.addEventListener('click', ()=>{
+      // если хочешь – можно дернуть существующую кнопку «Перезапустить»
+      // document.getElementById('restartBtn')?.click();
+      location.reload();                // быстрый и надёжный перезапуск
+    });
+    restartBtnWin.dataset.bound = '1';  // чтобы не навешивать повторно
+  }
+
+  startFireworks();
 }
+
 /* constants */
 const TILE_W=200, TILE_H=70, VERT_W=70, VERT_H=200, GAP=4, DZ=38;
 
@@ -1098,6 +1122,7 @@ if (!chainZoom.querySelector('.tile:not(.hand)')) {
   // 2) вернуть состояние концов, как было ДО хода
   // (если это была первая плитка — prevEnds.left/right будут null)
 // 2) вернуть состояние концов, как было ДО хода
+// 2) вернуть состояние концов, как было ДО хода
 if (last.prevEnds) {
   endLeft  = last.prevEnds.left  ? { ...last.prevEnds.left  } : null;
   endRight = last.prevEnds.right ? { ...last.prevEnds.right } : null;
@@ -1105,18 +1130,17 @@ if (last.prevEnds) {
   endLeft = endRight = null;
 }
 
-// 2a) ✨ восстановить "открытые значения" концов
+// 2a) вернуть "открытые" значения концов (A*/B*)
 if (last.prevOpen) {
-  openLeft  = last.prevOpen.left  ?? null;
-  openRight = last.prevOpen.right ?? null;
+  openLeft  = (last.prevOpen.left  ?? null);
+  openRight = (last.prevOpen.right ?? null);
 } else {
   openLeft = openRight = null;
 }
 
 // ...дальше...
 
-// после восстановления истории — пересчитывать концы по DOM
-// ТОЛЬКО если они отсутствуют (например, поле пустое)
+// пересчёт концов по DOM делаем ТОЛЬКО если концов нет вообще
 if (!endLeft || !endRight) ensureEndsValid();
 
 clearZones();
@@ -1142,6 +1166,29 @@ document.addEventListener('click', (e)=>{
   play(sClick);
 });
 addEventListener('dragover', e=>{ if(dragging) e.preventDefault(); });
+if(!(t && t.classList && t.classList.contains('dz'))) return; // кидаем только в зону
+e.preventDefault();
+
+// --- снимок состояния ДО хода (концы + "открытые" значения) ---
+function cloneEnd(e){
+  if(!e) return null;
+  return { x:e.x, y:e.y, orient:e.orient, dir:e.dir, el:e.el };
+}
+const __snapshotBefore = {
+  prevEnds: {
+    left:  cloneEnd(endLeft),
+    right: cloneEnd(endRight)
+  },
+  prevOpen: {
+    left:  openLeft,
+    right: openRight
+  },
+  player: dragging.owner,
+  tile: { ...dragging }   // сохраняем текущую плитку
+};
+
+const isCenter = t.dataset.end === 'C';
+const isLeft   = t.dataset.end === 'L';
 
 addEventListener('drop', e=>{
   if(!dragging) return;
@@ -1227,33 +1274,22 @@ play(sPlace); // ← звук «положили плитку на стол»
   hands[dragging.owner] = arr.filter(x=>x.uid !== dragging.uid);
   renderHand();
 // если у игрока закончились костяшки — победа
+// если у игрока закончились костяшки — победа
 if ((hands[dragging.owner] || []).length === 0) {
-  showWinOverlay();
+  document.getElementById("finalOverlay").style.display = "flex";
+  startFireworks(); // звук + фейерверк по реальному событию победы
 }
-  // история (для корректного Undo)
-function cloneEnd(e){
-  if(!e) return null;
-  return { x:e.x, y:e.y, orient:e.orient, dir:e.dir, el:e.el };
-}
+
+// --- фикс: пишем в историю СЕЙЧАС, используя снимок "до хода"
 history.push({
   type: 'place',
-  player: dragging.owner,
-  tile: { ...dragging },   // сохраняем значения плитки
-  el: placedEl,
-  // снимок концов ДО размещения этой костяшки
-  prevEnds: {
-    left:  cloneEnd(endLeft),
-    right: cloneEnd(endRight)
-  },
-  // ✨ добавили это:
-  prevOpen: {
-    left:  openLeft,
-    right: openRight
-  }
+  ...__snapshotBefore,
+  el: placedEl
 });
 
-  dragging = null;
-  updateControls();
+dragging = null;
+updateControls();
+
   clearZones();
   renderDirectionalZones(); // показать свежие зоны
   nextPlayer();
