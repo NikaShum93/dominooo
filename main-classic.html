@@ -305,7 +305,7 @@ let FEEDBACK = ""; // глобально, вместо const FEEDBACK...
 
 /* constants */
 const TILE_W=200, TILE_H=70, VERT_W=70, VERT_H=200, GAP=4, DZ=38;
-
+const MAX_HAND = 7; // максимум костяшек в руке
 /* DOM refs */
 const menuEl=document.getElementById('menu');
 const nameInputsEl=document.getElementById('nameInputs');
@@ -794,22 +794,22 @@ function updateControls(){
   const currentHand = hands[currentPlayer] || [];
   const playable = hasLegalMove(currentHand); // проверка, есть ли ход
 
-  if (playable) {
-    // есть куда ходить → кнопки выключены
-    drawBtn.disabled = true;
+const handLen = (hands[currentPlayer] || []).length;
+
+if (playable) {
+  drawBtn.disabled = true;
+  skipBtn.disabled = true;
+} else {
+  if (deck.length > 0) {
+    // нельзя брать, если рука уже полная
+    drawBtn.disabled = (handLen >= MAX_HAND);
     skipBtn.disabled = true;
   } else {
-    // ходов нет
-    if (deck.length > 0) {
-      // можно взять из колоды
-      drawBtn.disabled = false;
-      skipBtn.disabled = true;
-    } else {
-      // колода пуста → можно только пропустить
-      drawBtn.disabled = true;
-      skipBtn.disabled = false;
-    }
+    drawBtn.disabled = true;
+    skipBtn.disabled = false;
   }
+}
+
 }
 
 
@@ -849,32 +849,49 @@ function startFireworks(){
    Deck (from data) + default
 =========================================================================================== */
 function buildDeckFromData(d){
-  const out=[];
-  const A = (d && Array.isArray(d.listA)) ? d.listA : [];
-  if(A.length){
-    for(let i=0;i<A.length;i++){
-      for(let j=i;j<A.length;j++){
-        out.push({
-          a: i, b: j,
-          displayA: A[i], displayB: A[j],
-          uid: uid()
-        });
-      }
+  const MAX_OCCURS = 3;                 // слово используется не более 3 раз
+  const raw = (d && Array.isArray(d.listA)) ? d.listA : [];
+  const A = [...new Set(raw.map(x => String(x)))];  // уникальные строки
+
+  return buildLimitedPairs(A, MAX_OCCURS);
+}
+
+function makeDefaultDeck(){
+  const MAX_OCCURS = 3;
+  const F = ["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
+  return buildLimitedPairs(F, MAX_OCCURS);
+}
+
+// вспомогательная
+function buildLimitedPairs(A, MAX_OCCURS){
+  const n = A.length;
+  if (n < 2) return [];                 // нужно хотя бы 2 слова
+
+  // все пары i!=j
+  const pairs = [];
+  for (let i=0;i<n;i++){
+    for (let j=0;j<n;j++){
+      if (i!==j) pairs.push([i,j]);     // на одной костяшке слова не совпадают
     }
+  }
+  shuffle(pairs);
+
+  const cnt = Array(n).fill(0);
+  const out = [];
+
+  for (const [i,j] of pairs){
+    if (cnt[i] >= MAX_OCCURS) continue;
+    if (cnt[j] >= MAX_OCCURS) continue;
+    out.push({
+      a: i, b: j,
+      displayA: A[i], displayB: A[j],
+      uid: uid()
+    });
+    cnt[i]++; cnt[j]++;
   }
   return out;
 }
 
-function makeDefaultDeck(){
-  const F=["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
-  const out=[];
-  for(let i=0;i<F.length;i++){
-    for(let j=i;j<F.length;j++){
-      out.push({ a:i, b:j, displayA:F[i], displayB:F[j], uid:uid() });
-    }
-  }
-  return out;
-}
 
 /* оценка единого размера шрифта — по отображаемым словам/картинкам (только текст) */
 function computeUniformSize(deck){
@@ -989,13 +1006,15 @@ deck = buildDeckFromData(data);
   hands={}; passes={}; currentPlayer=0;
   for(let i=0;i<n;i++){ hands[i]=[]; passes[i]=0; }
 
-  // раздача 7 костяшек
-  for(let r=0;r<7;r++){
-    for(let i=0;i<n;i++){
-      if(!deck.length) break;
-      hands[i].push(deck.shift());
-    }
+// раздача с лимитом MAX_HAND и честным делением колоды
+const perPlayer = Math.min(MAX_HAND, Math.floor(deck.length / n));
+for (let r = 0; r < perPlayer; r++){
+  for (let i = 0; i < n; i++){
+    if (!deck.length) break;
+    hands[i].push(deck.shift());
   }
+}
+
 
   // стартовая на поле
   chainZoom.innerHTML='';
@@ -1031,14 +1050,15 @@ deck = buildDeckFromData(data);
    Buttons & DnD
 =========================================================================================== */
 drawBtn.addEventListener('click', ()=>{
-  if (sDraw) { sDraw.currentTime = 0; sDraw.play().catch(()=>{}); }
   const hand = hands[currentPlayer] || [];
+  if (hand.length >= MAX_HAND) return;       // защита от переполнения
   if (!deck.length) return;
+
+  if (sDraw) { sDraw.currentTime = 0; sDraw.play().catch(()=>{}); }
 
   hand.push(deck.shift());
   hands[currentPlayer] = hand;
-
-  passes[currentPlayer] = 0;  // ← сброс серии пассов
+  passes[currentPlayer] = 0;
 
   renderHand();
   updateControls();
