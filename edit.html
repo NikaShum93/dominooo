@@ -214,10 +214,6 @@
 function cleanList(raw){
   return raw.split(/[\n,]+/).map(x=>x.trim()).filter(x=>x);
 }
-<script>
-function cleanList(raw){
-  return raw.split(/[\n,]+/).map(x=>x.trim()).filter(x=>x);
-}
 
 /* ✚ НОВОЕ: публикация JSON на сервер и получение id */
 async function publishToServer(payload, idHint="domino") {
@@ -229,9 +225,9 @@ async function publishToServer(payload, idHint="domino") {
       "X-Publish-Key": "nika_read_pub_2025"
     },
     body: JSON.stringify({
-      id,                           // id файла (имя без .json)
-      folder: "texts/data",         // папка на GitHub Pages
-      content: payload              // сам JSON (объект)
+      id,                   // id файла (имя без .json)
+      folder: "texts/data", // папка на GitHub Pages
+      content: payload      // сам JSON (объект)
     })
   });
   if (!res.ok) {
@@ -262,11 +258,10 @@ document.getElementById("generateBtn").addEventListener("click", async ()=>{
   else file = "main-classic.html";
 
   const base = "https://nikashum93.github.io/dominooo/";
-
   let url;
+
   if (useServer) {
     try {
-      // ✚ публикуем JSON, получаем короткий id
       const id = await publishToServer(data, A[0] || "domino");
       url = `${base}${file}?id=${encodeURIComponent(id)}`;
     } catch (e) {
@@ -276,7 +271,6 @@ document.getElementById("generateBtn").addEventListener("click", async ()=>{
       url = `${base}${file}?data=${json}`;
     }
   } else {
-    // старый режим с ?data
     const json = encodeURIComponent(JSON.stringify(data));
     url = `${base}${file}?data=${json}`;
   }
@@ -286,8 +280,7 @@ document.getElementById("generateBtn").addEventListener("click", async ()=>{
   document.getElementById("embedCodeBox").style.display = "block";
 });
 
-
-/* Генерация верхней гирлянды */
+/* гирлянда */
 function generateGarland(id, step=40){
   const container = document.getElementById(id);
   const count = Math.floor(window.innerWidth / step);
@@ -298,5 +291,6 @@ function generateGarland(id, step=40){
 }
 generateGarland("garlandTop", 40);
 </script>
+
 </body>
 </html>
