@@ -233,11 +233,11 @@ async function publishToServer(dataObj, idHint = "domino"){
   const stamp = `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
   const id = `${slug}-${stamp}`;
 
-  const payload = {
-    id,
-    folder: "data",                          // как в рабочем файле
-    content: JSON.stringify(dataObj, null, 2) // ВАЖНО: строка!
-  };
+ const payload = {
+  id,
+  folder: "texts/data",                     // ✅ та же папка, что у игры
+  content: JSON.stringify(dataObj, null, 2) // ок
+};
 
   const res = await fetch(ENDPOINT, {
     method: "POST",
