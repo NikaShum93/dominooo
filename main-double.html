@@ -282,9 +282,13 @@
     <div id="tray" class="tray"></div>
   </div>
 
- <div id="finalOverlay" class="final-overlay">
+<div id="finalOverlay" class="final-overlay">
   <div class="final-message" id="finalMessage"></div>
+  <div class="win-actions" style="display:flex;gap:12px;margin-top:12px;">
+    <button id="restartOnWin" type="button" class="btn">Начать заново</button>
+  </div>
 </div>
+
 
 </div>
 
@@ -1259,10 +1263,28 @@ startBtn.addEventListener('click', ()=>{
 [restartBtn, skipBtn, endBtn].forEach(btn=>{
   btn.addEventListener('click', ()=>playSound("sClick"));
 });
+  // один раз привяжем кнопку перезапуска в оверлее
+(function(){
+  const btn = document.getElementById('restartOnWin');
+  if (btn && !btn.dataset.bound){
+    btn.addEventListener('click', ()=>location.reload());
+    btn.dataset.bound = '1';
+  }
+})();
+
 endBtn.addEventListener('click', ()=>{
   playSound("sClick");
   endByPoints(); // завершаем по очкам
 });
+
+// один раз привяжем кнопку перезапуска в оверлее
+(function(){
+  const btn = document.getElementById('restartOnWin');
+  if (btn && !btn.dataset.bound){
+    btn.addEventListener('click', ()=>location.reload());
+    btn.dataset.bound = '1';
+  }
+})();
 
 addEventListener('dragover', e=>{ if(dragging) e.preventDefault(); });
 
@@ -1292,13 +1314,24 @@ addEventListener('drop', e=>{
 addEventListener('mousemove', ()=>{ if(dragging) renderDirectionalZones(); });
 
 /* Safety init */
+/* Safety init */
 (function(){
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded', ()=>{ renderNameInputs(); });
-  } else {
+  function init(){
     renderNameInputs();
+    // привязка кнопки перезапуска в оверлее
+    const btn = document.getElementById('restartOnWin');
+    if (btn && !btn.dataset.bound){
+      btn.addEventListener('click', ()=>location.reload());
+      btn.dataset.bound = '1';
+    }
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
 })();
+
 </script>
 </body>
 </html>
