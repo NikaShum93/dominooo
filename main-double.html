@@ -221,8 +221,29 @@
   .dz::after{ content:attr(data-dir); font-size:11px; color:#2c1a32; font-weight:900; background:#f2c56a; padding:2px 6px; border-radius:8px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
 
   /* ===== WIN OVERLAY ===== */
-  .final-overlay{ position:absolute; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:100000; }
-  .final-message{ font-size:42px; font-weight:900; color:#ffe97f; }
+ /* ===== WIN OVERLAY ===== */
+.final-overlay{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,0.7);
+  display:none;
+  align-items:center;       /* по вертикали центр */
+  justify-content:center;   /* по горизонтали центр */
+  z-index:100000;
+  flex-direction:column;    /* текст сверху, потом кнопки (если будут) */
+  gap:16px;
+  padding:20px;
+}
+.final-message{
+  font-size:42px;
+  font-weight:900;
+  color:#ffe97f;
+  text-align:center;        /* центрируем текст */
+  line-height:1.2;
+  max-width:90vw;           /* не выходить за экран */
+  margin:0 auto;
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
@@ -285,12 +306,34 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.rand
 function uid(){ return Math.random().toString(36).slice(2,9); }
 function br(){ return { w:chainEl.clientWidth, h:chainEl.clientHeight }; }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
-function getQueryData(){
-  const raw=new URLSearchParams(location.search).get('data');
-  if(!raw) return null;
-  try{ return JSON.parse(decodeURIComponent(raw)); }
-  catch(e){ return null; }
+// ---- загрузка данных ?data=... или ?id=... из texts/data/<id>.json
+async function getPayload(){
+  const sp = new URLSearchParams(location.search);
+  const raw = sp.get('data');
+  const id  = sp.get('id');
+
+  // 1) Старый режим: ?data=<urlencoded json>
+  if (raw) {
+    try { return JSON.parse(decodeURIComponent(raw)); }
+    catch(e){ console.warn('Bad data param', e); }
+  }
+
+  // 2) Новый режим: ?id=<slug> → тянем JSON с GitHub Pages
+  if (id) {
+    const url = `https://nikashum93.github.io/texts/data/${encodeURIComponent(id)}.json`;
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) return await res.json();
+      console.warn('Cannot load JSON by id', id, res.status);
+    } catch(e) {
+      console.warn('Fetch failed', e);
+    }
+  }
+  return null;
 }
+
+// глобально храним фидбек
+let finalFeedback = "";
 
 // 🔥 универсальный проигрыватель звуков
 function playSound(id) {
@@ -1048,7 +1091,14 @@ function computeUniformSize(deck){
 /* ===========================================================================================
    Game flow
 =========================================================================================== */
-function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderPlayersBar(); renderHand(); updateControls(); } document.getElementById("playersBar").style.display = "flex";
+function nextPlayer(){
+  currentPlayer=(currentPlayer+1)%playerNames.length;
+  drawsThisTurn = 0;
+  drawBtn.disabled = false;
+  renderPlayersBar();
+  renderHand();
+  updateControls();
+}
 function everyonePassed(){ for(let i=0;i<playerNames.length;i++){ if(!passes[i]) return false; } return true; }
 function endByWinner(i){
   const winner = playerNames[i];
@@ -1069,7 +1119,7 @@ function endByPoints(){
 /* ===========================================================================================
    Start game
 =========================================================================================== */
-function startGame(){
+async function startGame(){
   const n=Math.max(2,Math.min(4,parseInt(playerCountEl.value)||2));
 
   // names
@@ -1080,9 +1130,9 @@ function startGame(){
 
   // deck — сначала из ?data=listA, иначе дефолт
  // deck — сначала из ?data=listA, иначе дефолт
-const data = getQueryData() || {};
-deck = buildDeckFromData(data);
-if(!deck.length){ deck = makeDefaultDeck(); }
+ const data = await getPayload() || {};
+  deck = buildDeckFromData(data);
+  if(!deck.length){ deck = makeDefaultDeck(); }
 
 // ⚡️ читаем финальный фидбек из редактора
 finalFeedback = (data.feedback && data.feedback.trim()) || "Поздравляем!";
