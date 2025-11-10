@@ -1006,7 +1006,27 @@ deck = buildDeckFromData(data);
   hands={}; passes={}; currentPlayer=0;
   for(let i=0;i<n;i++){ hands[i]=[]; passes[i]=0; }
 
-// раздача с лимитом MAX_HAND и честным делением колоды
+// === СТАРТОВАЯ ПЛИТКА — СНАЧАЛА ===
+chainZoom.innerHTML='';
+const sx = Math.floor((br().w - TILE_W)/2);
+const sy = Math.floor((br().h - TILE_H)/2);
+
+// берём ОДНУ реальную из колоды (рандом, потому что deck уже shuffle)
+const start = deck.shift() || { a:0, b:1, displayA:'Старт', displayB:'Старт', uid:uid() };
+
+const startTile = createTileEl(start.a, start.b, {
+  left: sx, top: sy, orient: 'h',
+  displayA: start.displayA, displayB: start.displayB
+});
+chainZoom.appendChild(startTile);
+
+// открытые концы после старта
+openLeft  = start.a;
+openRight = start.b;
+endLeft   = { x:sx, y:sy, orient:'h', dir:-1, el:startTile };
+endRight  = { x:sx, y:sy, orient:'h', dir: 1, el:startTile };
+
+// === РАЗДАЧА — ПОСЛЕ старта, честно и с лимитом MAX_HAND ===
 const perPlayer = Math.min(MAX_HAND, Math.floor(deck.length / n));
 for (let r = 0; r < perPlayer; r++){
   for (let i = 0; i < n; i++){
@@ -1014,20 +1034,6 @@ for (let r = 0; r < perPlayer; r++){
     hands[i].push(deck.shift());
   }
 }
-
-
-  // стартовая на поле
-  chainZoom.innerHTML='';
-  const sx=Math.floor((br().w-TILE_W)/2);
-  const sy=Math.floor((br().h-TILE_H)/2);
-  const start=deck.shift() || {a:0, b:0, displayA:'Старт', displayB:'Старт', uid:uid()};
-  const startTile = createTileEl(start.a, start.b, { left:sx, top:sy, orient:'h', displayA:start.displayA, displayB:start.displayB });
-  chainZoom.appendChild(startTile);
-
-  openLeft = start.a;
-  openRight = start.b;
-  endLeft  = { x:sx, y:sy, orient:'h', dir:-1, el:startTile };
-  endRight = { x:sx, y:sy, orient:'h', dir: 1, el:startTile };
 
    renderPlayersBar();
   renderHand();
