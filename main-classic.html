@@ -849,7 +849,7 @@ function startFireworks(){
    Deck (from data) + default
 =========================================================================================== */
 function buildDeckFromData(d){
-  const MAX_OCCURS = 3;                 // слово используется не более 3 раз
+  const MAX_OCCURS = 4;                 // слово используется не более 3 раз
   const raw = (d && Array.isArray(d.listA)) ? d.listA : [];
   const A = [...new Set(raw.map(x => String(x)))];  // уникальные строки
 
@@ -857,7 +857,7 @@ function buildDeckFromData(d){
 }
 
 function makeDefaultDeck(){
-  const MAX_OCCURS = 3;
+  const MAX_OCCURS = 4;
   const F = ["кот","пёс","луна","солнце","звезда","мост","река","дом","лес","море","самолёт"];
   return buildLimitedPairs(F, MAX_OCCURS);
 }
