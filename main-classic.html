@@ -231,11 +231,13 @@
 
   <div class="topbar">
     <div id="playersBar" class="players"></div>
-    <div class="controls">
-      <button id="drawBtn" class="btn">Взять</button>
-      <button id="skipBtn" class="btn">Пропустить</button>
-      <button id="restartBtn" class="btn">Перезапустить</button>
-    </div>
+   <div class="controls">
+  <button id="drawBtn" class="btn">Взять</button>
+  <button id="skipBtn" class="btn">Пропустить</button>
+  <button id="endBtn"  class="btn">Завершить игру</button>
+  <button id="restartBtn" class="btn">Перезапустить</button>
+</div>
+
   </div>
   <div id="turnInfo"></div>
 
@@ -316,6 +318,10 @@ const playersBarEl=document.getElementById('playersBar');
 const boardEl=document.getElementById('board');
 const chainEl=document.getElementById('chain');
 const chainZoom=document.getElementById('chainZoom');
+// Авто-пересбор MathJax при изменениях в цепочке
+const _debounceTypeset = (()=>{let h; return ()=>{ clearTimeout(h); h=setTimeout(typesetTiles, 0); };})();
+const chainObserver = new MutationObserver(()=> _debounceTypeset());
+chainObserver.observe(chainZoom, { childList:true, subtree:true });
 
 const handHeader=document.getElementById('handHeader');
 const trayEl=document.getElementById('tray');
@@ -323,7 +329,9 @@ const trayEl=document.getElementById('tray');
 const drawBtn=document.getElementById('drawBtn');
 const skipBtn=document.getElementById('skipBtn');
 const restartBtn=document.getElementById('restartBtn');
+const endBtn=document.getElementById('endBtn');          // ⬅️ добавили
 const turnInfo=document.getElementById('turnInfo');
+
 
 const previewWrap=document.getElementById('tilePreview');
 const previewInner=document.getElementById('tilePreviewInner');
@@ -333,6 +341,39 @@ const sDraw  = document.getElementById("sDraw");
 const sPick  = document.getElementById("sPick");
 const sPlace = document.getElementById("sPlace");
 const sClick = document.getElementById("sClick");
+  // ====== ЛОКАЛИЗАЦИЯ UI + Math режим ======
+let LANG = 'ru';
+let MATH_MODE = false;
+
+const I18N = {
+  ru: { title:'Domino · КГБ', draw:'Взять', pass:'Пропустить', end:'Завершить игру', restart:'Перезапустить', turn:'Ход', player:'Игрок' },
+  en: { title:'Domino · KGB', draw:'Draw', pass:'Pass', end:'End Game', restart:'Restart', turn:'Turn', player:'Player' },
+  fr: { title:'Domino · KGB', draw:'Piocher', pass:'Passer', end:'Terminer', restart:'Redémarrer', turn:'Tour', player:'Joueur' },
+  es: { title:'Domino · KGB', draw:'Robar', pass:'Pasar', end:'Terminar', restart:'Reiniciar', turn:'Turno', player:'Jugador' },
+  de: { title:'Domino · KGB', draw:'Ziehen', pass:'Passen', end:'Beenden', restart:'Neustart', turn:'Zug', player:'Spieler' },
+  zh: { title:'Domino · KGB', draw:'摸牌', pass:'过', end:'结束游戏', restart:'重启', turn:'轮到', player:'玩家' },
+  ja: { title:'Domino · KGB', draw:'ドロー', pass:'パス', end:'終了', restart:'再開', turn:'手番', player:'プレイヤー' }
+};
+
+function applyLocale(lang='ru'){
+  const t = I18N[lang] || I18N.ru;
+  document.getElementById('title').textContent = t.title;
+  document.getElementById('drawBtn').textContent = t.draw;
+  document.getElementById('skipBtn').textContent = t.pass;
+  document.getElementById('endBtn')?.textContent = t.end;
+  document.getElementById('restartBtn').textContent = t.restart;
+}
+
+function typesetTiles(){
+  if (!MATH_MODE || !window.MathJax || !MathJax.typesetPromise) return;
+  const targets = [
+    document.getElementById('tilePreviewInner'),
+    document.getElementById('chainZoom'),
+    document.getElementById('tray')
+  ].filter(Boolean);
+  MathJax.typesetPromise(targets).catch(()=>{});
+}
+
 /* Game state */
 let playerNames=[], hands={}, deck=[], currentPlayer=0, passes={};
 let openLeft=null, openRight=null, endLeft=null, endRight=null, dragging=null;
@@ -466,6 +507,7 @@ textEl.innerHTML = `<span class="math">${value}</span>`;
   renderHalf(halfR, b);
 
   previewWrap.style.display='flex';
+  typesetTiles();
 }
 
 function hidePreview(){ previewWrap.style.display='none'; }
@@ -774,22 +816,25 @@ function renderPlayersBar() {
 }
 
 function renderHand(){
-  handHeader.textContent = `${playerNames[currentPlayer]}: (${(hands[currentPlayer]||[]).length} костяшек)`;
+  handHeader.textContent = `${playerNames[currentPlayer] || (I18N[LANG].player + ' ' + (currentPlayer+1))}: (${(hands[currentPlayer]||[]).length} костяшек)`;
+
   trayEl.innerHTML='';
   for(const t of (hands[currentPlayer]||[])){
     const el=createTileEl(
       t.a, t.b,
       { role:'hand', owner:currentPlayer, uid:t.uid, orient:'h', draggable:true, displayA:t.displayA, displayB:t.displayB, aKey:t.a, bKey:t.b }
     );
-    trayEl.appendChild(el);
+      trayEl.appendChild(el);
   }
+  typesetTiles();                 // ⬅️ добили LaTeX для руки
 }
 
 function updateControls(){
   [...playersBarEl.getElementsByClassName('player')]
     .forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer));
 
-  turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
+turnInfo.textContent = `${I18N[LANG].turn}: ${playerNames[currentPlayer] || (I18N[LANG].player + ' ' + (currentPlayer+1))}`;
+
 
   const currentHand = hands[currentPlayer] || [];
   const playable = hasLegalMove(currentHand); // проверка, есть ли ход
@@ -993,11 +1038,18 @@ async function startGame(){
 
 // deck — сначала из ?data=listA, иначе дефолт
 const data = await getPayload() || {};
-FEEDBACK = (typeof data.feedback === 'string' ? data.feedback.trim() : "");
-deck = buildDeckFromData(data);
+// НОВОЕ: язык и math
+LANG = data.language || 'ru';
+MATH_MODE = !!data.mathMode;
+applyLocale(LANG);
 
-  if(!deck.length){ deck = makeDefaultDeck(); }
-  shuffle(deck);
+deck = buildDeckFromData(data);
+if(!deck.length){ deck = makeDefaultDeck(); }
+
+// ⚡️ читаем финальный фидбек из редактора
+FEEDBACK = (data.feedback && data.feedback.trim()) || (I18N[LANG] ? 'Поздравляем!' : 'Congratulations!');
+
+
 
   // шрифт под все слова (опционально)
   computeUniformSize(deck);
@@ -1019,6 +1071,7 @@ const startTile = createTileEl(start.a, start.b, {
   displayA: start.displayA, displayB: start.displayB
 });
 chainZoom.appendChild(startTile);
+typesetTiles();
 
 // открытые концы после старта
 openLeft  = start.a;
@@ -1049,8 +1102,7 @@ for (let r = 0; r < perPlayer; r++){
   menuEl.style.pointerEvents = 'none';
   // ----------------------------
 
-  document.getElementById('title').textContent = 'Domino · КГБ';
-}
+ }
 
 /* ===========================================================================================
    Buttons & DnD
@@ -1082,7 +1134,10 @@ skipBtn.addEventListener('click', ()=>{
   }
   nextPlayer();
 });
-
+endBtn.addEventListener('click', ()=>{
+  if (sClick) { sClick.currentTime = 0; sClick.play().catch(()=>{}); }
+  endByPoints();                  // ручное завершение
+});
 
 restartBtn.addEventListener('click', ()=>{
   if (sClick) { sClick.currentTime = 0; sClick.play().catch(()=>{}); }
