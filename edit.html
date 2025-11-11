@@ -203,6 +203,24 @@
 
 <!-- ✚ НОВОЕ: переключатель серверной публикации -->
 <label><input type="checkbox" id="useServer"> Публиковать на сервер (короткий iframe с ?id=)</label>
+<!-- ЯЗЫК UI + Математический режим -->
+<label>
+  Язык интерфейса:
+  <select id="language" style="margin-left:8px">
+    <option value="ru" selected>Русский</option>
+    <option value="en">English</option>
+    <option value="fr">Français</option>
+    <option value="es">Español</option>
+    <option value="de">Deutsch</option>
+    <option value="zh">中文</option>
+    <option value="ja">日本語</option>
+  </select>
+</label>
+
+<label>
+  <input type="checkbox" id="mathMode">
+  Математический режим (LaTeX на костяшках)
+</label>
 
 <p class="feedback-label">Введите текст финального фидбека (сообщение после победы):</p>
 
@@ -258,15 +276,20 @@ const payload = {
 
 
 document.getElementById("generateBtn").addEventListener("click", async ()=>{
-  const A = cleanList(document.getElementById("listA").value);
-  const B = cleanList(document.getElementById("listB").value);
-  const freeMode = document.getElementById("freeMode").checked;
-  const useServer = document.getElementById("useServer").checked;
+ const A = cleanList(document.getElementById("listA").value);
+const B = cleanList(document.getElementById("listB").value);
+const freeMode = document.getElementById("freeMode").checked;
+const useServer = document.getElementById("useServer").checked;
 
-  if(!A.length){ alert("Список A обязателен!"); return; }
+// НОВОЕ:
+const language = document.getElementById("language").value || 'ru';
+const mathMode = document.getElementById("mathMode").checked;
 
-  const feedback = (document.getElementById("feedbackText").value || "Поздравляем!").trim();
-  const data = { listA:A, listB:B, freeMode, feedback };
+if(!A.length){ alert("Список A обязателен!"); return; }
+
+const feedback = (document.getElementById("feedbackText").value || "Поздравляем!").trim();
+const data = { listA:A, listB:B, freeMode, feedback, language, mathMode };
+
 
   let file = "";
   if (freeMode && B.length) file = "main-free-double.html";
