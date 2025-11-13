@@ -1044,24 +1044,23 @@ turnInfo.textContent =
   const playable = hasLegalMove(currentHand);
 
   if (playable) {
+    // есть хотя бы один ход: игрок должен сыграть, брать нельзя
     drawBtn.disabled = true;
     skipBtn.disabled = true;
   } else {
+    // ходов нет
     if (deck.length > 0 && drawsThisTurn < MAX_DRAWS_PER_TURN) {
+      // можно взять из колоды
       drawBtn.disabled = false;
       skipBtn.disabled = true;
     } else {
+      // нельзя ни ходить, ни брать → остаётся только "Пропустить"
       drawBtn.disabled = true;
       skipBtn.disabled = false;
-
-      // 🔥 если игрок не может ни сходить, ни взять — он автоматически "пасует"
-      passes[currentPlayer] = (passes[currentPlayer]||0)+1;
-      if (everyonePassed()) {
-        endByPoints();
-        return;
-      }
+      // ВАЖНО: здесь НИЧЕГО не инкрементируем и игру не завершаем
     }
   }
+
 }
 
 /* ===========================================================================================
@@ -1402,9 +1401,19 @@ function nextPlayer(){
   updateControls();
 }
 
-skipBtn.addEventListener('click', ()=>{
-  passes[currentPlayer]=(passes[currentPlayer]||0)+1;
-  if(everyonePassed()){ endByPoints(); return; }
+skipBtn.addEventListener('click', () => {
+  // отмечаем, что этот игрок действительно нажал "Пропустить"
+  passes[currentPlayer] = (passes[currentPlayer] || 0) + 1;
+
+  // Игра автоматически заканчивается ТОЛЬКО если:
+  // 1) в колоде вообще нет костяшек
+  // 2) каждый игрок хотя бы один раз нажал "Пропустить"
+  if (deck.length === 0 && everyonePassed()) {
+    endByPoints();
+    return;
+  }
+
+  // иначе просто передаём ход дальше
   nextPlayer();
 });
 
