@@ -703,18 +703,17 @@ function renderHalf(container, value){
   textEl.style.justifyContent = "center";
   // ————————————————————————————————————————————————
 
-  if (MATH_MODE){
-    // корректная подача TeX: оборачиваем в \( ... \)
-    textEl.innerHTML = `\\(${value}\\)`;
-    container.appendChild(textEl);
-    if (window.MathJax && MathJax.typesetPromise){
-      MathJax.typesetPromise([textEl]).catch(()=>{});
-    }
-  } else {
-    // обычный текст без HTML-вставок
-    textEl.textContent = value;
-    container.appendChild(textEl);
+const looksLikeTeX = /\\[a-zA-Z]+|\\\(|\\\[|\$\$?|[\^_]/.test(String(value));
+
+if (MATH_MODE || looksLikeTeX){
+  textEl.innerHTML = `\\(${value}\\)`;
+  container.appendChild(textEl);
+  if (window.MathJax && MathJax.typesetPromise){
+    MathJax.typesetPromise([textEl]).catch(()=>{});
   }
+} else {
+  textEl.textContent = String(value);
+  container.appendChild(textEl);
 }
 
   renderHalf(halfL, a);
