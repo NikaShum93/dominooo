@@ -363,13 +363,20 @@ let LANG = 'ru';
 let MATH_MODE = false;
 
 const I18N = {
-  ru: { title:'Domino · КГБ', draw:'Взять', pass:'Пропустить', end:'Завершить игру', restart:'Перезапустить', turn:'Ход', player:'Игрок' },
-  en: { title:'Domino · KGB', draw:'Draw', pass:'Pass', end:'End Game', restart:'Restart', turn:'Turn', player:'Player' },
-  fr: { title:'Domino · KGB', draw:'Piocher', pass:'Passer', end:'Terminer', restart:'Redémarrer', turn:'Tour', player:'Joueur' },
-  es: { title:'Domino · KGB', draw:'Robar', pass:'Pasar', end:'Terminar', restart:'Reiniciar', turn:'Turno', player:'Jugador' },
-  de: { title:'Domino · KGB', draw:'Ziehen', pass:'Passen', end:'Beenden', restart:'Neustart', turn:'Zug', player:'Spieler' },
-  zh: { title:'Domino · KGB', draw:'摸牌', pass:'过', end:'结束游戏', restart:'重启', turn:'轮到', player:'玩家' },
-  ja: { title:'Domino · KGB', draw:'ドロー', pass:'パス', end:'終了', restart:'再開', turn:'手番', player:'プレイヤー' }
+  ru: { title:'Domino · КГБ', draw:'Взять', pass:'Пропустить', end:'Завершить игру', restart:'Перезапустить', turn:'Ход', player:'Игрок', congrats:'Поздравляем!',
+        playersCount:'Количество игроков:', playerName:'Имя игрока', start:'Начать игру' },
+  en: { title:'Domino · KGB', draw:'Draw', pass:'Pass', end:'End Game', restart:'Restart', turn:'Turn', player:'Player', congrats:'Congratulations!',
+        playersCount:'Players:', playerName:'Player name', start:'Start game' },
+  fr: { title:'Domino · KGB', draw:'Piocher', pass:'Passer', end:'Terminer', restart:'Redémarrer', turn:'Tour', player:'Joueur', congrats:'Félicitations !',
+        playersCount:'Nombre de joueurs :', playerName:'Nom du joueur', start:'Commencer' },
+  es: { title:'Domino · KGB', draw:'Robar', pass:'Pasar', end:'Terminar', restart:'Reiniciar', turn:'Turno', player:'Jugador', congrats:'¡Felicidades!',
+        playersCount:'Número de jugadores:', playerName:'Nombre del jugador', start:'Iniciar' },
+  de: { title:'Domino · KGB', draw:'Ziehen', pass:'Passen', end:'Beenden', restart:'Neustart', turn:'Zug', player:'Spieler', congrats:'Glückwunsch!',
+        playersCount:'Spieleranzahl:', playerName:'Spielername', start:'Spiel starten' },
+  zh: { title:'Domino · KGB', draw:'摸牌', pass:'过', end:'结束游戏', restart:'重启', turn:'轮到', player:'玩家', congrats:'恭喜！',
+        playersCount:'玩家数量：', playerName:'玩家名字', start:'开始' },
+  ja: { title:'Domino · KGB', draw:'ドロー', pass:'パス', end:'終了', restart:'再開', turn:'手番', player:'プレイヤー', congrats:'おめでとう！',
+        playersCount:'人数：', playerName:'プレイヤー名', start:'ゲーム開始' }
 };
 
 function applyLocale(lang='ru'){
@@ -380,6 +387,43 @@ function applyLocale(lang='ru'){
  const endB = document.getElementById('endBtn');
 if (endB) endB.textContent = t.end;
   document.getElementById('restartBtn').textContent = t.restart;
+}
+// применить подписи в МЕНЮ (лейблы/плейсхолдеры/кнопка)
+function applyMenuLocale(lang='ru'){
+  const t = I18N[lang] || I18N.ru;
+
+  // лейбл "Количество игроков:"
+  const cntLabel = menuEl.querySelector('label');
+  if (cntLabel) cntLabel.firstChild.nodeValue = t.playersCount + ' ';
+
+  // имена игроков — перерисуем плейсхолдеры
+  const inputs = nameInputsEl.querySelectorAll('input[id^="pname"]');
+  inputs.forEach((inp, idx)=>{
+    inp.placeholder = `${t.playerName} ${idx+1}`;
+  });
+
+  // кнопка "Начать игру"
+  const start = document.getElementById('startBtn');
+  if (start) start.textContent = t.start;
+}
+
+// храним загруженную конфу
+let DATA_CONFIG = null;
+
+// предзагрузить конфиг И применить локаль/математику ДО рендера меню
+async function preloadConfig(){
+  const data = await getPayload() || {};
+  DATA_CONFIG = data;
+
+  LANG = data.language || data.lang || 'ru';
+  MATH_MODE = !!(data.mathMode ?? data.math);   // понимаем оба флага
+
+  applyLocale(LANG);
+  applyMenuLocale(LANG);
+
+  // фидбек по локали по умолчанию
+  const t = I18N[LANG] || I18N.ru;
+  finalFeedback = (data.feedback && data.feedback.trim()) || t.congrats;
 }
 
 function typesetTiles(){
@@ -436,22 +480,36 @@ boardEl.addEventListener('wheel', e=>{
 =========================================================================================== */
 function renderNameInputs(){
   nameInputsEl.innerHTML='';
-  const c=parseInt(playerCountEl.value,10)||2;
-  for(let i=0;i<c;i++){
+  const c = parseInt(playerCountEl.value,10) || 2;
+  const t = I18N[LANG] || I18N.ru;
+
+  for (let i=0;i<c;i++){
     const row=document.createElement('div');
     row.className='name-row';
+
     const lab=document.createElement('label');
-    lab.textContent='Имя игрока '+(i+1);
+    lab.textContent = `${t.playerName} ${i+1}`;
+
     const inp=document.createElement('input');
-    inp.placeholder='Имя игрока '+(i+1);
+    inp.placeholder = `${t.playerName} ${i+1}`;
     inp.id='pname'+i;
+
     row.appendChild(lab);
     row.appendChild(inp);
     nameInputsEl.appendChild(row);
   }
 }
-playerCountEl.addEventListener('input',renderNameInputs);
-renderNameInputs();
+playerCountEl.addEventListener('input', ()=>{
+  renderNameInputs();
+  applyMenuLocale(LANG);
+});
+
+// вместо мгновенного вызова ждём предзагрузку конфы
+(async ()=>{
+  await preloadConfig();
+  renderNameInputs();
+})();
+
 
 /* ===========================================================================================
    Big Preview
