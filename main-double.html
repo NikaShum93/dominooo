@@ -245,7 +245,16 @@
 }
 
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+ <script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)'], ['$', '$']],
+      displayMath: [['\\[','\\]'], ['$$','$$']],
+      processEscapes: true
+    }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 </head>
 <body>
 
@@ -373,6 +382,44 @@ const turnInfo=document.getElementById('turnInfo');
 
 const previewWrap=document.getElementById('tilePreview');
 const previewInner=document.getElementById('tilePreviewInner');
+// ===== ЛОКАЛИЗАЦИЯ + ФЛАГ МАТЕМАТИКИ =====
+let LANG = 'ru';
+let MATH_MODE = false;
+
+const I18N = {
+  ru: { title:'Domino · КГБ', draw:'Взять', pass:'Пропустить', end:'Завершить игру', restart:'Перезапустить', turn:'Ход', player:'Игрок', congrats:'Поздравляем!' },
+  en: { title:'Domino · KGB', draw:'Draw', pass:'Pass', end:'End Game', restart:'Restart', turn:'Turn', player:'Player', congrats:'Congratulations!' },
+  fr: { title:'Domino · KGB', draw:'Piocher', pass:'Passer', end:'Terminer', restart:'Redémarrer', turn:'Tour', player:'Joueur', congrats:'Félicitations !' },
+  es: { title:'Domino · KGB', draw:'Robar', pass:'Pasar', end:'Terminar', restart:'Reiniciar', turn:'Turno', player:'Jugador', congrats:'¡Felicidades!' },
+  de: { title:'Domino · KGB', draw:'Ziehen', pass:'Passen', end:'Beenden', restart:'Neustart', turn:'Zug', player:'Spieler', congrats:'Glückwunsch!' },
+  zh: { title:'Domino · KGB', draw:'摸牌', pass:'过', end:'结束游戏', restart:'重启', turn:'轮到', player:'玩家', congrats:'恭喜！' },
+  ja: { title:'Domino · KGB', draw:'ドロー', pass:'パス', end:'終了', restart:'再開', turn:'手番', player:'プレイヤー', congrats:'おめでとう！' }
+};
+
+function applyLocale(lang='ru'){
+  const t = I18N[lang] || I18N.ru;
+  document.getElementById('title').textContent   = t.title;
+  document.getElementById('drawBtn').textContent = t.draw;
+  document.getElementById('skipBtn').textContent = t.pass;
+  const endB = document.getElementById('endBtn'); if (endB) endB.textContent = t.end;
+  document.getElementById('restartBtn').textContent = t.restart;
+}
+
+// ===== ДОТИПКИВАНИЕ ФОРМУЛ =====
+function typesetTiles(){
+  if (!MATH_MODE || !window.MathJax || !MathJax.typesetPromise) return;
+  const targets = [
+    document.getElementById('tilePreviewInner'),
+    document.getElementById('chainZoom'),
+    document.getElementById('tray')
+  ].filter(Boolean);
+  MathJax.typesetPromise(targets).catch(()=>{});
+}
+
+// авто-типсет при изменениях цепочки
+const _debounceTypeset = (()=>{ let h; return ()=>{ clearTimeout(h); h=setTimeout(typesetTiles, 0); };})();
+const chainObserver = new MutationObserver(()=> _debounceTypeset());
+chainObserver.observe(chainZoom, { childList:true, subtree:true });
 
 /* Game state */
 let playerNames=[], hands={}, deck=[], currentPlayer=0, passes={};
@@ -483,25 +530,32 @@ function showPreview(a, b){
   const isImg = v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
 
 function renderHalf(container, value){
-  container.innerHTML="";
-  if(isImg(value)){ 
-    const img=document.createElement('img'); 
-    img.src=value; 
-    container.appendChild(img); 
+  container.innerHTML = "";
+  if (isImg(value)){
+    const img = document.createElement('img');
+    img.src = value;
+    container.appendChild(img);
+    return;
+  }
+  const textEl = document.createElement('b');
+  textEl.style.fontSize = "40px";
+  textEl.style.wordBreak = "break-word";
+  textEl.style.whiteSpace = "normal";
+  textEl.style.overflow = "visible";
+  textEl.style.display = "flex";
+  textEl.style.alignItems = "center";
+  textEl.style.justifyContent = "center";
+
+  if (MATH_MODE){
+    textEl.innerHTML = `\\(${value}\\)`;
+    container.appendChild(textEl);
+    if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([textEl]).catch(()=>{});
   } else {
-   const textEl=document.createElement('b'); 
-textEl.innerHTML = `<span class="math">${value}</span>`;
-textEl.style.fontSize = "40px"; 
-textEl.style.wordBreak = "break-word"; 
-textEl.style.whiteSpace = "normal"; 
-textEl.style.overflow = "auto"; 
-textEl.style.display = "flex";
-textEl.style.alignItems = "center";
-textEl.style.justifyContent = "center";
-container.appendChild(textEl); 
-if (window.MathJax) MathJax.typesetPromise([textEl]);
+    textEl.textContent = value;
+    container.appendChild(textEl);
   }
 }
+
 
   renderHalf(halfL, a);
   renderHalf(halfR, b);
@@ -554,25 +608,26 @@ function fitToHalf(node, container) {
   const isImg=v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
 
 function renderHalf(containerEl, value){
-  containerEl.innerHTML="";
-  if(isImg(value)){
-    const img=document.createElement('img');
-    img.src=value;
+  containerEl.innerHTML = "";
+  if (isImg(value)){
+    const img = document.createElement('img');
+    img.src = value;
     containerEl.appendChild(img);
     return null;
   } else {
     const b = document.createElement('b');
-    b.innerHTML = `<span class="math">${value}</span>`;
+    if (MATH_MODE){
+      b.innerHTML = `\\(${value}\\)`;
+    } else {
+      b.textContent = value;
+    }
     containerEl.appendChild(b);
-
-    if(window.MathJax){
-      MathJax.typesetPromise([b]);
+    if (MATH_MODE && window.MathJax && MathJax.typesetPromise){
+      MathJax.typesetPromise([b]).catch(()=>{});
     }
     return b;
   }
 }
-
-
 
   const dispA = opts.displayA ?? a;
   const dispB = opts.displayB ?? b;
@@ -900,7 +955,9 @@ function renderHand(){
     );
     trayEl.appendChild(el);
   }
+  typesetTiles(); // ← добавили
 }
+
 
 function updateControls(){
   [...playersBarEl.getElementsByClassName('player')]
@@ -1132,14 +1189,19 @@ async function startGame(){
     playerNames.push((document.getElementById('pname'+i)?.value||'').trim()||('Игрок '+(i+1)));
   }
 
-  // deck — сначала из ?data=listA, иначе дефолт
- // deck — сначала из ?data=listA, иначе дефолт
- const data = await getPayload() || {};
-  deck = buildDeckFromData(data);
-  if(!deck.length){ deck = makeDefaultDeck(); }
+ // Данные + язык/математика
+const data = await getPayload() || {};
+LANG = data.language || 'ru';
+MATH_MODE = !!data.mathMode;
+applyLocale(LANG);
 
-// ⚡️ читаем финальный фидбек из редактора
-finalFeedback = (data.feedback && data.feedback.trim()) || "Поздравляем!";
+deck = buildDeckFromData(data);
+if(!deck.length){ deck = makeDefaultDeck(); }
+
+// Фидбек по локали, если не задан
+const t = I18N[LANG] || I18N.ru;
+finalFeedback = (data.feedback && data.feedback.trim()) || t.congrats;
+
 
 // шрифт под все слова (опционально)
 computeUniformSize(deck);
@@ -1168,15 +1230,16 @@ for (let r = 0; r < 7; r++) {
   }
 }
 
-// создаём элемент и кладём его в центр
 const startTile = createTileEl(first.a, first.b, {
   orient: 'h',
   left: sx,
   top: sy,
-  displayA: first.displayA, // Слева B
-  displayB: first.displayB  // Справа A
+  displayA: first.displayA,
+  displayB: first.displayB
 });
 chainZoom.appendChild(startTile);
+typesetTiles(); // ← добавили, чтобы формулы на старте рендерились
+
 
 // только теперь выставляем концы
 openLeft  = first.b; // слева теперь всегда B*
