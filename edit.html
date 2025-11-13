@@ -42,27 +42,27 @@
   }
 
   /* контейнер для списков */
-/* компактная двухколоночная сетка редактора */
+/* Задания — фиксированные две колонки */
 .lists{
   display:grid;
-  grid-template-columns: 360px 360px; /* было 460px — сузили колонки */
-  gap: 18px;                           /* чуть меньше расстояние */
-  max-width: 760px;                    /* контейнер под новые ширины */
+  grid-template-columns: 360px 360px; /* две колонки фикс ширины */
+  gap: 18px;
+  max-width: 738px;                   /* 360 + 360 + 18 */
   margin: 16px auto 6px;
-  justify-content:center;              /* центрируем сетку */
+  justify-content:center;
 }
 .list-col{ min-width:0; width:360px; box-sizing:border-box; }
 .list-col p{
-  white-space:nowrap;                  /* без переносов */
+  white-space:nowrap;                 /* заголовки без переносов */
   overflow:hidden;
   text-overflow:ellipsis;
+  margin:0 0 6px;
 }
 .list-col textarea{
-  width:100%;                          /* заполняет свою колонку */
+  width:100%;
   min-height: 140px;
   box-sizing:border-box;
 }
-
 
 
   label{
@@ -90,21 +90,20 @@
     position:relative; z-index:2;
   }
 
-  textarea#feedbackText {
-    width:90%;
-    max-width:800px;
-    min-height:80px;
-    margin:12px auto;
-    padding:14px 16px;
-    border-radius:12px;
-    border:2px solid #ffda8b;
-    background:rgba(255,255,255,0.9);
-    color:#2c1a32;
-    font-size:16px;
-    box-shadow:0 0 10px rgba(255,218,139,.6);
-    display:block;
-    position:relative; z-index:2;
-  }
+/* оставить только это */
+.input-line{
+  width:100%;
+  max-width: 800px;
+  padding:12px 14px;
+  border-radius:10px;
+  border:2px solid #ffda8b;
+  background:rgba(255,255,255,0.9);
+  color:#2c1a32;
+  font-size:16px;
+  box-shadow:0 0 10px rgba(255,218,139,.6);
+  display:block;
+  margin: 4px auto 0;
+}
 
   button{
     padding:14px 28px; border-radius:12px; border:none;
@@ -200,10 +199,6 @@
   padding:6px 10px; border-radius:8px; border:1px solid #ffda8b; background:#fff; color:#2c1a32;
 }
 
-/* Задания */
-.lists{ width:100%; max-width:none; margin: 0; }
-.list-col p{ margin:0 0 6px; }
-
 /* Линейное поле фидбека */
 .input-line{
   width:100%;
@@ -231,12 +226,10 @@
   }
   .list-col{ width:auto; }
   .list-col p{
-    white-space:normal;   /* на телефоне можно переносить */
+    white-space:normal;    /* на мобилке можно переносить */
     text-overflow:clip;
   }
 }
-
-
 </style>
 </head>
 <body>
