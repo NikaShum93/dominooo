@@ -963,7 +963,12 @@ function computeUniformSize(deck){
 /* ===========================================================================================
    Game flow
 =========================================================================================== */
-function nextPlayer(){ currentPlayer=(currentPlayer+1)%playerNames.length; renderPlayersBar(); renderHand(); updateControls(); } document.getElementById("playersBar").style.display = "flex";
+function nextPlayer(){
+  currentPlayer = (currentPlayer+1) % playerNames.length;
+  renderPlayersBar();
+  renderHand();
+  updateControls();
+}
 function everyonePassed(){ for(let i=0;i<playerNames.length;i++){ if(!passes[i]) return false; } return true; }
 function endByPoints(){
   // очки = у кого меньше костяшек в руке
