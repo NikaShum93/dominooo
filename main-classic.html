@@ -669,59 +669,57 @@ function showPreview(a, b){
   const big = document.createElement("div");
   big.className = "tile";
   big.style.position = "static";
-  big.style.width = "680px"; 
+  big.style.width = "680px";
   big.style.height = "260px";
   big.innerHTML = '<div class="half"></div><div class="half"></div>';
   previewInner.appendChild(big);
 
   const halfL = big.querySelector(".half:first-child");
   const halfR = big.querySelector(".half:last-child");
-  const isImg = v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
 
-// ВНУТРИ showPreview — функция рендера половинки для ПРЕВЬЮ
-function renderHalf(container, value){
-  container.innerHTML = "";
+  // функция рендера одной половинки
+  function renderHalf(container, value){
+    container.innerHTML = "";
 
-  const isImg = v => /^https?:\/\/.+\.(png|jpe?g|gif|svg|webp)$/i.test(v);
+    const isImg = v => /^https?:\/\/.+\.(png|jpe?g|gif|svg|webp)$/i.test(v);
+    if (isImg(value)){
+      const img = document.createElement('img');
+      img.src = value;
+      container.appendChild(img);
+      return;
+    }
 
-  if (isImg(value)){
-    const img = document.createElement('img');
-    img.src = value;
-    container.appendChild(img);
-    return;
+    const textEl = document.createElement('b');
+    textEl.style.fontSize = "40px";
+    textEl.style.wordBreak = "break-word";
+    textEl.style.whiteSpace = "normal";
+    textEl.style.overflow = "auto";
+    textEl.style.display = "flex";
+    textEl.style.alignItems = "center";
+    textEl.style.justifyContent = "center";
+
+    const looksLikeTeX = /\\[a-zA-Z]+|\\\(|\\\[|\$\$?|[\^_]/.test(String(value));
+
+    if (MATH_MODE || looksLikeTeX){
+      textEl.innerHTML = `\\(${value}\\)`;
+      container.appendChild(textEl);
+      if (window.MathJax && MathJax.typesetPromise){
+        MathJax.typesetPromise([textEl]).catch(()=>{});
+      }
+    } else {
+      textEl.textContent = String(value);
+      container.appendChild(textEl);
+    }
   }
 
-  const textEl = document.createElement('b');
-
-  // ——— твои визуальные настройки, сохранены как были ———
-  textEl.style.fontSize = "40px";
-  textEl.style.wordBreak = "break-word";
-  textEl.style.whiteSpace = "normal";
-  textEl.style.overflow = "auto";
-  textEl.style.display = "flex";
-  textEl.style.alignItems = "center";
-  textEl.style.justifyContent = "center";
-  // ————————————————————————————————————————————————
-
-const looksLikeTeX = /\\[a-zA-Z]+|\\\(|\\\[|\$\$?|[\^_]/.test(String(value));
-
-if (MATH_MODE || looksLikeTeX){
-  textEl.innerHTML = `\\(${value}\\)`;
-  container.appendChild(textEl);
-  if (window.MathJax && MathJax.typesetPromise){
-    MathJax.typesetPromise([textEl]).catch(()=>{});
-  }
-} else {
-  textEl.textContent = String(value);
-  container.appendChild(textEl);
-}
-
+  // уже ВНЕ функции renderHalf:
   renderHalf(halfL, a);
   renderHalf(halfR, b);
 
-  previewWrap.style.display='flex';
+  previewWrap.style.display = 'flex';
   typesetTiles();
 }
+
 
 function hidePreview(){ previewWrap.style.display='none'; }
 previewWrap.addEventListener('click',hidePreview);
