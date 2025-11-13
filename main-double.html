@@ -583,37 +583,39 @@ function showPreview(a, b){
 function renderHalf(container, value){
   container.innerHTML = "";
 
-  if (isImg(value)){
+  const isImg = v => /^https?:\/\/.+\.(png|jpe?g|gif|svg|webp)$/i.test(v);
+  if (isImg(value)) {
     const img = document.createElement('img');
     img.src = value;
-    container.appendChild(img);
+    container.appendChild(img);       // ← тут точно container, не c
     return;
   }
 
   const textEl = document.createElement('b');
+  // авто-детект TeX (чтобы рендерилось даже при MATH_MODE=false)
+  const looksLikeTeX = /\\[a-zA-Z]+|\\\(|\\\[|\$\$?|[\^_]/.test(String(value));
+
+  if (MATH_MODE || looksLikeTeX){
+    textEl.innerHTML = `\\(${value}\\)`;     // inline TeX
+  } else {
+    textEl.textContent = String(value);
+  }
+
+  // стили превью
   textEl.style.fontSize = "40px";
   textEl.style.wordBreak = "break-word";
   textEl.style.whiteSpace = "normal";
-  textEl.style.overflow = "visible";
+  textEl.style.overflow = "auto";
   textEl.style.display = "flex";
   textEl.style.alignItems = "center";
   textEl.style.justifyContent = "center";
 
-  c// детектируем: \команды, \( \[ $$ $, а также ^ или _ (x^{2}, a_b)
-const looksLikeTeX = /\\[a-zA-Z]+|\\\(|\\\[|\$\$?|[\^_]/.test(String(value));
-
-
-  if (MATH_MODE || looksLikeTeX){
-    textEl.innerHTML = `\\(${value}\\)`;
-    container.appendChild(textEl);
-    if (window.MathJax && MathJax.typesetPromise){
-      MathJax.typesetPromise([textEl]).catch(()=>{});
-    }
-  } else {
-    textEl.textContent = String(value);
-    container.appendChild(textEl);
+  container.appendChild(textEl);            // ← опечатка была тут
+  if (window.MathJax && MathJax.typesetPromise){
+    MathJax.typesetPromise([container]).catch(()=>{});
   }
 }
+
 
 
   renderHalf(halfL, a);
