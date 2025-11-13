@@ -360,7 +360,8 @@ function applyLocale(lang='ru'){
   document.getElementById('title').textContent = t.title;
   document.getElementById('drawBtn').textContent = t.draw;
   document.getElementById('skipBtn').textContent = t.pass;
-  document.getElementById('endBtn')?.textContent = t.end;
+ const endB = document.getElementById('endBtn');
+if (endB) endB.textContent = t.end;
   document.getElementById('restartBtn').textContent = t.restart;
 }
 
