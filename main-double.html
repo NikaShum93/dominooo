@@ -397,25 +397,53 @@ let LANG = 'ru';
 let MATH_MODE = false;
 
 const I18N = {
-  ru: { title:'Domino · КГБ', draw:'Взять', pass:'Пропустить', end:'Завершить игру', restart:'Перезапустить', turn:'Ход', player:'Игрок', congrats:'Поздравляем!' },
-  en: { title:'Domino · KGB', draw:'Draw', pass:'Pass', end:'End Game', restart:'Restart', turn:'Turn', player:'Player', congrats:'Congratulations!' },
-  fr: { title:'Domino · KGB', draw:'Piocher', pass:'Passer', end:'Terminer', restart:'Redémarrer', turn:'Tour', player:'Joueur', congrats:'Félicitations !' },
-  es: { title:'Domino · KGB', draw:'Robar', pass:'Pasar', end:'Terminar', restart:'Reiniciar', turn:'Turno', player:'Jugador', congrats:'¡Felicidades!' },
-  de: { title:'Domino · KGB', draw:'Ziehen', pass:'Passen', end:'Beenden', restart:'Neustart', turn:'Zug', player:'Spieler', congrats:'Glückwunsch!' },
-  zh: { title:'Domino · KGB', draw:'摸牌', pass:'过', end:'结束游戏', restart:'重启', turn:'轮到', player:'玩家', congrats:'恭喜！' },
-  ja: { title:'Domino · KGB', draw:'ドロー', pass:'パス', end:'終了', restart:'再開', turn:'手番', player:'プレイヤー', congrats:'おめでとう！' }
+  ru: { title:'Domino · КГБ', draw:'Взять', pass:'Пропустить', end:'Завершить игру', restart:'Перезапустить',
+        turn:'Ход', player:'Игрок', playersCount:'Количество игроков', playerName:'Имя игрока',
+        start:'Начать игру', tiles:'костяшек', winner:'Победитель', tie:'Победила дружба!', congrats:'Поздравляем!' },
+  en: { title:'Domino · KGB', draw:'Draw', pass:'Pass', end:'End Game', restart:'Restart',
+        turn:'Turn', player:'Player', playersCount:'Players count', playerName:"Player's name",
+        start:'Start game', tiles:'tiles', winner:'Winner', tie:'It’s a tie!', congrats:'Congratulations!' },
+  fr: { title:'Domino · KGB', draw:'Piocher', pass:'Passer', end:'Terminer', restart:'Redémarrer',
+        turn:'Tour', player:'Joueur', playersCount:'Nombre de joueurs', playerName:'Nom du joueur',
+        start:'Commencer', tiles:'tuiles', winner:'Vainqueur', tie:'Égalité !', congrats:'Félicitations !' },
+  es: { title:'Domino · KGB', draw:'Robar', pass:'Pasar', end:'Terminar', restart:'Reiniciar',
+        turn:'Turno', player:'Jugador', playersCount:'Número de jugadores', playerName:'Nombre del jugador',
+        start:'Empezar', tiles:'fichas', winner:'Ganador', tie:'¡Empate!', congrats:'¡Felicidades!' },
+  de: { title:'Domino · KGB', draw:'Ziehen', pass:'Passen', end:'Beenden', restart:'Neustart',
+        turn:'Zug', player:'Spieler', playersCount:'Spielerzahl', playerName:'Spielername',
+        start:'Spiel starten', tiles:'Steine', winner:'Sieger', tie:'Unentschieden!', congrats:'Glückwunsch!' },
+  zh: { title:'Domino · KGB', draw:'摸牌', pass:'过', end:'结束游戏', restart:'重启',
+        turn:'轮到', player:'玩家', playersCount:'玩家数量', playerName:'玩家姓名',
+        start:'开始游戏', tiles:'张', winner:'获胜者', tie:'平局！', congrats:'恭喜！' },
+  ja: { title:'Domino · KGB', draw:'ドロー', pass:'パス', end:'終了', restart:'再開',
+        turn:'手番', player:'プレイヤー', playersCount:'プレイヤー数', playerName:'プレイヤー名',
+        start:'ゲーム開始', tiles:'枚', winner:'勝者', tie:'引き分け！', congrats:'おめでとう！' }
 };
+
 
 function applyLocale(lang='ru'){
   const t = I18N[lang] || I18N.ru;
-  document.getElementById('title').textContent   = t.title;
+
+  // заголовок и кнопки HUD
+  document.getElementById('title').textContent = t.title;
   document.getElementById('drawBtn').textContent = t.draw;
   document.getElementById('skipBtn').textContent = t.pass;
   const endB = document.getElementById('endBtn'); if (endB) endB.textContent = t.end;
   document.getElementById('restartBtn').textContent = t.restart;
+
+  // стартовое меню
+  const pcLab = document.querySelector('#menu label');
+  if (pcLab){
+    // меняем только текст до двоеточия
+    pcLab.childNodes[0].nodeValue = t.playersCount + ': ';
+  }
+  const startBtnEl = document.getElementById('startBtn');
+  if (startBtnEl) startBtnEl.textContent = t.start;
+
+  // перерисовать подписи полей имён в нужной локали
+  renderNameInputs();
 }
 
-// ===== ДОТИПКИВАНИЕ ФОРМУЛ =====
 // ===== ДОТИПКИВАНИЕ ФОРМУЛ =====
 function typesetTiles(){
   if (!MATH_MODE || !window.MathJax || !MathJax.typesetPromise) return;
@@ -427,12 +455,9 @@ function typesetTiles(){
   MathJax.typesetPromise(targets).catch(()=>{});
 }
 
-// ⬇⬇⬇ ДОБАВЬ ЭТО СЮДА ⬇⬇⬇
-if (window.MathJax && MathJax.startup && MathJax.startup.promise) {
-  MathJax.startup.promise.then(()=> typesetTiles()).catch(()=>{});
+if (window.MathJax && MathJax.startup && MathJax.startup.promise){
+  MathJax.startup.promise.then(()=>typesetTiles()).catch(()=>{});
 }
-// ⬆⬆⬆ ДОБАВЬ ЭТО СЮДА ⬆⬆⬆
-
 // авто-типсет при изменениях цепочки
 const _debounceTypeset = (()=>{ let h; return ()=>{ clearTimeout(h); h=setTimeout(typesetTiles, 0); };})();
 const chainObserver = new MutationObserver(()=> _debounceTypeset());
@@ -483,20 +508,26 @@ boardEl.addEventListener('wheel', e=>{
 =========================================================================================== */
 function renderNameInputs(){
   nameInputsEl.innerHTML='';
-  const c=parseInt(playerCountEl.value,10)||2;
+  const c = parseInt(playerCountEl.value,10) || 2;
+  const t = I18N[LANG] || I18N.ru;
+
   for(let i=0;i<c;i++){
-    const row=document.createElement('div');
-    row.className='name-row';
-    const lab=document.createElement('label');
-    lab.textContent='Имя игрока '+(i+1);
-    const inp=document.createElement('input');
-    inp.placeholder='Имя игрока '+(i+1);
-    inp.id='pname'+i;
+    const row = document.createElement('div');
+    row.className = 'name-row';
+
+    const lab = document.createElement('label');
+    lab.textContent = `${t.playerName} ${i+1}`;
+
+    const inp = document.createElement('input');
+    inp.placeholder = `${t.playerName} ${i+1}`;
+    inp.id = 'pname'+i;
+
     row.appendChild(lab);
     row.appendChild(inp);
     nameInputsEl.appendChild(row);
   }
 }
+
 playerCountEl.addEventListener('input',renderNameInputs);
 renderNameInputs();
 
@@ -548,12 +579,14 @@ function showPreview(a, b){
 
 function renderHalf(container, value){
   container.innerHTML = "";
+
   if (isImg(value)){
     const img = document.createElement('img');
     img.src = value;
     container.appendChild(img);
     return;
   }
+
   const textEl = document.createElement('b');
   textEl.style.fontSize = "40px";
   textEl.style.wordBreak = "break-word";
@@ -563,12 +596,16 @@ function renderHalf(container, value){
   textEl.style.alignItems = "center";
   textEl.style.justifyContent = "center";
 
-  if (MATH_MODE){
+  const looksLikeTeX = /\\[a-zA-Z]+|\\\(|\\\[|\$\$?/.test(String(value));
+
+  if (MATH_MODE || looksLikeTeX){
     textEl.innerHTML = `\\(${value}\\)`;
     container.appendChild(textEl);
-    if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([textEl]).catch(()=>{});
+    if (window.MathJax && MathJax.typesetPromise){
+      MathJax.typesetPromise([textEl]).catch(()=>{});
+    }
   } else {
-    textEl.textContent = value;
+    textEl.textContent = String(value);
     container.appendChild(textEl);
   }
 }
@@ -626,25 +663,31 @@ function fitToHalf(node, container) {
 
 function renderHalf(containerEl, value){
   containerEl.innerHTML = "";
+
   if (isImg(value)){
     const img = document.createElement('img');
     img.src = value;
     containerEl.appendChild(img);
     return null;
-  } else {
-    const b = document.createElement('b');
-    if (MATH_MODE){
-      b.innerHTML = `\\(${value}\\)`;
-    } else {
-      b.textContent = value;
-    }
+  }
+
+  const b = document.createElement('b');
+  // авто-детект TeX: \sqrt, \int, \(, \[, $, $$
+  const looksLikeTeX = /\\[a-zA-Z]+|\\\(|\\\[|\$\$?/.test(String(value));
+
+  if (MATH_MODE || looksLikeTeX){
+    b.innerHTML = `\\(${value}\\)`;
     containerEl.appendChild(b);
-    if (MATH_MODE && window.MathJax && MathJax.typesetPromise){
+    if (window.MathJax && MathJax.typesetPromise){
       MathJax.typesetPromise([b]).catch(()=>{});
     }
-    return b;
+  } else {
+    b.textContent = String(value);
+    containerEl.appendChild(b);
   }
+  return b;
 }
+
 
   const dispA = opts.displayA ?? a;
   const dispB = opts.displayB ?? b;
@@ -952,19 +995,21 @@ addEventListener('resize', ()=>{ fitChain(); if(dragging) renderDirectionalZones
    UI: players & hand
 =========================================================================================== */
 function renderPlayersBar() {
+  const t = I18N[LANG] || I18N.ru;
   playersBarEl.innerHTML = '';
   for (let i = 0; i < playerNames.length; i++) {
     const el = document.createElement('div');
     el.className = 'player' + (i === currentPlayer ? ' active' : '');
-el.textContent = playerNames[i] || `${I18N[LANG].player} ${i+1}`;
+    el.textContent = playerNames[i] || `${t.player} ${i+1}`;
     playersBarEl.appendChild(el);
   }
-  playersBarEl.style.display = "flex"; // гарантируем, что видно
+  playersBarEl.style.display = "flex";
 }
 
 function renderHand(){
-  handHeader.textContent =
-  `${playerNames[currentPlayer] || I18N[LANG].player+' '+(currentPlayer+1)}: (${(hands[currentPlayer]||[]).length})`;
+ const t = I18N[LANG] || I18N.ru;
+handHeader.textContent = `${playerNames[currentPlayer] || (t.player + ' ' + (currentPlayer+1))}: (${(hands[currentPlayer]||[]).length} ${t.tiles})`;
+
 
   trayEl.innerHTML='';
   for(const t of (hands[currentPlayer]||[])){
@@ -1183,20 +1228,37 @@ function nextPlayer(){
 }
 function everyonePassed(){ for(let i=0;i<playerNames.length;i++){ if(!passes[i]) return false; } return true; }
 function endByWinner(i){
+  const t = I18N[LANG] || I18N.ru;
   const winner = playerNames[i];
-  // ✨ выводим фидбек вместе с победителем
   const msgEl = document.querySelector('#finalOverlay .final-message');
-  msgEl.innerHTML = `${finalFeedback}<br>🎉 Победитель: <span id="winnerName">${winner}</span> 🎉`;
+  msgEl.innerHTML = `${finalFeedback || t.congrats}<br>🎉 ${t.winner}: <span id="winnerName">${winner}</span> 🎉`;
 
   document.getElementById('finalOverlay').style.display = 'flex';
   startFireworks();
 }
 
+
 function endByPoints(){
-  let best=Infinity, wi=0;
-  for(let i=0;i<playerNames.length;i++){ const s=(hands[i]||[]).length; if(s<best){ best=s; wi=i; } }
-  endByWinner(wi);
+  const t = I18N[LANG] || I18N.ru;
+  let best=Infinity, wi=0, tie=false, bestCount=Infinity;
+
+  for(let i=0;i<playerNames.length;i++){
+    const s=(hands[i]||[]).length;
+    if (s < bestCount){ bestCount = s; wi = i; tie = false; }
+    else if (s === bestCount){ tie = true; }
+  }
+
+  const msgEl = document.querySelector('#finalOverlay .final-message');
+  if (tie){
+    msgEl.innerHTML = `${finalFeedback || t.congrats}<br>🎉 ${t.tie}`;
+  } else {
+    msgEl.innerHTML = `${finalFeedback || t.congrats}<br>🎉 ${t.winner}: <span id="winnerName">${playerNames[wi]}</span> 🎉`;
+  }
+
+  document.getElementById('finalOverlay').style.display = 'flex';
+  startFireworks();
 }
+
 
 /* ===========================================================================================
    Start game
@@ -1400,11 +1462,18 @@ addEventListener('drop', e=>{
 addEventListener('mousemove', ()=>{ if(dragging) renderDirectionalZones(); });
 
 /* Safety init */
-/* Safety init */
 (function(){
-  function init(){
+  async function init(){
+    // поднимем локаль ДО отрисовки полей
+    try{
+      const data = await getPayload() || {};
+      LANG = data.language || data.lang || 'ru';
+      MATH_MODE = !!(data.mathMode ?? data.math);
+    }catch(_){}
+
+    applyLocale(LANG);   // <- обновит и кнопки, и меню, и поля имён
     renderNameInputs();
-    // привязка кнопки перезапуска в оверлее
+
     const btn = document.getElementById('restartOnWin');
     if (btn && !btn.dataset.bound){
       btn.addEventListener('click', ()=>location.reload());
@@ -1417,6 +1486,8 @@ addEventListener('mousemove', ()=>{ if(dragging) renderDirectionalZones(); });
     init();
   }
 })();
+
+
 
 </script>
 </body>
