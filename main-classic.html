@@ -584,21 +584,37 @@ function createTileEl(a,b,opts={}){
 
   const isImg=v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
 
-  function renderHalf(containerEl, value){
-    containerEl.innerHTML="";
-    if(isImg(value)){
-      const img=document.createElement('img'); 
-      img.src=value; 
-      containerEl.appendChild(img);
-      return null;
-    } else {
-      const b=document.createElement('b');
-      b.innerHTML = `<span class="math">${value}</span>`;
-      containerEl.appendChild(b);
-      if (window.MathJax) MathJax.typesetPromise([b]);
-      return b;
-    }
+function renderHalf(containerEl, value){
+  containerEl.innerHTML = "";
+
+  if (isImg(value)){
+    const img = document.createElement("img");
+    img.src = value;
+    containerEl.appendChild(img);
+    return null;
   }
+
+  const b = document.createElement("b");
+
+  // Авто-детект TeX: если видим обратный слэш/доллары — рендерим как LaTeX,
+  // даже если глобальный MATH_MODE вдруг false.
+  const looksLikeTeX = /\\[a-zA-Z]|\\\(|\\\[|\$\$?/.test(String(value));
+
+  if (MATH_MODE || looksLikeTeX){
+    // важно: оборачиваем в \( ... \) для inline
+    b.innerHTML = `\\(${value}\\)`;
+    containerEl.appendChild(b);
+    if (window.MathJax && MathJax.typesetPromise){
+      MathJax.typesetPromise([b]).catch(()=>{});
+    }
+  } else {
+    // обычный текст — без HTML-вставок
+    b.textContent = String(value);
+    containerEl.appendChild(b);
+  }
+  return b;
+}
+
 
   let dispA = opts.displayA ?? a;
   let dispB = opts.displayB ?? b;
