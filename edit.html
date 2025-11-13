@@ -9,10 +9,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
+  :root{
+    /* ширина одной колонки списков и зазор между ними */
+    --col: 360px;
+    --gap: 18px;
+  }
+
   body{
     margin:0;
     padding:0;
-    background: url("https://img.genially.com/64233afb55129a0017751c8e/80454769-7ad4-4911-b11a-636485807651.jpeg") no-repeat center center fixed;
+    background:url("https://img.genially.com/64233afb55129a0017751c8e/80454769-7ad4-4911-b11a-636485807651.jpeg") no-repeat center center fixed;
     background-size:cover;
     font:18px "Inter", sans-serif;
     color:#fdf4ff;
@@ -23,7 +29,7 @@
     min-height:100vh;
     text-align:center;
     position:relative;
-    overflow:auto; /* убираем скролл */
+    overflow:auto;
   }
 
   h1{
@@ -37,74 +43,85 @@
   .logo{
     margin:10px auto 0;
     width:120px;
-    filter: drop-shadow(0 0 10px #ffda8b);
+    filter:drop-shadow(0 0 10px #ffda8b);
     position:relative; z-index:2;
   }
 
-  /* контейнер для списков */
-/* Задания — фиксированные две колонки */
-.lists{
-  display:grid;
-  grid-template-columns: 360px 360px; /* две колонки фикс ширины */
-  gap: 18px;
-  max-width: 738px;                   /* 360 + 360 + 18 */
-  margin: 16px auto 6px;
-  justify-content:center;
-}
-.list-col{ min-width:0; width:360px; box-sizing:border-box; }
-.list-col p{
-  white-space:nowrap;                 /* заголовки без переносов */
-  overflow:hidden;
-  text-overflow:ellipsis;
-  margin:0 0 6px;
-}
-.list-col textarea{
-  width:100%;
-  min-height: 140px;
-  box-sizing:border-box;
-}
-
-
-  label{
-    margin:10px auto;
-    display:flex;
-    align-items:center;
-    gap:8px;
-    font-size:16px;
-    background:rgba(46,25,56,0.6);
-    padding:8px 14px;
-    border-radius:8px;
-    max-width:650px;
-    box-shadow:0 0 8px rgba(255,126,255,.4);
-    position:relative; z-index:2;
-  }
-
-  p.feedback-label {
-    font-size:16px;
-    background:rgba(46,25,56,0.6);
-    padding:8px 14px;
-    border-radius:8px;
+  /* Панели */
+  .panel{
+    width:90%;
+    max-width:1000px;
     margin:12px auto;
-    max-width:650px;
-    box-shadow:0 0 8px rgba(255,126,255,.4);
-    position:relative; z-index:2;
+    padding:12px 14px;
+    background:rgba(46,25,56,.55);
+    border:1.5px solid rgba(255,218,139,.45);
+    border-radius:12px;
+    box-shadow:0 0 10px rgba(255,126,255,.35);
+  }
+  .panel-title{
+    margin:0 0 8px;
+    font-size:18px;
+    color:#ffeeb0;
+    text-shadow:0 0 6px #ffae00;
+    font-weight:700;
+    text-align:left;
   }
 
-/* оставить только это */
-.input-line{
-  width:100%;
-  max-width: 800px;
-  padding:12px 14px;
-  border-radius:10px;
-  border:2px solid #ffda8b;
-  background:rgba(255,255,255,0.9);
-  color:#2c1a32;
-  font-size:16px;
-  box-shadow:0 0 10px rgba(255,218,139,.6);
-  display:block;
-  margin: 4px auto 0;
-}
+  /* Верхняя панель */
+  .panel-top .row{
+    display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap;
+  }
+  .panel-top .check, .panel-top .lang{
+    background:rgba(0,0,0,.15);
+    padding:8px 10px; border-radius:10px; border:1px solid rgba(255,218,139,.35);
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel-top select{
+    padding:6px 10px; border-radius:8px; border:1px solid #ffda8b; background:#fff; color:#2c1a32;
+  }
 
+  /* Задания — две фиксированные колонки */
+  .lists{
+    display:grid;
+    grid-template-columns: var(--col) var(--col);
+    gap: var(--gap);
+    max-width: calc(var(--col) * 2 + var(--gap)); /* 2 колонки + зазор */
+    margin:16px auto 6px;
+    justify-content:center;
+  }
+  .list-col{ min-width:0; width:var(--col); box-sizing:border-box; }
+  .list-col p{
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    margin:0 0 6px;
+    background:rgba(46,25,56,0.6);
+    padding:8px 14px; border-radius:8px;
+    box-shadow:0 0 8px rgba(255,126,255,.4);
+  }
+  .list-col textarea{
+    width:100%;
+    min-height:140px;
+    box-sizing:border-box;
+    padding:14px 16px; border-radius:12px; border:2px solid #ffda8b;
+    background:rgba(255,255,255,0.9); color:#2c1a32; font-size:16px;
+    box-shadow:0 0 10px rgba(255,218,139,.6);
+  }
+
+  /* Фидбек — одинаковой ширины с двумя колонками */
+  .input-line{
+    width: calc(var(--col) * 2 + var(--gap)); /* ширина = 2 колонки + зазор */
+    max-width:100%;                           /* но не шире панели */
+    padding:12px 14px;
+    border-radius:10px;
+    border:2px solid #ffda8b;
+    background:rgba(255,255,255,0.9);
+    color:#2c1a32;
+    font-size:16px;
+    box-shadow:0 0 10px rgba(255,218,139,.6);
+    display:block;
+    margin:4px auto 0;                        /* по центру панели */
+  }
+
+  /* Кнопки */
   button{
     padding:14px 28px; border-radius:12px; border:none;
     background:linear-gradient(90deg,#ffda8b,#ff7eff);
@@ -113,124 +130,43 @@
     transition:transform .2s, box-shadow .2s;
     position:relative; z-index:2;
   }
-  button:hover{
-    transform:scale(1.05);
-    box-shadow:0 0 16px #ffda8b,0 0 28px #d06bff;
+  button:hover{ transform:scale(1.05); box-shadow:0 0 16px #ffda8b,0 0 28px #d06bff; }
+
+  /* Блок с iframe-кодом */
+  #embedCodeBox{ display:none; margin-top:12px; width:90%; max-width:800px; text-align:center; position:relative; z-index:2; }
+  #embedCode{
+    width:100%; min-height:120px; max-height:320px; overflow:auto; resize:vertical;
+    padding:14px; border-radius:12px; background:rgba(30,16,34,0.9); color:#ffda8b;
+    font-family:monospace; font-size:15px; border:2px solid #ff7eff; box-shadow:0 0 12px rgba(255,126,255,.6);
+    text-align:left; display:block; margin:0 auto;
   }
-
-#embedCodeBox{
-  display:none;                 /* покажем после генерации */
-  margin-top:12px;
-  width:90%;
-  max-width:800px;
-  text-align:center;
-  position:relative;
-  z-index:2;
-}
-
-#embedCode{
-  width:100%;
-  min-height:120px;             /* чуть выше базовая высота */
-  max-height:320px;             /* ограничиваем, чтобы не разъезжалась верстка */
-  overflow:auto;                /* собственная прокрутка внутри поля */
-  resize:vertical;              /* можно растягивать мышкой вниз/вверх */
-  padding:14px;
-  border-radius:12px;
-  background:rgba(30,16,34,0.9);
-  color:#ffda8b;
-  font-family:monospace;
-  font-size:15px;
-  border:2px solid #ff7eff;
-  box-shadow:0 0 12px rgba(255,126,255,.6);
-  text-align:left;
-  display:block;
-  margin:0 auto;
-}
 
   /* гирлянда */
   .garland{
-    position:fixed;
-    top:10px;
-    left:0;
-    width:100%;
-    display:flex;
-    justify-content:space-evenly;
-    pointer-events:none;
-    z-index:1;
+    position:fixed; top:10px; left:0; width:100%;
+    display:flex; justify-content:space-evenly; pointer-events:none; z-index:1;
   }
   .garland span{
     width:20px; height:20px; border-radius:50%;
-    background:#ffda8b; box-shadow:0 0 8px #ffda8b;
-    animation: blink 1.5s infinite alternate;
+    background:#ffda8b; box-shadow:0 0 8px #ffda8b; animation:blink 1.5s infinite alternate;
   }
-  .garland span:nth-child(2n){background:#ff7eff; box-shadow:0 0 8px #ff7eff; animation-delay:.3s}
-  .garland span:nth-child(3n){background:#7ef9ff; box-shadow:0 0 8px #7ef9ff; animation-delay:.6s}
-  @keyframes blink{from{opacity:.4} to{opacity:1}}
-  /* Панели */
-.panel{
-  width: 90%;
-  max-width: 1000px;
-  margin: 12px auto;
-  padding: 12px 14px;
-  background: rgba(46,25,56,.55);
-  border: 1.5px solid rgba(255,218,139,.45);
-  border-radius: 12px;
-  box-shadow: 0 0 10px rgba(255,126,255,.35);
-}
-.panel-title{
-  margin: 0 0 8px;
-  font-size: 18px;
-  color:#ffeeb0;
-  text-shadow: 0 0 6px #ffae00;
-  font-weight: 700;
-  text-align: left;
-}
+  .garland span:nth-child(2n){ background:#ff7eff; box-shadow:0 0 8px #ff7eff; animation-delay:.3s; }
+  .garland span:nth-child(3n){ background:#7ef9ff; box-shadow:0 0 8px #7ef9ff; animation-delay:.6s; }
+  @keyframes blink{ from{opacity:.4} to{opacity:1} }
 
-/* Верхняя панель — в одну строку на десктопе */
-.panel-top .row{
-  display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap;
-}
-.panel-top .check, .panel-top .lang{
-  background: rgba(0,0,0,.15);
-  padding:8px 10px; border-radius:10px; border:1px solid rgba(255,218,139,.35);
-  display:flex; align-items:center; gap:8px;
-}
-.panel-top select{
-  padding:6px 10px; border-radius:8px; border:1px solid #ffda8b; background:#fff; color:#2c1a32;
-}
+  /* Низ панели с действиями */
+  .actions{ text-align:center; }
+  .actions .under-btn{ display:block; margin-top:8px; text-align:center; }
 
-/* Линейное поле фидбека */
-.input-line{
-  width:100%;
-  max-width: 800px;
-  padding:12px 14px;
-  border-radius:10px;
-  border:2px solid #ffda8b;
-  background:rgba(255,255,255,0.9);
-  color:#2c1a32;
-  font-size:16px;
-  box-shadow:0 0 10px rgba(255,218,139,.6);
-  display:block;
-  margin: 4px auto 0;
-}
-
-/* Кнопка + чекбокс передачи ниже */
-.actions{ text-align:center; }
-.actions .under-btn{ display:block; margin-top:8px; text-align:center; }
-
-/* Мобильные правки (одна колонка) */
-@media (max-width: 900px){
-  .lists{
-    grid-template-columns: 1fr;
-    max-width: 520px;
+  /* Мобильные правки — одна колонка и фидбек на всю ширину */
+  @media (max-width: 900px){
+    .lists{ grid-template-columns:1fr; max-width:520px; }
+    .list-col{ width:auto; }
+    .list-col p{ white-space:normal; text-overflow:clip; }
+    .input-line{ width:100%; } /* фидбек тянется по панели */
   }
-  .list-col{ width:auto; }
-  .list-col p{
-    white-space:normal;    /* на мобилке можно переносить */
-    text-overflow:clip;
-  }
-}
 </style>
+
 </head>
 <body>
 
