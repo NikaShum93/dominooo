@@ -145,27 +145,34 @@
 
   /* ===== PREVIEW ===== */
   #tilePreview .tile{ width:680px!important; height:260px!important; }
- #tilePreview .tile b {
+#tilePreview .tile b{
   font-size: 40px;
   font-weight: 900;
   color: #1c1712;
   text-align: center;
   line-height: 1.2;
-  white-space: normal;    /* перенос */
-  word-break: break-word; /* перенос по словам */
-  overflow: auto;         /* скролл если не влезло */
-  max-height: 100%;
-  padding: 4px;
+  white-space: normal;
+  word-break: normal;
+  overflow: visible;      /* ← убираем полосы прокрутки */
+  max-height: none;       /* ← не ограничиваем высоту, пусть текст дышит */
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-
-#tilePreview .half {
+/* саму половинку держим без скролла и без выходов наружу */
+#tilePreview .half{
   display:flex;
   justify-content:center;
   align-items:center;
+  overflow: hidden;       /* ← даже если формула чуть больше, скролла не будет */
+}
+
+/* чтобы формулы MathJax аккуратно вписывались по коробке */
+#tilePreview mjx-container{
+  max-width: 100%;
+  max-height: 100%;
 }
 
   /* ===== HAND ===== */
