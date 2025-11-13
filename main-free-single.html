@@ -234,7 +234,17 @@
 .win-btn:hover{ filter:brightness(1.05); }
 
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+ <script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)'], ['$', '$']],
+      displayMath: [['\\[','\\]'], ['$$','$$']],
+      processEscapes: true
+    }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 </head>
 <body>
 
@@ -291,6 +301,63 @@
   <audio id="sClick" src="click.mp3" preload="auto"></audio>
 
 <script>
+  // ===== i18n + math flags + payload =====
+let LANG = 'ru';
+let MATH_MODE = false;
+let FEEDBACK = '';
+
+const I18N = {
+  ru:{title:'Domino · КГБ',draw:'Взять',pass:'Пропустить',end:'Завершить',restart:'Перезапустить',turn:'Ход',player:'Игрок',congrats:'Поздравляем!',playersCount:'Количество игроков:',playerName:'Имя игрока',start:'Начать игру',winner:'Победитель',tie:'Победила дружба!',tiles:'костяшек',startOver:'Начать заново'},
+  en:{title:'Domino · KGB',draw:'Draw',pass:'Pass',end:'End',restart:'Restart',turn:'Turn',player:'Player',congrats:'Congratulations!',playersCount:'Players:',playerName:'Player name',start:'Start game',winner:'Winner',tie:'Tie!',tiles:'tiles',startOver:'Restart'},
+  fr:{title:'Domino · KGB',draw:'Piocher',pass:'Passer',end:'Terminer',restart:'Redémarrer',turn:'Tour',player:'Joueur',congrats:'Félicitations !',playersCount:'Nombre de joueurs :',playerName:'Nom du joueur',start:'Commencer',winner:'Gagnant',tie:'Match nul !',tiles:'tuiles',startOver:'Recommencer'},
+  es:{title:'Domino · KGB',draw:'Robar',pass:'Pasar',end:'Terminar',restart:'Reiniciar',turn:'Turno',player:'Jugador',congrats:'¡Felicidades!',playersCount:'Número de jugadores:',playerName:'Nombre del jugador',start:'Iniciar',winner:'Ganador',tie:'¡Empate!',tiles:'fichas',startOver:'Reiniciar'},
+  de:{title:'Domino · KGB',draw:'Ziehen',pass:'Passen',end:'Beenden',restart:'Neustart',turn:'Zug',player:'Spieler',congrats:'Glückwunsch!',playersCount:'Spieleranzahl:',playerName:'Spielername',start:'Spiel starten',winner:'Sieger',tie:'Unentschieden!',tiles:'Steine',startOver:'Neu starten'},
+  zh:{title:'Domino · KGB',draw:'摸牌',pass:'过',end:'结束',restart:'重启',turn:'轮到',player:'玩家',congrats:'恭喜！',playersCount:'玩家数量：',playerName:'玩家名字',start:'开始',winner:'获胜者',tie:'平局！',tiles:'张',startOver:'重新开始'},
+  ja:{title:'Domino · KGB',draw:'ドロー',pass:'パス',end:'終了',restart:'再開',turn:'手番',player:'プレイヤー',congrats:'おめでとう！',playersCount:'人数：',playerName:'プレイヤー名',start:'ゲーム開始',winner:'勝者',tie:'引き分け！',tiles:'タイル',startOver:'再開'}
+};
+
+function applyLocale(lang='ru'){
+  const t = I18N[lang] || I18N.ru;
+  document.getElementById('title').textContent = t.title;
+  document.getElementById('drawBtn').textContent = t.draw;
+  const undoBtn = document.getElementById('undoBtn'); if (undoBtn) undoBtn.textContent = 'Undo' in t ? t.undo : undoBtn.textContent;
+  document.getElementById('endBtn').textContent = t.end;
+  document.getElementById('restartBtn').textContent = t.restart;
+  const restartWin = document.getElementById('restartOnWin'); if (restartWin) restartWin.textContent = t.startOver;
+}
+function applyMenuLocale(lang='ru'){
+  const t = I18N[lang] || I18N.ru;
+  const cntLabel = document.querySelector('#menu label'); if (cntLabel) cntLabel.firstChild.nodeValue = t.playersCount + ' ';
+  document.querySelectorAll('#nameInputs input[id^="pname"]').forEach((inp,i)=> inp.placeholder = `${t.playerName} ${i+1}`);
+  const sb = document.getElementById('startBtn'); if (sb) sb.textContent = t.start;
+}
+
+async function getPayload(){
+  const sp = new URLSearchParams(location.search);
+  const raw = sp.get('data');
+  const id  = sp.get('id');
+
+  if (raw){
+    try { return JSON.parse(decodeURIComponent(raw)); } catch(e){ return null; }
+  }
+  if (id){
+    const url = `https://nikashum93.github.io/texts/data/${encodeURIComponent(id)}.json`;
+    try{ const r = await fetch(url, {cache:'no-store'}); if (r.ok) return await r.json(); } catch(e){}
+  }
+  return null;
+}
+
+let DATA_CONFIG = null;
+async function preloadConfig(){
+  const data = await getPayload() || {};
+  DATA_CONFIG = data;
+  LANG = data.language || data.lang || 'ru';
+  MATH_MODE = !!(data.mathMode ?? data.math);
+  FEEDBACK = (data.feedback && data.feedback.trim()) || (I18N[LANG]||I18N.ru).congrats;
+  applyLocale(LANG);
+  applyMenuLocale(LANG);
+}
+
 /* ===========================================================================================
    Utils & State
 =========================================================================================== */
@@ -298,24 +365,12 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.rand
 function uid(){ return Math.random().toString(36).slice(2,9); }
 function br(){ return { w:chainEl.clientWidth, h:chainEl.clientHeight }; }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
-function getQueryData(){
-  const raw=new URLSearchParams(location.search).get('data');
-  if(!raw) return null;
-  try{ return JSON.parse(decodeURIComponent(raw)); }
-  catch(e){ return null; }
-}
-
-// === финальный текст победы из параметров редактора ===
-const __payload = getQueryData() || {};
-const FINAL_TEXT =
-  (__payload && typeof __payload.feedback === 'string' && __payload.feedback.trim())
-    ? __payload.feedback.trim()
-    : '🎉 Победила дружба! 🎉';
 
 // Унифицированный показ оверлея победы
 function showWinOverlay() {
   const msgEl = document.querySelector('#finalOverlay .final-message');
-  if (msgEl) msgEl.textContent = FINAL_TEXT;
+ if (msgEl) msgEl.textContent = FEEDBACK || '🎉';
+
 
   const overlay = document.getElementById('finalOverlay');
   if (overlay) overlay.style.display = 'flex';
@@ -436,17 +491,20 @@ function renderNameInputs(){
     const row=document.createElement('div');
     row.className='name-row';
     const lab=document.createElement('label');
-    lab.textContent='Имя игрока '+(i+1);
-    const inp=document.createElement('input');
-    inp.placeholder='Имя игрока '+(i+1);
+   const t = I18N[LANG] || I18N.ru;
+lab.textContent = `${t.playerName} ${i+1}`;
+const inp=document.createElement('input');
+inp.placeholder = `${t.playerName} ${i+1}`;
+
     inp.id='pname'+i;
     row.appendChild(lab);
     row.appendChild(inp);
     nameInputsEl.appendChild(row);
   }
 }
-playerCountEl.addEventListener('input',renderNameInputs);
-renderNameInputs();
+playerCountEl.addEventListener('input', ()=>{ renderNameInputs(); applyMenuLocale(LANG); });
+(async ()=>{ await preloadConfig(); renderNameInputs(); })();
+
 
 /* ===========================================================================================
    Big Preview
@@ -494,27 +552,41 @@ function showPreview(a, b){
   const halfR = big.querySelector(".half:last-child");
   const isImg = v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
 
- function renderHalf(container, value){
-  container.innerHTML="";
-  if(isImg(value)){ 
-    const img=document.createElement('img'); 
-    img.src=value; 
-    container.appendChild(img); 
+function renderHalf(container, value) {
+  container.innerHTML = "";
+
+  // картинка
+  if (isImg(value)) {
+    const img = document.createElement("img");
+    img.src = value;
+    container.appendChild(img);
+    return;
+  }
+
+  // текст / формула
+  const textEl = document.createElement("b");
+  textEl.style.fontSize = "40px";
+  textEl.style.wordBreak = "break-word";
+  textEl.style.whiteSpace = "normal";
+  textEl.style.overflow = "auto";
+  textEl.style.display = "flex";
+  textEl.style.alignItems = "center";
+  textEl.style.justifyContent = "center";
+
+  const looksLikeTeX = /\\[a-zA-Z]+|\\\(|\\\[|\$\$?|[\^_]/.test(String(value));
+  if (MATH_MODE || looksLikeTeX) {
+    textEl.innerHTML = `\\(${value}\\)`;   // inline TeX
   } else {
-   const textEl=document.createElement('b'); 
-textEl.innerHTML = `<span class="math">${value}</span>`; 
-textEl.style.fontSize = "40px"; 
-    textEl.style.wordBreak = "break-word"; 
-    textEl.style.whiteSpace = "normal"; 
-    textEl.style.overflow = "auto"; 
-    textEl.style.display = "flex";
-    textEl.style.alignItems = "center";
-    textEl.style.justifyContent = "center";
-    container.appendChild(textEl); 
-    if (window.MathJax) MathJax.typesetPromise([textEl]);
+    textEl.textContent = String(value);    // обычный текст
+  }
+
+  container.appendChild(textEl);
+
+  // рендерим MathJax только если нужно
+  if ((MATH_MODE || looksLikeTeX) && window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([textEl]).catch(() => {});
   }
 }
-
 
   renderHalf(halfL, a);
   renderHalf(halfR, b);
@@ -572,11 +644,17 @@ function fitToHalf(node, container) {
       const img=document.createElement('img'); img.src=value; containerEl.appendChild(img);
       return null;
    }else{
-  const b=document.createElement('b'); 
-  b.innerHTML = `<span class="math">${value}</span>`;
-  containerEl.appendChild(b); 
-  if (window.MathJax) MathJax.typesetPromise([b]);
-  return b;
+ const b=document.createElement('b');
+const looksLikeTeX = /\\[a-zA-Z]+|\\\(|\\\[|\$\$?|[\^_]/.test(String(value));
+if (MATH_MODE || looksLikeTeX){
+  b.innerHTML = `\\(${value}\\)`;
+} else {
+  b.textContent = String(value);
+}
+containerEl.appendChild(b);
+if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([b]).catch(()=>{});
+return b;
+
 }
   }
 
@@ -861,14 +939,18 @@ function renderPlayersBar() {
   for (let i = 0; i < playerNames.length; i++) {
     const el = document.createElement('div');
     el.className = 'player' + (i === currentPlayer ? ' active' : '');
-    el.textContent = playerNames[i] || `Игрок ${i+1}`;
+ const t = I18N[LANG] || I18N.ru;
+el.textContent = playerNames[i] || `${t.player} ${i+1}`;
+
     playersBarEl.appendChild(el);
   }
   playersBarEl.style.display = "flex"; // гарантируем, что видно
 }
 
 function renderHand(){
-  handHeader.textContent = `${playerNames[currentPlayer]}: (${(hands[currentPlayer]||[]).length} костяшек)`;
+ const t = I18N[LANG] || I18N.ru;
+handHeader.textContent = `${playerNames[currentPlayer] || (t.player + ' ' + (currentPlayer+1))}: (${(hands[currentPlayer]||[]).length} ${t.tiles})`;
+
   trayEl.innerHTML='';
   for(const t of (hands[currentPlayer]||[])){
     const el=createTileEl(
@@ -882,8 +964,9 @@ function renderHand(){
 function updateControls(){
   [...playersBarEl.getElementsByClassName('player')]
     .forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer));
+const t = I18N[LANG] || I18N.ru;
+turnInfo.textContent = `${t.turn}: ${playerNames[currentPlayer] || (t.player + ' ' + (currentPlayer+1))}`;
 
-  turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
 
   // остаток колоды
   deckInfo.textContent = `Колода: ${deck.length}`;
@@ -1013,10 +1096,17 @@ function startGame(){
   }
 
   // deck — сначала из ?data=listA, иначе дефолт
-  const data = getQueryData() || {};
-  deck = buildDeckFromData(data);
-  if(!deck.length){ deck = makeDefaultDeck(); }
-  shuffle(deck);
+ const data = DATA_CONFIG || {};
+LANG = data.language || data.lang || 'ru';
+MATH_MODE = !!(data.mathMode ?? data.math);
+applyLocale(LANG);
+
+FEEDBACK = (data.feedback && data.feedback.trim()) || (I18N[LANG]||I18N.ru).congrats;
+
+deck = buildDeckFromData(data);
+if(!deck.length){ deck = makeDefaultDeck(); }
+shuffle(deck);
+
 
   // шрифт под все слова (опционально)
   computeUniformSize(deck);
