@@ -258,6 +258,57 @@
   };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<script>
+// ---- загрузка данных ?data=... или ?id=... из texts/data/<id>.json
+async function getPayload(){
+  const sp = new URLSearchParams(location.search);
+  const raw = sp.get('data');
+  const id  = sp.get('id');
+
+  // 1) Старый режим: ?data=<urlencoded json>
+  if (raw) {
+    try { return JSON.parse(decodeURIComponent(raw)); }
+    catch(e){ console.warn('Bad data param', e); }
+  }
+
+  // 2) Новый режим: ?id=<slug> → тянем JSON с GitHub Pages
+  if (id) {
+    const url = `https://nikashum93.github.io/texts/data/${encodeURIComponent(id)}.json`;
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) return await res.json();
+      console.warn('Cannot load JSON by id', id, res.status);
+    } catch(e) { console.warn('Fetch failed', e); }
+  }
+  return null;
+}
+
+// Предзагрузка: тянем данные один раз и сразу ставим язык/математику
+let PRELOADED = null;
+
+(function attachPreload(){
+  (async ()=>{
+    const parseMaybeArray = (x)=>
+      Array.isArray(x) ? x :
+      (typeof x === 'string'
+        ? x.split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean)
+        : []);
+
+    PRELOADED = await getPayload() || {};
+    PRELOADED.listA = parseMaybeArray(PRELOADED.listA);
+    PRELOADED.listB = parseMaybeArray(PRELOADED.listB);
+
+    // локаль/математика из данных
+    LANG = PRELOADED.language || PRELOADED.lang || LANG;
+    const mm = PRELOADED.mathMode ?? PRELOADED.math;
+    MATH_MODE = (mm===true || mm==='true' || mm===1 || mm==='1');
+
+    // эти функции у тебя уже есть ниже
+    if (typeof applyLocale === 'function') applyLocale(LANG);
+    if (typeof applyMenuLocale === 'function') applyMenuLocale(LANG);
+  })();
+})();
+</script>
 
 </head>
 <body>
@@ -374,8 +425,8 @@ const I18N = {
     winner:'勝者', tie:'引き分け！', tiles:'タイル',
     deck:'山札', startOver:'再開'
   }
-};
-
+  };
+window.FEEDBACK = (I18N[LANG]?.congrats || 'Congratulations!');
 function applyLocale(lang='ru'){
   const t = I18N[lang] || I18N.ru;
   document.getElementById('title').textContent = t.title;
@@ -401,14 +452,6 @@ function applyMenuLocale(lang='ru'){
   if (sb) sb.textContent = t.start;
 }
 
-// подтягиваем флаги из ?data
-(function preloadLocaleFromQuery(){
-  const data = getQueryData() || {};
-  LANG = data.language || data.lang || 'ru';
-  MATH_MODE = !!(data.mathMode ?? data.math);
-  applyLocale(LANG);
-  applyMenuLocale(LANG);
-})();
 
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function uid(){ return Math.random().toString(36).slice(2,9); }
@@ -423,46 +466,16 @@ function parseMaybeArray(x){
   return [];
 }
 
-function getQueryData(){
-  // пробуем ?data=
-  const qs = new URLSearchParams(location.search).get('data');
-  // и #data= (для Genially и некоторых конструкторов)
-  const hs = new URLSearchParams(location.hash.replace(/^#/, '')).get('data');
-
-  const raw = qs || hs;
-  if (!raw) return null;
-
-  try {
-    const obj = JSON.parse(decodeURIComponent(raw));
-    // нормализуем поля
-    if (obj) {
-      obj.listA = parseMaybeArray(obj.listA);
-      obj.listB = parseMaybeArray(obj.listB);
-      if (typeof obj.mathMode === 'string') obj.mathMode = obj.mathMode === 'true';
-      if (typeof obj.math === 'string')     obj.math     = obj.math === 'true';
-    }
-    return obj;
-  } catch (e) {
-    return null;
-  }
-}
-
-const __payload = getQueryData() || {};
-const FEEDBACK =
-  (__payload && typeof __payload.feedback === 'string' && __payload.feedback.trim())
-    ? __payload.feedback.trim()
-    : (I18N[LANG]?.congrats || 'Congratulations!');
-
 function showWinOverlay(isTie=false, winnerName='') {
   const t = I18N[LANG] || I18N.ru;
   const msgEl = document.querySelector('#finalOverlay .final-message');
   if (msgEl){
     if (isTie){
-      msgEl.innerHTML = `🎉 ${FEEDBACK} 🎉<br>${t.tie}`;
+      msgEl.innerHTML = `🎉 ${window.FEEDBACK} 🎉<br>${t.tie}`;
     } else if (winnerName){
-      msgEl.innerHTML = `🎉 ${FEEDBACK} 🎉<br>${t.winner}: <span>${winnerName}</span>`;
+      msgEl.innerHTML = `🎉 ${window.FEEDBACK} 🎉<br>${t.winner}: <span>${winnerName}</span>`;
     } else {
-      msgEl.innerHTML = `🎉 ${FEEDBACK} 🎉`;
+      msgEl.innerHTML = `🎉 ${window.FEEDBACK} 🎉`;
     }
   }
   const overlay = document.getElementById('finalOverlay');
@@ -1221,10 +1234,15 @@ function startGame(){
   }
 
   // deck — сначала из ?data=listA, иначе дефолт
-  const data = getQueryData() || {};
-  deck = buildDeckFromData(data);
-  if(!deck.length){ deck = makeDefaultDeck(); }
-  shuffle(deck);
+const data = PRELOADED || {};
+deck = buildDeckFromData(data);
+if(!deck.length){ deck = makeDefaultDeck(); }
+shuffle(deck);
+
+// фидбек по локали
+const t = I18N[LANG] || I18N.ru;
+window.FEEDBACK = (data.feedback && data.feedback.trim()) || t.congrats;
+
 
   // шрифт под все слова (опционально)
   computeUniformSize(deck);
