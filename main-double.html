@@ -382,6 +382,16 @@ const turnInfo=document.getElementById('turnInfo');
 
 const previewWrap=document.getElementById('tilePreview');
 const previewInner=document.getElementById('tilePreviewInner');
+  // ===== ПРЕДЗАГРУЗКА ЯЗЫКА/МАТРЕЖИМА ДО СТАРТА =====
+let PRELOADED = null;
+(async ()=>{
+  PRELOADED = await getPayload() || {};
+  LANG = PRELOADED.language || LANG;
+  const mm = PRELOADED.mathMode;
+  MATH_MODE = (mm===true || mm==='true' || mm===1 || mm==='1');
+  applyLocale(LANG);           // локализуем кнопки до старта
+})();
+
 // ===== ЛОКАЛИЗАЦИЯ + ФЛАГ МАТЕМАТИКИ =====
 let LANG = 'ru';
 let MATH_MODE = false;
@@ -406,6 +416,7 @@ function applyLocale(lang='ru'){
 }
 
 // ===== ДОТИПКИВАНИЕ ФОРМУЛ =====
+// ===== ДОТИПКИВАНИЕ ФОРМУЛ =====
 function typesetTiles(){
   if (!MATH_MODE || !window.MathJax || !MathJax.typesetPromise) return;
   const targets = [
@@ -415,6 +426,12 @@ function typesetTiles(){
   ].filter(Boolean);
   MathJax.typesetPromise(targets).catch(()=>{});
 }
+
+// ⬇⬇⬇ ДОБАВЬ ЭТО СЮДА ⬇⬇⬇
+if (window.MathJax && MathJax.startup && MathJax.startup.promise) {
+  MathJax.startup.promise.then(()=> typesetTiles()).catch(()=>{});
+}
+// ⬆⬆⬆ ДОБАВЬ ЭТО СЮДА ⬆⬆⬆
 
 // авто-типсет при изменениях цепочки
 const _debounceTypeset = (()=>{ let h; return ()=>{ clearTimeout(h); h=setTimeout(typesetTiles, 0); };})();
@@ -939,14 +956,16 @@ function renderPlayersBar() {
   for (let i = 0; i < playerNames.length; i++) {
     const el = document.createElement('div');
     el.className = 'player' + (i === currentPlayer ? ' active' : '');
-    el.textContent = playerNames[i] || `Игрок ${i+1}`;
+el.textContent = playerNames[i] || `${I18N[LANG].player} ${i+1}`;
     playersBarEl.appendChild(el);
   }
   playersBarEl.style.display = "flex"; // гарантируем, что видно
 }
 
 function renderHand(){
-  handHeader.textContent = `${playerNames[currentPlayer]}: (${(hands[currentPlayer]||[]).length} костяшек)`;
+  handHeader.textContent =
+  `${playerNames[currentPlayer] || I18N[LANG].player+' '+(currentPlayer+1)}: (${(hands[currentPlayer]||[]).length})`;
+
   trayEl.innerHTML='';
   for(const t of (hands[currentPlayer]||[])){
     const el=createTileEl(
@@ -963,7 +982,9 @@ function updateControls(){
   [...playersBarEl.getElementsByClassName('player')]
     .forEach((n,idx)=>n.classList.toggle('active',idx===currentPlayer));
 
-  turnInfo.textContent = `Ход: ${playerNames[currentPlayer]}`;
+turnInfo.textContent =
+  `${I18N[LANG].turn}: ${playerNames[currentPlayer] || I18N[LANG].player+' '+(currentPlayer+1)}`;
+
 
   const currentHand = hands[currentPlayer] || [];
   const playable = hasLegalMove(currentHand);
@@ -1190,10 +1211,13 @@ async function startGame(){
   }
 
  // Данные + язык/математика
-const data = await getPayload() || {};
-LANG = data.language || 'ru';
-MATH_MODE = !!data.mathMode;
+// Данные + язык/математика (берём предзагруженные, чтобы меню уже было локализовано)
+const data = PRELOADED || await getPayload() || {};
+LANG = data.language || LANG;
+const mm = data.mathMode;
+MATH_MODE = (mm===true || mm==='true' || mm===1 || mm==='1');
 applyLocale(LANG);
+
 
 deck = buildDeckFromData(data);
 if(!deck.length){ deck = makeDefaultDeck(); }
@@ -1262,7 +1286,6 @@ endRight  = { x: sx, y: sy, orient: 'h', dir:  1, el: startTile };
   menuEl.style.pointerEvents = 'none';
   // ----------------------------
 
-  document.getElementById('title').textContent = 'Domino · КГБ';
 }
 
 
