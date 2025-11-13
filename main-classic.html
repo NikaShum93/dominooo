@@ -214,7 +214,17 @@
 .win-btn:hover{ filter:brightness(1.05); }
 
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['\\(', '\\)'], ['$', '$']],
+      displayMath: [['\\[','\\]'], ['$$','$$']],
+      processEscapes: true
+    }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 </head>
 <body>
 
@@ -482,27 +492,44 @@ function showPreview(a, b){
   const halfR = big.querySelector(".half:last-child");
   const isImg = v=>/^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(v);
 
- function renderHalf(container, value){
-  container.innerHTML="";
-  if(isImg(value)){ 
-    const img=document.createElement('img'); 
-    img.src=value; 
-    container.appendChild(img); 
+// ВНУТРИ showPreview — функция рендера половинки для ПРЕВЬЮ
+function renderHalf(container, value){
+  container.innerHTML = "";
+
+  const isImg = v => /^https?:\/\/.+\.(png|jpe?g|gif|svg|webp)$/i.test(v);
+
+  if (isImg(value)){
+    const img = document.createElement('img');
+    img.src = value;
+    container.appendChild(img);
+    return;
+  }
+
+  const textEl = document.createElement('b');
+
+  // ——— твои визуальные настройки, сохранены как были ———
+  textEl.style.fontSize = "40px";
+  textEl.style.wordBreak = "break-word";
+  textEl.style.whiteSpace = "normal";
+  textEl.style.overflow = "auto";
+  textEl.style.display = "flex";
+  textEl.style.alignItems = "center";
+  textEl.style.justifyContent = "center";
+  // ————————————————————————————————————————————————
+
+  if (MATH_MODE){
+    // корректная подача TeX: оборачиваем в \( ... \)
+    textEl.innerHTML = `\\(${value}\\)`;
+    container.appendChild(textEl);
+    if (window.MathJax && MathJax.typesetPromise){
+      MathJax.typesetPromise([textEl]).catch(()=>{});
+    }
   } else {
-   const textEl=document.createElement('b'); 
-textEl.innerHTML = `<span class="math">${value}</span>`;
-    textEl.style.fontSize = "40px"; 
-    textEl.style.wordBreak = "break-word"; 
-    textEl.style.whiteSpace = "normal"; 
-    textEl.style.overflow = "auto"; 
-    textEl.style.display = "flex";
-    textEl.style.alignItems = "center";
-    textEl.style.justifyContent = "center";
-    container.appendChild(textEl); 
-    if (window.MathJax) MathJax.typesetPromise([textEl]);
+    // обычный текст без HTML-вставок
+    textEl.textContent = value;
+    container.appendChild(textEl);
   }
 }
-
 
   renderHalf(halfL, a);
   renderHalf(halfR, b);
