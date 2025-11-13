@@ -272,7 +272,8 @@
 <div id="finalOverlay" class="final-overlay">
   <div class="final-message"></div>
   <div class="win-actions">
-    <button id="restartOnWin" type="button" class="win-btn">Начать заново</button>
+   <button id="restartOnWin" type="button" class="win-btn"></button>
+
   </div>
 </div>
 
@@ -363,31 +364,148 @@ let LANG = 'ru';
 let MATH_MODE = false;
 
 const I18N = {
-  ru: { title:'Domino · КГБ', draw:'Взять', pass:'Пропустить', end:'Завершить игру', restart:'Перезапустить', turn:'Ход', player:'Игрок', congrats:'Поздравляем!',
-        playersCount:'Количество игроков:', playerName:'Имя игрока', start:'Начать игру' },
-  en: { title:'Domino · KGB', draw:'Draw', pass:'Pass', end:'End Game', restart:'Restart', turn:'Turn', player:'Player', congrats:'Congratulations!',
-        playersCount:'Players:', playerName:'Player name', start:'Start game' },
-  fr: { title:'Domino · KGB', draw:'Piocher', pass:'Passer', end:'Terminer', restart:'Redémarrer', turn:'Tour', player:'Joueur', congrats:'Félicitations !',
-        playersCount:'Nombre de joueurs :', playerName:'Nom du joueur', start:'Commencer' },
-  es: { title:'Domino · KGB', draw:'Robar', pass:'Pasar', end:'Terminar', restart:'Reiniciar', turn:'Turno', player:'Jugador', congrats:'¡Felicidades!',
-        playersCount:'Número de jugadores:', playerName:'Nombre del jugador', start:'Iniciar' },
-  de: { title:'Domino · KGB', draw:'Ziehen', pass:'Passen', end:'Beenden', restart:'Neustart', turn:'Zug', player:'Spieler', congrats:'Glückwunsch!',
-        playersCount:'Spieleranzahl:', playerName:'Spielername', start:'Spiel starten' },
-  zh: { title:'Domino · KGB', draw:'摸牌', pass:'过', end:'结束游戏', restart:'重启', turn:'轮到', player:'玩家', congrats:'恭喜！',
-        playersCount:'玩家数量：', playerName:'玩家名字', start:'开始' },
-  ja: { title:'Domino · KGB', draw:'ドロー', pass:'パス', end:'終了', restart:'再開', turn:'手番', player:'プレイヤー', congrats:'おめでとう！',
-        playersCount:'人数：', playerName:'プレイヤー名', start:'ゲーム開始' }
+  ru: {
+    title: 'Domino · КГБ',
+    draw: 'Взять',
+    pass: 'Пропустить',
+    end: 'Завершить игру',
+    restart: 'Перезапустить',
+    turn: 'Ход',
+    player: 'Игрок',
+    congrats: 'Поздравляем!',
+    playersCount: 'Количество игроков:',
+    playerName: 'Имя игрока',
+    start: 'Начать игру',
+    winner: 'Победитель',
+    tie: 'Победила дружба!',
+    tiles: 'костяшек',
+    startOver: 'Начать заново'
+  },
+
+  en: {
+    title: 'Domino · KGB',
+    draw: 'Draw',
+    pass: 'Pass',
+    end: 'End Game',
+    restart: 'Restart',
+    turn: 'Turn',
+    player: 'Player',
+    congrats: 'Congratulations!',
+    playersCount: 'Players:',
+    playerName: 'Player name',
+    start: 'Start game',
+    winner: 'Winner',
+    tie: 'Friendship wins!',
+    tiles: 'tiles',
+    startOver: 'Restart'
+  },
+
+  fr: {
+    title: 'Domino · KGB',
+    draw: 'Piocher',
+    pass: 'Passer',
+    end: 'Terminer',
+    restart: 'Redémarrer',
+    turn: 'Tour',
+    player: 'Joueur',
+    congrats: 'Félicitations !',
+    playersCount: 'Nombre de joueurs :',
+    playerName: 'Nom du joueur',
+    start: 'Commencer',
+    winner: 'Gagnant',
+    tie: 'Match nul !',
+    tiles: 'tuiles',
+    startOver: 'Recommencer'
+  },
+
+  es: {
+    title: 'Domino · KGB',
+    draw: 'Robar',
+    pass: 'Pasar',
+    end: 'Terminar',
+    restart: 'Reiniciar',
+    turn: 'Turno',
+    player: 'Jugador',
+    congrats: '¡Felicidades!',
+    playersCount: 'Número de jugadores:',
+    playerName: 'Nombre del jugador',
+    start: 'Iniciar',
+    winner: 'Ganador',
+    tie: '¡Empate!',
+    tiles: 'fichas',
+    startOver: 'Reiniciar'
+  },
+
+  de: {
+    title: 'Domino · KGB',
+    draw: 'Ziehen',
+    pass: 'Passen',
+    end: 'Beenden',
+    restart: 'Neustart',
+    turn: 'Zug',
+    player: 'Spieler',
+    congrats: 'Glückwunsch!',
+    playersCount: 'Spieleranzahl:',
+    playerName: 'Spielername',
+    start: 'Spiel starten',
+    winner: 'Sieger',
+    tie: 'Unentschieden!',
+    tiles: 'Steine',
+    startOver: 'Neu starten'
+  },
+
+  zh: {
+    title: 'Domino · KGB',
+    draw: '摸牌',
+    pass: '过',
+    end: '结束游戏',
+    restart: '重启',
+    turn: '轮到',
+    player: '玩家',
+    congrats: '恭喜！',
+    playersCount: '玩家数量：',
+    playerName: '玩家名字',
+    start: '开始',
+    winner: '获胜者',
+    tie: '平局！',
+    tiles: '张',
+    startOver: '重新开始'
+  },
+
+  ja: {
+    title: 'Domino · KGB',
+    draw: 'ドロー',
+    pass: 'パス',
+    end: '終了',
+    restart: '再開',
+    turn: '手番',
+    player: 'プレイヤー',
+    congrats: 'おめでとう！',
+    playersCount: '人数：',
+    playerName: 'プレイヤー名',
+    start: 'ゲーム開始',
+    winner: '勝者',
+    tie: '引き分け！',
+    tiles: 'タイル',
+    startOver: '再開'
+  }
 };
+
 
 function applyLocale(lang='ru'){
   const t = I18N[lang] || I18N.ru;
   document.getElementById('title').textContent = t.title;
   document.getElementById('drawBtn').textContent = t.draw;
   document.getElementById('skipBtn').textContent = t.pass;
- const endB = document.getElementById('endBtn');
-if (endB) endB.textContent = t.end;
+  const endB = document.getElementById('endBtn');
+  if (endB) endB.textContent = t.end;
   document.getElementById('restartBtn').textContent = t.restart;
+
+  // 🔽 ДОБАВЬ ЭТО:
+  const restartWin = document.getElementById('restartOnWin');
+  if (restartWin) restartWin.textContent = t.startOver;
 }
+
 // применить подписи в МЕНЮ (лейблы/плейсхолдеры/кнопка)
 function applyMenuLocale(lang='ru'){
   const t = I18N[lang] || I18N.ru;
@@ -425,7 +543,10 @@ async function preloadConfig(){
   const t = I18N[LANG] || I18N.ru;
   finalFeedback = (data.feedback && data.feedback.trim()) || t.congrats;
 }
-
+(function setWinBtnLocale(){
+  const btn = document.getElementById('restartOnWin');
+  if (btn) btn.textContent = (I18N[LANG]||I18N.ru).startOver;
+})();
 function typesetTiles(){
   if (!MATH_MODE || !window.MathJax || !MathJax.typesetPromise) return;
   const targets = [
@@ -914,18 +1035,21 @@ addEventListener('resize', ()=>{ fitChain(); if(dragging) renderDirectionalZones
    UI: players & hand
 =========================================================================================== */
 function renderPlayersBar() {
+  const t = I18N[LANG] || I18N.ru;              // 🔽 добавь
   playersBarEl.innerHTML = '';
   for (let i = 0; i < playerNames.length; i++) {
     const el = document.createElement('div');
     el.className = 'player' + (i === currentPlayer ? ' active' : '');
-    el.textContent = playerNames[i] || `Игрок ${i+1}`;
+    el.textContent = playerNames[i] || `${t.player} ${i+1}`;  // 🔄 было "Игрок"
     playersBarEl.appendChild(el);
   }
-  playersBarEl.style.display = "flex"; // гарантируем, что видно
+  playersBarEl.style.display = "flex";
 }
 
+
 function renderHand(){
-  handHeader.textContent = `${playerNames[currentPlayer] || (I18N[LANG].player + ' ' + (currentPlayer+1))}: (${(hands[currentPlayer]||[]).length} костяшек)`;
+    const t = I18N[LANG] || I18N.ru;  
+  handHeader.textContent = `${playerNames[currentPlayer] || (t.player + ' ' + (currentPlayer+1))}: (${(hands[currentPlayer]||[]).length} ${t.tiles})`;
 
   trayEl.innerHTML='';
   for(const t of (hands[currentPlayer]||[])){
@@ -1093,16 +1217,17 @@ function endByPoints(){
   const finalMsg = overlay.querySelector('.final-message');
   const fb = FEEDBACK;
 
-  if (tie){
-    // оставляем ничью (если хочешь — можно выбрать тай-брейк по ходу/первому игроку)
-    finalMsg.innerHTML = fb ? `🎉 ${fb} 🎉<br>Победила дружба!`
-                            : `Победила дружба!`;
-  } else {
-    const winner = playerNames[winnerIdx];
-    finalMsg.innerHTML = fb
-      ? `🎉 ${fb} 🎉<br>Победитель: <span>${winner}</span>`
-      : `Победитель: <span>${winner}</span>`;
-  }
+ const t = (I18N[LANG]||I18N.ru);
+if (tie){
+  finalMsg.innerHTML = fb ? `🎉 ${fb} 🎉<br>${t.tie}`
+                          : t.tie;
+} else {
+  const winner = playerNames[winnerIdx];
+  finalMsg.innerHTML = fb
+    ? `🎉 ${fb} 🎉<br>${t.winner}: <span>${winner}</span>`
+    : `${t.winner}: <span>${winner}</span>`;
+}
+
 
   overlay.style.display = 'flex';
   if (typeof startFireworks === 'function') startFireworks();
@@ -1121,10 +1246,12 @@ function endByWinner(i){
   const overlay = document.getElementById('finalOverlay');
   const finalMsg = overlay.querySelector('.final-message');
 
-  const fb = FEEDBACK; // ← берём из ?data
-  finalMsg.innerHTML = fb
-    ? `🎉 ${fb} 🎉<br>Победитель: <span>${winner}</span>`
-    : `Победитель: <span>${winner}</span>`;
+const t = (I18N[LANG]||I18N.ru);
+const fb = FEEDBACK;
+finalMsg.innerHTML = fb
+  ? `🎉 ${fb} 🎉<br>${t.winner}: <span>${winner}</span>`
+  : `${t.winner}: <span>${winner}</span>`;
+
 
   overlay.style.display = 'flex';
   if (typeof startFireworks === 'function') startFireworks();
