@@ -414,11 +414,37 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.rand
 function uid(){ return Math.random().toString(36).slice(2,9); }
 function br(){ return { w:chainEl.clientWidth, h:chainEl.clientHeight }; }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function parseMaybeArray(x){
+  if (Array.isArray(x)) return x;
+  if (typeof x === 'string') {
+    // поддержка: через перенос строки, запятые, точка с запятой
+    return x.split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 function getQueryData(){
-  const raw=new URLSearchParams(location.search).get('data');
-  if(!raw) return null;
-  try{ return JSON.parse(decodeURIComponent(raw)); }
-  catch(e){ return null; }
+  // пробуем ?data=
+  const qs = new URLSearchParams(location.search).get('data');
+  // и #data= (для Genially и некоторых конструкторов)
+  const hs = new URLSearchParams(location.hash.replace(/^#/, '')).get('data');
+
+  const raw = qs || hs;
+  if (!raw) return null;
+
+  try {
+    const obj = JSON.parse(decodeURIComponent(raw));
+    // нормализуем поля
+    if (obj) {
+      obj.listA = parseMaybeArray(obj.listA);
+      obj.listB = parseMaybeArray(obj.listB);
+      if (typeof obj.mathMode === 'string') obj.mathMode = obj.mathMode === 'true';
+      if (typeof obj.math === 'string')     obj.math     = obj.math === 'true';
+    }
+    return obj;
+  } catch (e) {
+    return null;
+  }
 }
 
 const __payload = getQueryData() || {};
@@ -1138,6 +1164,50 @@ function nextPlayer(){
   renderHand();
   updateControls();
 }
+  function softRestart(showMenu = true){
+  // остановить фейерверки и скрыть оверлей победы
+  fwRunning = false;
+  fwParticles = [];
+  fwCanvas.style.display = 'none';
+  const overlay = document.getElementById('finalOverlay');
+  if (overlay) overlay.style.display = 'none';
+
+  // сброс состояния игры
+  playerNames = [];
+  hands = {};
+  deck = [];
+  currentPlayer = 0;
+  passes = {};
+  history = [];
+  dragging = null;
+  endLeft = endRight = openLeft = openRight = null;
+
+  // очистка UI
+  chainZoom.innerHTML = '';
+  chainZoom.appendChild(centerHint);
+  trayEl.innerHTML = '';
+  playersBarEl.innerHTML = '';
+  handHeader.textContent = '';
+  turnInfo.textContent = '';
+  deckInfo.textContent = '';
+
+  // сброс пан/зум
+  scale = 1; panX = 0; panY = 0; updateTransform();
+
+  // показать/спрятать меню
+  if (showMenu){
+    menuEl.classList.remove('hidden');
+    menuEl.removeAttribute('aria-hidden');
+    menuEl.style.display = '';
+    menuEl.style.visibility = '';
+    menuEl.style.opacity = '';
+    menuEl.style.pointerEvents = '';
+    // перерендерим инпуты + локаль
+    renderNameInputs();
+    applyMenuLocale(LANG);
+  }
+}
+
 /* ===========================================================================================
    Start game
 =========================================================================================== */
@@ -1276,7 +1346,10 @@ document.getElementById("endBtn").addEventListener("click", ()=> showWinOverlay(
 
 
 
-restartBtn.addEventListener('click', ()=>location.reload());
+restartBtn.addEventListener('click', ()=> softRestart(true));
+  // КНОПКА В ОВЕРЛЕЕ "Начать заново"
+const restartOnWinBtn = document.getElementById('restartOnWin');
+restartOnWinBtn.addEventListener('click', ()=> softRestart(true));
 startBtn.addEventListener('click', startGame);
 // Единый клик-звук для всех кнопок, кроме "Взять" (у неё свой звук sDraw)
 document.addEventListener('click', (e)=>{
